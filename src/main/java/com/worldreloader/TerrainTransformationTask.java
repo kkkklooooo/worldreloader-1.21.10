@@ -188,22 +188,20 @@ public class TerrainTransformationTask {
         copyFromReference(targetX, targetZ, referenceX, referenceZ);
     }
 
-    /**
-     * 破坏目标位置的方块（Y > 60 的区域）
-     */
+
     private void destroyAtPosition(int targetX, int targetZ) {
         // 获取目标位置的地表高度
         int surfaceY = world.getChunk(targetX >> 4, targetZ >> 4)
                 .getHeightmap(Heightmap.Type.WORLD_SURFACE)
                 .get(targetX & 15, targetZ & 15);
 
-        if (surfaceY < 54) {
+        if (surfaceY < 18) {
             return;
         }
 
         // 从Y=61开始到地表上方清除方块
         if (currentRadius <= 3) {
-            for (int y = 56; y <= surfaceY + 10; y++) {
+            for (int y = 20; y <= surfaceY + 10; y++) {
                 BlockPos targetPos = new BlockPos(targetX, y, targetZ);
                 if (targetPos.getX() == center.getX() && targetPos.getY() == center.getY() && targetPos.getZ() == center.getZ()) {
                     continue;
@@ -217,7 +215,7 @@ public class TerrainTransformationTask {
                 }
             }
         } else {
-            for (int y = 56; y <= surfaceY + 10; y++) {
+            for (int y = 20; y <= surfaceY + 10; y++) {
                 BlockPos targetPos = new BlockPos(targetX, y, targetZ);
                 BlockState currentState = world.getBlockState(targetPos);
                 if (!currentState.isAir()) {
@@ -255,7 +253,7 @@ public class TerrainTransformationTask {
                 .getHeightmap(Heightmap.Type.MOTION_BLOCKING)
                 .get(referenceX & 15, referenceZ & 15);
 
-        if (referenceSurfaceY < 55) {
+        if (referenceSurfaceY < 19) {
             return null;
         }
 
@@ -347,7 +345,7 @@ public class TerrainTransformationTask {
         List<BlockState> blocks = new ArrayList<>();
         List<Integer> heights = new ArrayList<>();
 
-        for (int y = 56; y <= surfaceY + 10; y++) {
+        for (int y = 20; y <= surfaceY + 10; y++) {
             BlockPos pos = new BlockPos(x, y, z);
             BlockState state = world.getBlockState(pos);
 

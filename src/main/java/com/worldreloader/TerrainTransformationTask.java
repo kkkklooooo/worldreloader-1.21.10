@@ -23,6 +23,7 @@ public class TerrainTransformationTask {
     private Set<ChunkPos> forcedChunks = new HashSet<>();
 
     private int currentRadius = 0;
+    private final int paddingCount = 64;
     private final int maxRadius = 64;
     private boolean isActive = false;
     private boolean isinit = false;
@@ -30,7 +31,7 @@ public class TerrainTransformationTask {
     //private int tickInterval = 1;
 
     // 新增：控制改造速度的间隔变量，每 interval 次才改造圆环地形
-    private final int interval = 3; // 例如设置为3，表示每3个半径才改造一次
+    private final int interval = 1; // 例如设置为3，表示每3个半径才改造一次
     private int radiusCounter = 0; // 用于计数当前累计的半径数
 
     public TerrainTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter, net.minecraft.entity.player.PlayerEntity player) {
@@ -92,7 +93,7 @@ public class TerrainTransformationTask {
     }
 
     private void processNextStep() {
-        if (currentRadius > maxRadius) {
+        if (currentRadius > maxRadius+paddingCount) {
             player.sendMessage(net.minecraft.text.Text.literal("§6地形改造完成！"), false);
             stop();
             return;
@@ -181,11 +182,16 @@ public class TerrainTransformationTask {
             return;
         }
 
+
+        int originalSurfaceY = world.getChunk(targetX >> 4, targetZ >> 4)
+                .getHeightmap(Heightmap.Type.WORLD_SURFACE)
+                .get(targetX & 15, targetZ & 15);
+
         // 先破坏目标位置
         destroyAtPosition(targetX, targetZ);
 
         // 然后从参考位置复制到目标位置
-        copyFromReference(targetX, targetZ, referenceX, referenceZ);
+        copyFromReference(targetX, targetZ, referenceX, referenceZ,originalSurfaceY);
     }
 
 
@@ -228,7 +234,7 @@ public class TerrainTransformationTask {
     /**
      * 从参考位置复制到目标位置
      */
-    private void copyFromReference(int targetX, int targetZ, int referenceX, int referenceZ) {
+    private void copyFromReference(int targetX, int targetZ, int referenceX, int referenceZ,int originalSurfaceY) {
         // 获取参考位置的地表信息
         ReferenceTerrainInfo referenceInfo = getReferenceTerrainInfo(referenceX, referenceZ);
         if (referenceInfo == null) {
@@ -236,7 +242,7 @@ public class TerrainTransformationTask {
         }
 
         // 复制整个Y轴范围的方块
-        copyTerrainStructure(targetX, targetZ, referenceInfo);
+        copyTerrainStructure(targetX, targetZ, referenceInfo,originalSurfaceY);
     }
 
     /**
@@ -372,7 +378,7 @@ public class TerrainTransformationTask {
     /**
      * 复制地形结构到目标位置
      */
-    private void copyTerrainStructure(int targetX, int targetZ, ReferenceTerrainInfo reference) {
+    private void copyTerrainStructure(int targetX, int targetZ, ReferenceTerrainInfo reference,int originalSurfaceY) {
         // 复制主要地形方块
         if (reference.blocks != null && reference.heights != null) {
             if (currentRadius <= 3) {
@@ -397,7 +403,7 @@ public class TerrainTransformationTask {
                         }
                     }
                 }
-            } else {
+            } else if(currentRadius<maxRadius) {
                 for (int i = 0; i < reference.blocks.length; i++) {
                     int targetY = reference.heights[i] + center.getY() - this.referenceCenter.getY();
                     //targetY = this.center.getY();
@@ -411,6 +417,10 @@ public class TerrainTransformationTask {
                         }
                     }
                 }
+            }else{
+
+                //此处添加Padding逻辑,要求从targetY高度逐渐转到原来此位置的高度
+                applyPaddingTransition(targetX, targetZ, reference,originalSurfaceY);
             }
         }
 
@@ -442,5 +452,118 @@ public class TerrainTransformationTask {
         int[] heights;                 // 对应的高度
         BlockState[] aboveSurfaceBlocks; // 地表以上的装饰方块
         int[] aboveSurfaceHeights;     // 装饰方块的高度
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /**
+     * 在Padding区域应用从参考地形到原始地形的平滑过渡
+     */
+    private void applyPaddingTransition(int targetX, int targetZ, ReferenceTerrainInfo reference,int originalSurfaceY) {
+        // 计算在Padding区域中的位置比例 (0.0 到 1.0)
+        // 0.0 = 开始Padding (maxRadius), 1.0 = 结束Padding (maxRadius + paddingCount)
+        float progress = (float)(currentRadius - maxRadius) / paddingCount;
+
+        // 获取目标位置的原始地表高度
+//        int originalSurfaceY = world.getChunk(targetX >> 4, targetZ >> 4)
+//                .getHeightmap(Heightmap.Type.WORLD_SURFACE)
+//                .get(targetX & 15, targetZ & 15);
+
+        // 计算参考地形的目标高度（考虑中心点的高度差）
+        int referenceTargetY = reference.surfaceY + center.getY() - this.referenceCenter.getY();
+
+        // 计算过渡后的目标高度
+        int transitionSurfaceY = (int)(referenceTargetY + (originalSurfaceY - referenceTargetY) * progress);
+
+        // 应用过渡效果
+        for (int i = 0; i < reference.blocks.length; i++) {
+            int referenceY = reference.heights[i];
+            int targetY = referenceY + center.getY() - this.referenceCenter.getY();
+
+            // 计算该方块在过渡中的目标高度
+            int transitionY = calculateTransitionHeight(referenceY, reference.surfaceY, targetY, transitionSurfaceY, progress);
+
+            BlockPos targetPos = new BlockPos(targetX, transitionY, targetZ);
+            BlockState referenceState = reference.blocks[i];
+
+            // 只在需要时设置方块
+            if (!referenceState.isAir()) {
+                BlockState currentState = world.getBlockState(targetPos);
+                if (!currentState.equals(referenceState)) {
+                    world.setBlockState(targetPos, referenceState, 3);
+                }
+            }
+        }
+
+        // 清理可能悬空的方块
+        cleanFloatingBlocks(targetX, targetZ, transitionSurfaceY);
+    }
+
+    /**
+     * 计算方块在过渡中的目标高度
+     */
+    private int calculateTransitionHeight(int referenceY, int referenceSurfaceY, int targetY, int transitionSurfaceY, float progress) {
+        // 如果是地表以上的方块，根据进度调整高度
+        if (referenceY > referenceSurfaceY) {
+            int heightAboveSurface = referenceY - referenceSurfaceY;
+            return transitionSurfaceY + heightAboveSurface;
+        }
+
+        // 如果是地表以下的方块，保持相对高度关系
+        int depthBelowSurface = referenceSurfaceY - referenceY;
+        return transitionSurfaceY - depthBelowSurface;
+    }
+
+    /**
+     * 清理可能悬空的方块
+     */
+    private void cleanFloatingBlocks(int targetX, int targetZ, int transitionSurfaceY) {
+        // 清理过渡区域上方可能悬空的方块
+        for (int y = transitionSurfaceY + 10; y > transitionSurfaceY; y--) {
+            BlockPos pos = new BlockPos(targetX, y, targetZ);
+            BlockState state = world.getBlockState(pos);
+
+            // 如果检测到悬空的固体方块，将其替换为空气
+            if (!state.isAir() && isSolidBlock(state) && y > transitionSurfaceY + 2) {
+                // 检查下方是否有支撑
+                boolean hasSupport = false;
+                for (int checkY = y - 1; checkY >= transitionSurfaceY; checkY--) {
+                    BlockPos belowPos = new BlockPos(targetX, checkY, targetZ);
+                    BlockState belowState = world.getBlockState(belowPos);
+                    if (isSolidBlock(belowState)) {
+                        hasSupport = true;
+                        break;
+                    }
+                }
+
+                if (!hasSupport) {
+                    world.setBlockState(pos, Blocks.AIR.getDefaultState(), 3);
+                }
+            }
+        }
+    }
+
+    /**
+     * 判断是否为固体方块
+     */
+    private boolean isSolidBlock(BlockState state) {
+        return state.isSolidBlock(world, BlockPos.ORIGIN) &&
+                !state.isAir() &&
+                !state.getBlock().toString().toLowerCase().contains("leaves");
     }
 }

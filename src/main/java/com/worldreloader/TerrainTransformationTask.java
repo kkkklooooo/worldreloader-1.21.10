@@ -23,8 +23,8 @@ public class TerrainTransformationTask {
     private Set<ChunkPos> forcedChunks = new HashSet<>();
 
     private int currentRadius = 0;
-    private final int paddingCount = 64;
-    private final int maxRadius = 74;
+    private final int paddingCount = 24;
+    private final int maxRadius = 88;
     private boolean isActive = false;
     private boolean isinit = false;
 
@@ -184,7 +184,7 @@ public class TerrainTransformationTask {
 
 
         int originalSurfaceY = world.getChunk(targetX >> 4, targetZ >> 4)
-                .getHeightmap(Heightmap.Type.WORLD_SURFACE)
+                .getHeightmap(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES)
                 .get(targetX & 15, targetZ & 15);
 
         // 先破坏目标位置
@@ -207,7 +207,7 @@ public class TerrainTransformationTask {
 
         // 从Y=61开始到地表上方清除方块
         if (currentRadius <= 3) {
-            for (int y = 20; y <= surfaceY + 10; y++) {
+            for (int y = 40; y <= surfaceY + 20; y++) {
                 BlockPos targetPos = new BlockPos(targetX, y, targetZ);
                 if (targetPos.getX() == center.getX() && targetPos.getY() == center.getY() && targetPos.getZ() == center.getZ()) {
                     continue;
@@ -221,7 +221,7 @@ public class TerrainTransformationTask {
                 }
             }
         } else {
-            for (int y = 20; y <= surfaceY + 10; y++) {
+            for (int y = 40; y <= surfaceY + 20; y++) {
                 BlockPos targetPos = new BlockPos(targetX, y, targetZ);
                 BlockState currentState = world.getBlockState(targetPos);
                 if (!currentState.isAir()) {
@@ -299,7 +299,6 @@ public class TerrainTransformationTask {
 
         // 明确的非地面方块
         if (block == Blocks.AIR ||
-                block == Blocks.WATER ||
                 block == Blocks.LAVA ||
                 block == Blocks.LEVER ||
                 block == Blocks.OAK_LEAVES ||
@@ -312,6 +311,7 @@ public class TerrainTransformationTask {
                 block == Blocks.CHERRY_LEAVES ||
                 block == Blocks.AZALEA_LEAVES ||
                 block == Blocks.FLOWERING_AZALEA_LEAVES ||
+                block==Blocks.PALE_OAK_LEAVES||
                 block == Blocks.TALL_GRASS ||
                 block == Blocks.FERN ||
                 block == Blocks.LARGE_FERN ||
@@ -337,7 +337,8 @@ public class TerrainTransformationTask {
                 block == Blocks.CLAY ||
                 block == Blocks.SNOW_BLOCK ||
                 block == Blocks.ICE ||
-                block == Blocks.PACKED_ICE;
+                block == Blocks.PACKED_ICE||
+                block==Blocks.WATER;
     }
 
     /**
@@ -351,7 +352,7 @@ public class TerrainTransformationTask {
         List<BlockState> blocks = new ArrayList<>();
         List<Integer> heights = new ArrayList<>();
 
-        for (int y = 20; y <= surfaceY + 10; y++) {
+        for (int y = 40; y <= surfaceY + 20; y++) {
             BlockPos pos = new BlockPos(x, y, z);
             BlockState state = world.getBlockState(pos);
 
@@ -380,7 +381,7 @@ public class TerrainTransformationTask {
      */
     private void copyTerrainStructure(int targetX, int targetZ, ReferenceTerrainInfo reference,int originalSurfaceY) {
         // 复制主要地形方块
-        if (reference.blocks != null && reference.heights != null) {
+        if (reference.blocks != null && reference.heights.length!=0) {
             if (currentRadius <= 3) {
 
 
@@ -453,6 +454,38 @@ public class TerrainTransformationTask {
         BlockState[] aboveSurfaceBlocks; // 地表以上的装饰方块
         int[] aboveSurfaceHeights;     // 装饰方块的高度
     }
+    private boolean isWaterOrAquaticPlant(BlockState state) {
+        Block block = state.getBlock();
+
+        // 水方块
+        if (block == Blocks.WATER || block == Blocks.LAVA) {
+            return true;
+        }
+
+        // 水生植物
+        if (block == Blocks.KELP ||
+                block == Blocks.KELP_PLANT ||
+                block == Blocks.SEAGRASS ||
+                block == Blocks.TALL_SEAGRASS ||
+                block == Blocks.SEA_PICKLE) {
+            return true;
+        }
+
+        // 珊瑚相关
+        String blockName = block.getTranslationKey().toLowerCase();
+        if (blockName.contains("coral") &&
+                (blockName.contains("fan") || blockName.contains("block") || blockName.contains("wall"))) {
+            return true;
+        }
+
+        // 其他可能的水生生物
+        if (block == Blocks.BUBBLE_COLUMN ||
+                block == Blocks.CONDUIT ) {
+            return true;
+        }
+
+        return false;
+    }
 
 
 
@@ -477,7 +510,7 @@ public class TerrainTransformationTask {
     private void applyPaddingTransition(int targetX, int targetZ, ReferenceTerrainInfo reference,int originalSurfaceY) {
         // 计算在Padding区域中的位置比例 (0.0 到 1.0)
         // 0.0 = 开始Padding (maxRadius), 1.0 = 结束Padding (maxRadius + paddingCount)
-        float progress =1- (float)((maxRadius-currentRadius)/paddingCount);
+        float progress =1.0f-(float)(maxRadius-currentRadius)/paddingCount;
 
         // 获取目标位置的原始地表高度
 //        int originalSurfaceY = world.getChunk(targetX >> 4, targetZ >> 4)
@@ -499,13 +532,16 @@ public class TerrainTransformationTask {
             int transitionY = calculateTransitionHeight(referenceY, reference.surfaceY, targetY, transitionSurfaceY, progress);
 
             BlockPos targetPos = new BlockPos(targetX, transitionY, targetZ);
-            BlockState referenceState = reference.blocks[i];
+            if(!isWaterOrAquaticPlant(reference.blocks[i])) {
+                //避免水因为过渡而违反物理学
+                BlockState referenceState = reference.blocks[i];
 
-            // 只在需要时设置方块
-            if (!referenceState.isAir()) {
-                BlockState currentState = world.getBlockState(targetPos);
-                if (!currentState.equals(referenceState)) {
-                    world.setBlockState(targetPos, referenceState, 3);
+                // 只在需要时设置方块
+                if (!referenceState.isAir()) {
+                    BlockState currentState = world.getBlockState(targetPos);
+                    if (!currentState.equals(referenceState)) {
+                        world.setBlockState(targetPos, referenceState, 3);
+                    }
                 }
             }
         }
@@ -564,6 +600,7 @@ public class TerrainTransformationTask {
     private boolean isSolidBlock(BlockState state) {
         return state.isSolidBlock(world, BlockPos.ORIGIN) &&
                 !state.isAir() &&
-                !state.getBlock().toString().toLowerCase().contains("leaves");
+                !state.getBlock().toString().toLowerCase().contains("leaves")&&
+                !state.getBlock().toString().toLowerCase().contains("log");
     }
 }

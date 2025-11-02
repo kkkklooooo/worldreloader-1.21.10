@@ -24,7 +24,7 @@ public class TerrainTransformationTask {
 
     private int currentRadius = 0;
     private final int paddingCount = 64;
-    private final int maxRadius = 64;
+    private final int maxRadius = 74;
     private boolean isActive = false;
     private boolean isinit = false;
 
@@ -93,7 +93,7 @@ public class TerrainTransformationTask {
     }
 
     private void processNextStep() {
-        if (currentRadius > maxRadius+paddingCount) {
+        if (currentRadius > maxRadius) {
             player.sendMessage(net.minecraft.text.Text.literal("§6地形改造完成！"), false);
             stop();
             return;
@@ -403,7 +403,7 @@ public class TerrainTransformationTask {
                         }
                     }
                 }
-            } else if(currentRadius<maxRadius) {
+            } else if(currentRadius<maxRadius-paddingCount) {
                 for (int i = 0; i < reference.blocks.length; i++) {
                     int targetY = reference.heights[i] + center.getY() - this.referenceCenter.getY();
                     //targetY = this.center.getY();
@@ -477,7 +477,7 @@ public class TerrainTransformationTask {
     private void applyPaddingTransition(int targetX, int targetZ, ReferenceTerrainInfo reference,int originalSurfaceY) {
         // 计算在Padding区域中的位置比例 (0.0 到 1.0)
         // 0.0 = 开始Padding (maxRadius), 1.0 = 结束Padding (maxRadius + paddingCount)
-        float progress = (float)(currentRadius - maxRadius) / paddingCount;
+        float progress =1- (float)((maxRadius-currentRadius)/paddingCount);
 
         // 获取目标位置的原始地表高度
 //        int originalSurfaceY = world.getChunk(targetX >> 4, targetZ >> 4)

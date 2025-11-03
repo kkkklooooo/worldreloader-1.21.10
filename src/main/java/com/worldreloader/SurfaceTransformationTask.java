@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.entity.ItemEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
@@ -40,6 +41,9 @@ public class SurfaceTransformationTask {
 
     private static final int HEIGHT_DIFFERENCE_THRESHOLD = 15;
 
+    private final int itemCleanupInterval = 20;
+    private int lastCleanupRadius = -1;
+
     // 用于存储当前半径的位置列表
     private List<BlockPos> currentRadiusPositions = new ArrayList<>();
 
@@ -57,10 +61,15 @@ public class SurfaceTransformationTask {
     }
 
     public void stop() {
+        // 任务结束时清理一次物品实体
+        cleanupItemEntities();
+        player.sendMessage(net.minecraft.text.Text.literal("§a最终物品清理完成！"), false);
+
         this.isActive = false;
         // 清理状态
         currentRadiusPositions.clear();
         currentStep = 0;
+        lastCleanupRadius = -1;
     }
 
     private void RegisterToTick() {
@@ -102,6 +111,11 @@ public class SurfaceTransformationTask {
             currentRadiusPositions = generateCirclePositions(currentRadius);
             player.sendMessage(net.minecraft.text.Text.literal("§7开始改造半径: " + currentRadius + "格 (共 " + currentRadiusPositions.size() + " 个位置)"), false);
         }
+        if (currentRadius % itemCleanupInterval == 0 && currentRadius != lastCleanupRadius) {
+            cleanupItemEntities();
+            lastCleanupRadius = currentRadius;
+        }
+
 
         // 计算当前步骤需要处理的位置范围
         int totalPositions = currentRadiusPositions.size();
@@ -242,6 +256,46 @@ public class SurfaceTransformationTask {
                 world.setBlockState(targetPos, Blocks.AIR.getDefaultState(), 3);
             }
         }
+    }
+    /**
+     * 清理物品实体
+     */
+    private void cleanupItemEntities() {
+        int itemsCleared = 0;
+
+        // 获取改造区域内的所有物品实体
+
+        // 计算清理范围（基于当前半径）
+        int cleanupRadius = Math.min(currentRadius + 10, maxRadius + 20); // 稍微扩大范围确保清理完整
+
+        List<ItemEntity> itemsToRemove = new ArrayList<>(world.getEntitiesByClass(
+                ItemEntity.class,
+                getCleanupBoundingBox(cleanupRadius),
+                entity -> true));
+
+        // 移除所有找到的物品实体
+        for (net.minecraft.entity.ItemEntity item : itemsToRemove) {
+            item.discard();
+            itemsCleared++;
+        }
+
+        if (itemsCleared > 0) {
+            player.sendMessage(net.minecraft.text.Text.literal("§b清理了 " + itemsCleared + " 个掉落物（半径 " + currentRadius + "）"), false);
+        }
+    }
+
+    /**
+     * 获取清理范围的边界框
+     */
+    private net.minecraft.util.math.Box getCleanupBoundingBox(int radius) {
+        int minX = center.getX() - radius;
+        int minY = this.minY;
+        int minZ = center.getZ() - radius;
+        int maxX = center.getX() + radius;
+        int maxY =2000; // 使用世界高度上限
+        int maxZ = center.getZ() + radius;
+
+        return new net.minecraft.util.math.Box(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     /**

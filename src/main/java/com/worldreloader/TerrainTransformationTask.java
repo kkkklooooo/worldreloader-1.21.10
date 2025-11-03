@@ -28,6 +28,10 @@ public class TerrainTransformationTask {
     private boolean isActive = false;
     private boolean isinit = false;
 
+    // 物品实体清理间隔
+    private final int itemCleanupInterval = 20;
+    private int lastCleanupRadius = -1;
+
     //private int tickInterval = 1;
 
     // 新增：控制改造速度的间隔变量，每 interval 次才改造圆环地形
@@ -51,6 +55,10 @@ public class TerrainTransformationTask {
     }
 
     public void stop() {
+        // 任务结束时清理一次物品实体
+        cleanupItemEntities();
+        player.sendMessage(net.minecraft.text.Text.literal("§a最终物品清理完成！"), false);
+
         this.isActive = false;
     }
 
@@ -100,6 +108,12 @@ public class TerrainTransformationTask {
             return;
         }
 
+        // 检查是否需要清理物品实体（每20半径清理一次）
+        if (currentRadius % itemCleanupInterval == 0 && currentRadius != lastCleanupRadius) {
+            cleanupItemEntities();
+            lastCleanupRadius = currentRadius;
+        }
+
         // 新增：间隔控制逻辑
         radiusCounter++;
         if (radiusCounter < interval) {
@@ -130,6 +144,51 @@ public class TerrainTransformationTask {
         /*if (isActive) {
             //scheduleNextTick();
         }*/
+    }
+
+    /**
+     * 清理物品实体
+     */
+    private void cleanupItemEntities() {
+        int itemsCleared = 0;
+
+        // 获取改造区域内的所有物品实体
+        List<net.minecraft.entity.ItemEntity> itemsToRemove = new ArrayList<>();
+
+        // 计算清理范围（基于当前半径）
+        int cleanupRadius = Math.min(currentRadius + 10, maxRadius + 20); // 稍微扩大范围确保清理完整
+
+        for (net.minecraft.entity.ItemEntity itemEntity : world.getEntitiesByClass(
+                net.minecraft.entity.ItemEntity.class,
+                getCleanupBoundingBox(cleanupRadius),
+                entity -> true)) {
+
+            itemsToRemove.add(itemEntity);
+        }
+
+        // 移除所有找到的物品实体
+        for (net.minecraft.entity.ItemEntity item : itemsToRemove) {
+            item.discard();
+            itemsCleared++;
+        }
+
+        if (itemsCleared > 0) {
+            player.sendMessage(net.minecraft.text.Text.literal("§b清理了 " + itemsCleared + " 个掉落物（半径 " + currentRadius + "）"), false);
+        }
+    }
+
+    /**
+     * 获取清理范围的边界框
+     */
+    private net.minecraft.util.math.Box getCleanupBoundingBox(int radius) {
+        int minX = center.getX() - radius;
+        int minY = world.getBottomY();
+        int minZ = center.getZ() - radius;
+        int maxX = center.getX() + radius;
+        int maxY = 2000; // 使用世界高度上限
+        int maxZ = center.getZ() + radius;
+
+        return new net.minecraft.util.math.Box(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     /**
@@ -487,23 +546,6 @@ public class TerrainTransformationTask {
 
         return false;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /**
      * 在Padding区域应用从参考地形到原始地形的平滑过渡

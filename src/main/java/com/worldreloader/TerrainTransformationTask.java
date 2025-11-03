@@ -24,7 +24,7 @@ public class TerrainTransformationTask {
 
     private int currentRadius = 0;
     private final int paddingCount = 24;
-    private final int maxRadius = 88;
+    private int maxRadius = 88;
     private boolean isActive = false;
     private boolean isinit = false;
 
@@ -39,6 +39,7 @@ public class TerrainTransformationTask {
         this.center = center;
         this.referenceCenter = referenceCenter;
         this.player = player;
+        this.maxRadius = WorldReloader.config.maxRadius;
         RegisterToTick();
     }
 

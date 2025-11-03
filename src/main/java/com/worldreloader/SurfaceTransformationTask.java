@@ -23,7 +23,7 @@ public class SurfaceTransformationTask {
     private Set<ChunkPos> forcedChunks = new HashSet<>();
 
     private int currentRadius = 0;
-    private final int maxRadius = 512;
+    private final int maxRadius = WorldReloader.config.maxRadius;
     private boolean isActive = false;
     private boolean isinit = false;
 

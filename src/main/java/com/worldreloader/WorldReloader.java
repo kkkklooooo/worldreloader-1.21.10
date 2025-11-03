@@ -1,8 +1,15 @@
 package com.worldreloader;
 
+import me.shedaniel.autoconfig.AutoConfig;
+import me.shedaniel.autoconfig.ConfigHolder;
+import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
+import me.shedaniel.clothconfig2.api.ConfigBuilder;
+import me.shedaniel.clothconfig2.api.ConfigScreen;
 import net.fabricmc.api.ModInitializer;
 
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +41,8 @@ import java.util.Objects;
 public class WorldReloader implements ModInitializer {
 	public static final String MOD_ID = "worldreloader";
 
+	public static ModConfig config;
+	public static ConfigHolder ch = AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
 	// This logger is used to write text to the console and the log file.
 	// It is considered best practice to use your mod id as the logger's name.
 	// That way, it's clear which mod wrote info, warnings, and errors.
@@ -96,7 +105,24 @@ public class WorldReloader implements ModInitializer {
 
 			return ActionResult.PASS;
 		});
+		KeyBindings.register();
+
+		config = AutoConfig.getConfigHolder(ModConfig.class).getConfig();
+		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			while (KeyBindings.openConfigKey.wasPressed()) {
+				if (client.player != null) {
+					// 打开配置界面
+					client.setScreen(AutoConfig.getConfigScreen(ModConfig.class, client.currentScreen).get());
+				}
+			}
+		});
+
 	}
+
+//	private void openConfigScreen(MinecraftClient client) {
+//		ConfigBuilder cb = ConfigBuilder.create().setParentScreen(client.currentScreen).setTitle(Text.of("CFG"));
+//		client.setScreen();
+//	}
 
 	private void startTerrainTransformation(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
 		LOGGER.info("开始地形改造过程 - 信标位置: {}", beaconPos);

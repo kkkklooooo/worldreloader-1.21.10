@@ -311,7 +311,7 @@ public class TerrainTransformationTask {
                 block == Blocks.CHERRY_LEAVES ||
                 block == Blocks.AZALEA_LEAVES ||
                 block == Blocks.FLOWERING_AZALEA_LEAVES ||
-                block==Blocks.PALE_OAK_LEAVES||
+                block == Blocks.PALE_OAK_LEAVES||
                 block == Blocks.TALL_GRASS ||
                 block == Blocks.FERN ||
                 block == Blocks.LARGE_FERN ||
@@ -338,7 +338,7 @@ public class TerrainTransformationTask {
                 block == Blocks.SNOW_BLOCK ||
                 block == Blocks.ICE ||
                 block == Blocks.PACKED_ICE||
-                block==Blocks.WATER;
+                block == Blocks.WATER;
     }
 
     /**

@@ -107,7 +107,8 @@ public class WorldReloader implements ModInitializer {
 		BlockPos referencePos = findReferencePosition(world, beaconPos, targetBiome, targetStructure, player);
 
 		if (referencePos != null) {
-			new TerrainTransformationTask(world, beaconPos, referencePos, player).start();
+			//new TerrainTransformationTask(world, beaconPos, referencePos, player).start();
+			new SurfaceTransformationTask(world,beaconPos,referencePos,player).start();
 			player.sendMessage(Text.literal("§a地形改造已启动！将先清除区域再复制远处的地表结构。"), false);
 			LOGGER.info("地形改造任务已启动 - 参考位置: {}", referencePos);
 		} else {
@@ -246,7 +247,7 @@ public class WorldReloader implements ModInitializer {
 			// 进一步验证找到的高度确实是固体地面
 			surfaceY = validateAndAdjustSurfaceHeight(world, pos.getX(), pos.getZ(), surfaceY);
 
-			if (surfaceY >= 64 && surfaceY < world.getHeight() - 10) {
+			if (surfaceY >= 64) {
 				BlockPos surfacePos = new BlockPos(pos.getX(), surfaceY, pos.getZ());
 				BlockState surfaceBlock = world.getBlockState(surfacePos);
 

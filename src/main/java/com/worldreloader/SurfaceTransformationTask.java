@@ -39,8 +39,6 @@ public class SurfaceTransformationTask {
     private static final int COPY_HEIGHT = 15;
     private final int minY;
 
-    private static final int HEIGHT_DIFFERENCE_THRESHOLD = 15;
-
     private final int itemCleanupInterval = 20;
     private int lastCleanupRadius = -1;
 
@@ -202,7 +200,7 @@ public class SurfaceTransformationTask {
      * 当参考地形高度低于当前地形高度-15时跳过
      */
     private boolean shouldSkipProcessing(int referenceSurfaceYAtTarget, int originalSurfaceY) {
-        return referenceSurfaceYAtTarget < originalSurfaceY - HEIGHT_DIFFERENCE_THRESHOLD;
+        return referenceSurfaceYAtTarget < originalSurfaceY - DESTROY_HEIGHT;
     }
 
     /**

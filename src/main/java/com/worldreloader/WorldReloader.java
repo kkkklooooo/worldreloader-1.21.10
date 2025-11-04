@@ -179,74 +179,82 @@ public class WorldReloader implements ModInitializer {
 		return null;
 	}
 	public static void setBiome(BlockPos pos, RegistryEntry<Biome> biome, ServerWorld serverWorld) {
-		// 获取坐标所属区块的起始坐标（区块坐标转换为世界坐标）
-		int chunkX = pos.getX() >> 4; // 除以16得到区块坐标
-		int chunkZ = pos.getZ() >> 4;
-		BlockPos chunkStartPos = new BlockPos(chunkX << 4, serverWorld.getBottomY(), chunkZ << 4); // 乘以16得到世界坐标
-
-		// 计算区块的结束坐标（一个区块是16x16，高度从世界底部到顶部）
-		BlockPos chunkEndPos = new BlockPos(
-				chunkStartPos.getX() + 15,
-				serverWorld.getHeight(),
-				chunkStartPos.getZ() + 15
-		);
-
-		LOGGER.warn("区块范围: {} 到 {}", chunkStartPos.toShortString(), chunkEndPos.toShortString());
-
-		int worldBottomY = serverWorld.getBottomY();
-		int worldTopY = serverWorld.getHeight();
-		int totalHeight = worldTopY - worldBottomY;
-
-		// 计算每次处理的高度层（确保每次不超过3000个方块）
-		// 每个水平面有 16 * 16 = 256 个方块
-		int maxBlocksPerCall = 32768;
-		int maxHeightPerCall = maxBlocksPerCall / 256; // 每次最多处理的高度层数
-
-		if (maxHeightPerCall < 1) {
-			maxHeightPerCall = 1; // 至少处理1层
-		}
-
-		LOGGER.info("世界高度范围: {}-{}, 总高度: {}, 每次处理高度: {}",
-				worldBottomY, worldTopY, totalHeight, maxHeightPerCall);
-
-		// 按高度分层处理
-		for (int startY = worldBottomY; startY < worldTopY; startY += maxHeightPerCall) {
-			int endY = Math.min(startY + maxHeightPerCall - 1, worldTopY - 1);
-
-			BlockPos layerStartPos = new BlockPos(chunkStartPos.getX(), startY, chunkStartPos.getZ());
-			BlockPos layerEndPos = new BlockPos(chunkEndPos.getX(), endY, chunkEndPos.getZ());
-
-			int layerHeight = endY - startY + 1;
-			int blocksInThisLayer = 256 * layerHeight;
-
-			LOGGER.info("处理高度层: {}-{}, 方块数: {}", startY, endY, blocksInThisLayer);
-
-			// 使用FillBiomeCommand设置当前高度层的生物群系
-			Either<Integer, CommandSyntaxException> either = FillBiomeCommand.fillBiome(
+		BlockPos a = new BlockPos(pos.getX()-10,pos.getY()-10,pos.getZ());
+		BlockPos b = new BlockPos(pos.getX(),pos.getY()+10,pos.getZ()+10);
+		Either<Integer, CommandSyntaxException> either = FillBiomeCommand.fillBiome(
 					serverWorld,
-					layerStartPos,
-					layerEndPos,
+					a,
+					b,
 					biome
 			);
-
-			if (either.right().isPresent()) {
-				CommandSyntaxException error = either.right().get();
-				LOGGER.error("设置生物群系失败 (高度层 {}-{}): {}", startY, endY, error.getMessage());
-				// 可以选择继续处理其他层，或者抛出异常
-				// throw this.createError("test.error.set_biome: " + error.getMessage());
-			} else {
-				Integer modifiedCount = either.left().orElse(0);
-				LOGGER.info("成功设置高度层 {}-{} 的生物群系，修改计数: {}", startY, endY, modifiedCount);
-			}
-
-			// 可选：添加小延迟避免服务器过载
-			try {
-				Thread.sleep(10); // 10毫秒延迟
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-				break;
-			}
-		}
+		// 获取坐标所属区块的起始坐标（区块坐标转换为世界坐标）
+//		int chunkX = pos.getX() >> 4; // 除以16得到区块坐标
+//		int chunkZ = pos.getZ() >> 4;
+//		BlockPos chunkStartPos = new BlockPos(chunkX << 4, serverWorld.getBottomY(), chunkZ << 4); // 乘以16得到世界坐标
+//
+//		// 计算区块的结束坐标（一个区块是16x16，高度从世界底部到顶部）
+//		BlockPos chunkEndPos = new BlockPos(
+//				chunkStartPos.getX() + 15,
+//				serverWorld.getHeight(),
+//				chunkStartPos.getZ() + 15
+//		);
+//
+//		LOGGER.warn("区块范围: {} 到 {}", chunkStartPos.toShortString(), chunkEndPos.toShortString());
+//
+//		int worldBottomY = serverWorld.getBottomY();
+//		int worldTopY = serverWorld.getHeight();
+//		int totalHeight = worldTopY - worldBottomY;
+//
+//		// 计算每次处理的高度层（确保每次不超过3000个方块）
+//		// 每个水平面有 16 * 16 = 256 个方块
+//		int maxBlocksPerCall = 32768;
+//		int maxHeightPerCall = maxBlocksPerCall / 256; // 每次最多处理的高度层数
+//
+//		if (maxHeightPerCall < 1) {
+//			maxHeightPerCall = 1; // 至少处理1层
+//		}
+//
+//		LOGGER.info("世界高度范围: {}-{}, 总高度: {}, 每次处理高度: {}",
+//				worldBottomY, worldTopY, totalHeight, maxHeightPerCall);
+//
+//		// 按高度分层处理
+//		for (int startY = worldBottomY; startY < worldTopY; startY += maxHeightPerCall) {
+//			int endY = Math.min(startY + maxHeightPerCall - 1, worldTopY - 1);
+//
+//			BlockPos layerStartPos = new BlockPos(chunkStartPos.getX(), startY, chunkStartPos.getZ());
+//			BlockPos layerEndPos = new BlockPos(chunkEndPos.getX(), endY, chunkEndPos.getZ());
+//
+//			int layerHeight = endY - startY + 1;
+//			int blocksInThisLayer = 256 * layerHeight;
+//
+//			LOGGER.info("处理高度层: {}-{}, 方块数: {}", startY, endY, blocksInThisLayer);
+//
+//			// 使用FillBiomeCommand设置当前高度层的生物群系
+//			Either<Integer, CommandSyntaxException> either = FillBiomeCommand.fillBiome(
+//					serverWorld,
+//					layerStartPos,
+//					layerEndPos,
+//					biome
+//			);
+//
+//			if (either.right().isPresent()) {
+//				CommandSyntaxException error = either.right().get();
+//				LOGGER.error("设置生物群系失败 (高度层 {}-{}): {}", startY, endY, error.getMessage());
+//				// 可以选择继续处理其他层，或者抛出异常
+//				// throw this.createError("test.error.set_biome: " + error.getMessage());
+//			} else {
+//				Integer modifiedCount = either.left().orElse(0);
+//				LOGGER.info("成功设置高度层 {}-{} 的生物群系，修改计数: {}", startY, endY, modifiedCount);
+//			}
+//
+//			// 可选：添加小延迟避免服务器过载
+//			try {
+//				Thread.sleep(10); // 10毫秒延迟
+//			} catch (InterruptedException e) {
+//				Thread.currentThread().interrupt();
+//				break;
+//			}
+//		}
 
 		LOGGER.info("生物群系设置完成");
 	}

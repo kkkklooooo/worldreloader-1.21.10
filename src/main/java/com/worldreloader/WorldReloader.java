@@ -160,9 +160,9 @@ public class WorldReloader implements ModInitializer {
 
 		if (referencePos != null) {
 			if(config.UseSurface){
-				new SurfaceTransformationTask(world,beaconPos,referencePos,player).start();
+				new SurfaceTransformationTask(world,beaconPos,referencePos,player,world.getBiome(referencePos)).start();
 			}else {
-				new TerrainTransformationTask(world, beaconPos, referencePos, player).start();
+				new TerrainTransformationTask(world, beaconPos, referencePos, player,world.getBiome(referencePos)).start();
 			}
 			//new TerrainTransformationTask(world, beaconPos, referencePos, player).start();
 
@@ -187,7 +187,7 @@ public class WorldReloader implements ModInitializer {
 		return null;
 	}
 
-	public void setBiome(BlockPos pos, RegistryKey<Biome> biome,ServerWorld serverWorld) {
+	public static void setBiome(BlockPos pos, RegistryKey<Biome> biome,ServerWorld serverWorld) {
 		// 获取坐标所属区块的起始坐标（区块坐标转换为世界坐标）
 		int chunkX = pos.getX() >> 4; // 除以16得到区块坐标
 		int chunkZ = pos.getZ() >> 4;
@@ -213,7 +213,7 @@ public class WorldReloader implements ModInitializer {
 //			throw this.createError("test.error.set_biome");
 //		}
 	}
-	public void setBiome(BlockPos pos, RegistryEntry<Biome> biome, ServerWorld serverWorld) {
+	public static void setBiome(BlockPos pos, RegistryEntry<Biome> biome, ServerWorld serverWorld) {
 		// 获取坐标所属区块的起始坐标（区块坐标转换为世界坐标）
 		int chunkX = pos.getX() >> 4; // 除以16得到区块坐标
 		int chunkZ = pos.getZ() >> 4;

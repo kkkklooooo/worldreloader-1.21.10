@@ -4,11 +4,13 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.Heightmap;
+import net.minecraft.world.biome.Biome;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -40,18 +42,20 @@ public class TerrainTransformationTask {
     private int itemCleanupInterval = WorldReloader.config.itemCleanupInterval;
     private int lastCleanupRadius = -1;
 
+    private RegistryEntry<Biome> bb;
     //private int tickInterval = 1;
 
     // 新增：控制改造速度的间隔变量，每 interval 次才改造圆环地形
     private final int interval = 1; // 例如设置为3，表示每3个半径才改造一次
     private int radiusCounter = 0; // 用于计数当前累计的半径数
 
-    public TerrainTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter, net.minecraft.entity.player.PlayerEntity player) {
+    public TerrainTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter, net.minecraft.entity.player.PlayerEntity player,RegistryEntry<Biome> bb) {
         this.world = world;
         this.center = center;
         this.referenceCenter = referenceCenter;
         this.player = player;
         this.maxRadius = WorldReloader.config.maxRadius;
+        this.bb = bb;
         RegisterToTick();
     }
 
@@ -290,7 +294,7 @@ public class TerrainTransformationTask {
     private void processPosition(BlockPos circlePos) {
         int targetX = circlePos.getX();
         int targetZ = circlePos.getZ();
-
+        WorldReloader.setBiome(circlePos,bb,world);
         if (!world.isChunkLoaded(targetX >> 4, targetZ >> 4)) {
             return;
         }

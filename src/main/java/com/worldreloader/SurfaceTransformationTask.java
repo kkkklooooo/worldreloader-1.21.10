@@ -5,11 +5,13 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.Heightmap;
+import net.minecraft.world.biome.Biome;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -23,6 +25,7 @@ public class SurfaceTransformationTask {
     private final net.minecraft.entity.player.PlayerEntity player;
     private Set<ChunkPos> forcedChunks = new HashSet<>();
 
+    private RegistryEntry<Biome> bb;
     private int currentRadius = 0;
     private final int maxRadius = WorldReloader.config.maxRadius;
     private boolean isActive = false;
@@ -45,12 +48,13 @@ public class SurfaceTransformationTask {
     // 用于存储当前半径的位置列表
     private List<BlockPos> currentRadiusPositions = new ArrayList<>();
 
-    public SurfaceTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter, net.minecraft.entity.player.PlayerEntity player) {
+    public SurfaceTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter, net.minecraft.entity.player.PlayerEntity player,RegistryEntry<Biome> bb) {
         this.world = world;
         this.center = center;
         this.referenceCenter = referenceCenter;
         this.player = player;
         this.minY = world.getBottomY();
+        this.bb=bb;
         RegisterToTick();
     }
 
@@ -153,6 +157,7 @@ public class SurfaceTransformationTask {
             int targetX = circlePos.getX();
             int targetZ = circlePos.getZ();
 
+            WorldReloader.setBiome(circlePos,bb,world);
             if (!world.isChunkLoaded(targetX >> 4, targetZ >> 4)) {
                 continue;
             }

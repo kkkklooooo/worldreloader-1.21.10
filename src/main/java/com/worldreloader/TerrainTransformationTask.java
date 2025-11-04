@@ -10,6 +10,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.Heightmap;
+import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 
 import java.util.ArrayList;
@@ -85,13 +86,14 @@ public class TerrainTransformationTask {
                     int chunkRadius = (maxRadius + 15) >> 4; // 向上取整
                     for (int x = -chunkRadius; x <= chunkRadius; x++) {
                         for (int z = -chunkRadius; z <= chunkRadius; z++) {
-                            if(WorldReloader.config.isChangeBiome)
-                            {
-                                WorldReloader.setBiome(center,bb,world);
-                            }
                             ChunkPos chunkPos = new ChunkPos((referenceCenter.getX() >> 4) + x, (referenceCenter.getZ() >> 4) + z);
                             if (!forcedChunks.contains(chunkPos)) {
                                 world.setChunkForced(chunkPos.x, chunkPos.z, true);
+                                if(WorldReloader.config.isChangeBiome)
+                                {
+                                    bb=getBiomeAtChunkCenter(world,chunkPos);
+                                    WorldReloader.setBiome(center.add(16*x,0,16*z),bb,world);
+                                }
                                 forcedChunks.add(chunkPos);
                             }
                         }
@@ -106,6 +108,20 @@ public class TerrainTransformationTask {
                 isinit = false;
             }
         });
+    }
+    public RegistryEntry<Biome> getBiomeAtChunkCenter(World world, ChunkPos chunkPos) {
+        // 计算区块中心点的世界坐标（X和Z轴）
+        int centerX = chunkPos.getStartX() + 8; // 区块起始X坐标 + 8得到中心X
+        int centerZ = chunkPos.getStartZ() + 8; // 区块起始Z坐标 + 8得到中心Z
+
+        // 获取中心点顶部的Y坐标（使用MOTION_BLOCKING高度图，忽略树叶等非固体方块）
+        int topY = world.getTopY(Heightmap.Type.MOTION_BLOCKING, centerX, centerZ);
+
+        // 创建中心点顶部位置的BlockPos
+        BlockPos topPos = new BlockPos(centerX, topY, centerZ);
+
+        // 获取该位置的生物群系RegistryEntry
+        return world.getBiome(topPos);
     }
 
 

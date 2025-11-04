@@ -25,5 +25,14 @@
 
   "text.autoconfig.worldreloader.category.Non-surface": "非表面设置",
   "text.autoconfig.worldreloader.option.paddingCount": "填充数量",
-  "text.autoconfig.worldreloader.option.paddingCount.@Tooltip": "非表面生成的填充区块数量"
+  "text.autoconfig.worldreloader.option.paddingCount.@Tooltip": "非表面生成的填充区块数量",
+
+
+  "text.autoconfig.worldreloader.category.Structure Mappings": "映射",
+  "text.autoconfig.worldreloader.option.structureMappings": "对应关系",
+  "text.autoconfig.worldreloader.option.StructureMapping.itemId": "方块ID",
+  "text.autoconfig.worldreloader.option.StructureMapping.structureId": "结构ID",
+  "text.autoconfig.worldreloader.option.StructureMapping.enabled": "是否启用"
+
+
 }

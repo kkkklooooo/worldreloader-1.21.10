@@ -1,7 +1,10 @@
 package com.worldreloader;
 
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.datafixers.util.Either;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
+import me.shedaniel.autoconfig.gui.registry.GuiRegistry;
 import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigScreen;
@@ -10,6 +13,12 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.server.command.FillBiomeCommand;
+import net.minecraft.test.GameTestState;
+import net.minecraft.test.TestContext;
+import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,6 +93,9 @@ public class WorldReloader implements ModInitializer {
 	public void onInitialize() {
 		LOGGER.info("Terrain Transformation Mod Initialized!");
 
+		GuiRegistry registry = AutoConfig.getGuiRegistry(ModConfig.class);
+//		registry.registerPredicateProvider(new StructureMappingGuiProvider(),
+//				field -> "structureMappings".equals(field.getName()));
 		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
 			if (world.isClient()) return ActionResult.PASS;
 
@@ -130,7 +142,17 @@ public class WorldReloader implements ModInitializer {
 		RegistryKey<Biome> targetBiome = detectTargetBiome(world, beaconPos, player);
 		String targetStructure = detectTargetStructure(world, beaconPos, player);
 
+
 		BlockPos referencePos = findReferencePosition(world, beaconPos, targetBiome, targetStructure, player);
+
+		if(targetBiome!=null){
+
+		}else{
+			LOGGER.warn(world.getBiome(referencePos).getIdAsString());
+			world.getServer().execute(()->{
+				setBiome(beaconPos,world.getBiome(referencePos),world);
+			});
+		}
 
 		if (referencePos != null) {
 			if(config.UseSurface){
@@ -153,11 +175,111 @@ public class WorldReloader implements ModInitializer {
 
 		for (BlockToBiomeMapping mapping : BLOCK_TO_BIOME_MAPPINGS) {
 			if (mapping.block == sideBlock) {
+
 				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + mapping.biomeName + "生物群系"), false);
 				return mapping.biome;
 			}
 		}
 		return null;
+	}
+
+	public void setBiome(BlockPos pos, RegistryKey<Biome> biome,ServerWorld serverWorld) {
+		// 获取坐标所属区块的起始坐标（区块坐标转换为世界坐标）
+		int chunkX = pos.getX() >> 4; // 除以16得到区块坐标
+		int chunkZ = pos.getZ() >> 4;
+		BlockPos chunkStartPos = new BlockPos(chunkX << 4, serverWorld.getBottomY(), chunkZ << 4); // 乘以16得到世界坐标
+
+		// 计算区块的结束坐标（一个区块是16x16，高度从世界底部到顶部）
+		BlockPos chunkEndPos = new BlockPos(
+				chunkStartPos.getX() + 15,
+				serverWorld.getHeight(),
+				chunkStartPos.getZ() + 15
+		);
+
+		// 使用FillBiomeCommand设置整个区块的生物群系
+		Either<Integer, CommandSyntaxException> either = FillBiomeCommand.fillBiome(
+				serverWorld,
+				chunkStartPos,
+				chunkEndPos,
+
+				serverWorld.getRegistryManager().getOrThrow(RegistryKeys.BIOME).getOrThrow(biome)
+		);
+
+//		if (either.right().isPresent()) {
+//			throw this.createError("test.error.set_biome");
+//		}
+	}
+	public void setBiome(BlockPos pos, RegistryEntry<Biome> biome, ServerWorld serverWorld) {
+		// 获取坐标所属区块的起始坐标（区块坐标转换为世界坐标）
+		int chunkX = pos.getX() >> 4; // 除以16得到区块坐标
+		int chunkZ = pos.getZ() >> 4;
+		BlockPos chunkStartPos = new BlockPos(chunkX << 4, serverWorld.getBottomY(), chunkZ << 4); // 乘以16得到世界坐标
+
+		// 计算区块的结束坐标（一个区块是16x16，高度从世界底部到顶部）
+		BlockPos chunkEndPos = new BlockPos(
+				chunkStartPos.getX() + 15,
+				serverWorld.getHeight(),
+				chunkStartPos.getZ() + 15
+		);
+
+		LOGGER.warn("区块范围: {} 到 {}", chunkStartPos.toShortString(), chunkEndPos.toShortString());
+
+		int worldBottomY = serverWorld.getBottomY();
+		int worldTopY = serverWorld.getHeight();
+		int totalHeight = worldTopY - worldBottomY;
+
+		// 计算每次处理的高度层（确保每次不超过3000个方块）
+		// 每个水平面有 16 * 16 = 256 个方块
+		int maxBlocksPerCall = 3000;
+		int maxHeightPerCall = maxBlocksPerCall / 256; // 每次最多处理的高度层数
+
+		if (maxHeightPerCall < 1) {
+			maxHeightPerCall = 1; // 至少处理1层
+		}
+
+		LOGGER.info("世界高度范围: {}-{}, 总高度: {}, 每次处理高度: {}",
+				worldBottomY, worldTopY, totalHeight, maxHeightPerCall);
+
+		// 按高度分层处理
+		for (int startY = worldBottomY; startY < worldTopY; startY += maxHeightPerCall) {
+			int endY = Math.min(startY + maxHeightPerCall - 1, worldTopY - 1);
+
+			BlockPos layerStartPos = new BlockPos(chunkStartPos.getX(), startY, chunkStartPos.getZ());
+			BlockPos layerEndPos = new BlockPos(chunkEndPos.getX(), endY, chunkEndPos.getZ());
+
+			int layerHeight = endY - startY + 1;
+			int blocksInThisLayer = 256 * layerHeight;
+
+			LOGGER.info("处理高度层: {}-{}, 方块数: {}", startY, endY, blocksInThisLayer);
+
+			// 使用FillBiomeCommand设置当前高度层的生物群系
+			Either<Integer, CommandSyntaxException> either = FillBiomeCommand.fillBiome(
+					serverWorld,
+					layerStartPos,
+					layerEndPos,
+					biome
+			);
+
+			if (either.right().isPresent()) {
+				CommandSyntaxException error = either.right().get();
+				LOGGER.error("设置生物群系失败 (高度层 {}-{}): {}", startY, endY, error.getMessage());
+				// 可以选择继续处理其他层，或者抛出异常
+				// throw this.createError("test.error.set_biome: " + error.getMessage());
+			} else {
+				Integer modifiedCount = either.left().orElse(0);
+				LOGGER.info("成功设置高度层 {}-{} 的生物群系，修改计数: {}", startY, endY, modifiedCount);
+			}
+
+			// 可选：添加小延迟避免服务器过载
+			try {
+				Thread.sleep(10); // 10毫秒延迟
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				break;
+			}
+		}
+
+		LOGGER.info("生物群系设置完成");
 	}
 
 	private String detectTargetStructure(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {

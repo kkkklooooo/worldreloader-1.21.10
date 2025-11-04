@@ -4,6 +4,10 @@ import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 @Config(name = "worldreloader")
 class ModConfig implements ConfigData {
 
@@ -30,6 +34,39 @@ class ModConfig implements ConfigData {
 
     @ConfigEntry.Category("Non-surface")
     int paddingCount = 24;
+
+
+    // ============ 新增的物品-结构映射配置 ============
+    @ConfigEntry.Category("Structure Mappings")
+    @ConfigEntry.Gui.Tooltip(count = 2)
+    //List<Float> f = new ArrayList<>();
+    public List<StructureMapping> structureMappings = new ArrayList<>();
+
+
+
+    public static class StructureMapping {
+        public String itemId;
+        public String structureId;
+        public boolean enabled = true;
+
+        public StructureMapping() {}
+
+        public StructureMapping(String itemId, String structureId) {
+            this.itemId = itemId;
+            this.structureId = structureId;
+
+        }
+
+    }
+
+    public HashMap<String,String> ToHash(){
+        HashMap<String,String> map = new HashMap<>();
+        for (StructureMapping i :this.structureMappings){
+            map.put(i.itemId,i.structureId);
+        }
+        return map;
+    }
+
 
 //    @ConfigEntry.Gui.CollapsibleObject
 //    InnerStuff stuff = new InnerStuff();

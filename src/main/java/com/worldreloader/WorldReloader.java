@@ -133,8 +133,13 @@ public class WorldReloader implements ModInitializer {
 		BlockPos referencePos = findReferencePosition(world, beaconPos, targetBiome, targetStructure, player);
 
 		if (referencePos != null) {
+			if(config.UseSurface){
+				new SurfaceTransformationTask(world,beaconPos,referencePos,player).start();
+			}else {
+				new TerrainTransformationTask(world, beaconPos, referencePos, player).start();
+			}
 			//new TerrainTransformationTask(world, beaconPos, referencePos, player).start();
-			new SurfaceTransformationTask(world,beaconPos,referencePos,player).start();
+
 			player.sendMessage(Text.literal("§a地形改造已启动！将先清除区域再复制远处的地表结构。"), false);
 			LOGGER.info("地形改造任务已启动 - 参考位置: {}", referencePos);
 		} else {

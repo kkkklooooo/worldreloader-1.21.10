@@ -23,13 +23,13 @@ public class TerrainTransformationTask {
     private Set<ChunkPos> forcedChunks = new HashSet<>();
 
     private int currentRadius = 0;
-    private final int paddingCount = 24;
-    private int maxRadius = 88;
+    private int paddingCount = WorldReloader.config.paddingCount;
+    private int maxRadius = WorldReloader.config.maxRadius;
     private boolean isActive = false;
     private boolean isinit = false;
 
     // 物品实体清理间隔
-    private final int itemCleanupInterval = 20;
+    private int itemCleanupInterval = WorldReloader.config.itemCleanupInterval;
     private int lastCleanupRadius = -1;
 
     //private int tickInterval = 1;

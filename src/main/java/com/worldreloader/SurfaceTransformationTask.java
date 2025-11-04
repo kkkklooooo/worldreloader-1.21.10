@@ -29,17 +29,17 @@ public class SurfaceTransformationTask {
     private boolean isinit = false;
 
     // 控制改造速度的间隔变量 - 改为10刻完成一个半径
-    private final int totalSteps = 10;
+    private int totalSteps = WorldReloader.config.totalSteps;
     private int currentStep = 0;
 
     // 处理范围
-    private static final int DESTROY_DEPTH = 15;
-    private static final int DESTROY_HEIGHT = 15;
-    private static final int COPY_DEPTH = 15;
-    private static final int COPY_HEIGHT = 15;
+    private  int DESTROY_DEPTH = WorldReloader.config.DESTROY_DEPTH;
+    private  int DESTROY_HEIGHT = WorldReloader.config.DESTROY_HEIGHT;
+    private  int COPY_DEPTH = WorldReloader.config.COPY_DEPTH;
+    private  int COPY_HEIGHT = WorldReloader.config.COPY_HEIGHT;
     private final int minY;
 
-    private final int itemCleanupInterval = 20;
+    private int itemCleanupInterval = WorldReloader.config.itemCleanupInterval;
     private int lastCleanupRadius = -1;
 
     // 用于存储当前半径的位置列表

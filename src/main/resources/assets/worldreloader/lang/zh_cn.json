@@ -1,0 +1,29 @@
+{
+  "mod.worldreloader": "世界重载器",
+
+  "text.autoconfig.worldreloader.title": "世界重载器配置",
+
+  "text.autoconfig.worldreloader.category.Main": "主要设置",
+  "text.autoconfig.worldreloader.option.UseSurface": "使用表面生成",
+  "text.autoconfig.worldreloader.option.UseSurface.@Tooltip": "是否启用表面地形生成功能",
+  "text.autoconfig.worldreloader.option.maxRadius": "最大半径",
+  "text.autoconfig.worldreloader.option.maxRadius.@Tooltip": "地形改造的最大半径范围",
+  "text.autoconfig.worldreloader.option.itemCleanupInterval": "物品清理间隔",
+  "text.autoconfig.worldreloader.option.itemCleanupInterval.@Tooltip": "清理掉落物品的时间间隔（刻）",
+
+  "text.autoconfig.worldreloader.category.surface": "表面设置",
+  "text.autoconfig.worldreloader.option.totalSteps": "总步骤数",
+  "text.autoconfig.worldreloader.option.totalSteps.@Tooltip": "控制改造速度的间隔变量 - 每10刻完成一个半径",
+  "text.autoconfig.worldreloader.option.DESTROY_DEPTH": "破坏深度",
+  "text.autoconfig.worldreloader.option.DESTROY_DEPTH.@Tooltip": "表面破坏的深度限制",
+  "text.autoconfig.worldreloader.option.DESTROY_HEIGHT": "破坏高度",
+  "text.autoconfig.worldreloader.option.DESTROY_HEIGHT.@Tooltip": "表面破坏的高度限制",
+  "text.autoconfig.worldreloader.option.COPY_DEPTH": "复制深度",
+  "text.autoconfig.worldreloader.option.COPY_DEPTH.@Tooltip": "表面复制的深度限制",
+  "text.autoconfig.worldreloader.option.COPY_HEIGHT": "复制高度",
+  "text.autoconfig.worldreloader.option.COPY_HEIGHT.@Tooltip": "表面复制的高度限制",
+
+  "text.autoconfig.worldreloader.category.Non-surface": "非表面设置",
+  "text.autoconfig.worldreloader.option.paddingCount": "填充数量",
+  "text.autoconfig.worldreloader.option.paddingCount.@Tooltip": "非表面生成的填充区块数量"
+}

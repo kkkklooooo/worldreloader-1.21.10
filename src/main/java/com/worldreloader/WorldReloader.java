@@ -12,7 +12,10 @@ import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.impl.biome.modification.BuiltInRegistryKeys;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.registry.BuiltinRegistries;
+import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.command.FillBiomeCommand;
@@ -59,6 +62,7 @@ public class WorldReloader implements ModInitializer {
 
 
 	private static final BlockToBiomeMapping[] BLOCK_TO_BIOME_MAPPINGS = {
+
 			new BlockToBiomeMapping(Blocks.GRASS_BLOCK, BiomeKeys.PLAINS, "平原"),
 			new BlockToBiomeMapping(Blocks.JUNGLE_LOG, BiomeKeys.JUNGLE, "丛林"),
 			new BlockToBiomeMapping(Blocks.SAND, BiomeKeys.DESERT, "沙漠"),

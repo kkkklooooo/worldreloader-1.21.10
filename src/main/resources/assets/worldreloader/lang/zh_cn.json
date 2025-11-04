@@ -10,9 +10,10 @@
   "text.autoconfig.worldreloader.option.maxRadius.@Tooltip": "地形改造的最大半径范围",
   "text.autoconfig.worldreloader.option.itemCleanupInterval": "物品清理间隔",
   "text.autoconfig.worldreloader.option.itemCleanupInterval.@Tooltip": "清理掉落物品的时间间隔（刻）",
-
+  "text.autoconfig.worldreloader.option.Debug": "打印信息",
   "text.autoconfig.worldreloader.category.surface": "表面设置",
   "text.autoconfig.worldreloader.option.totalSteps": "总步骤数",
+  "text.autoconfig.worldreloader.option.totalSteps2": "总步骤数",
   "text.autoconfig.worldreloader.option.totalSteps.@Tooltip": "控制改造速度的间隔变量 - 每10刻完成一个半径",
   "text.autoconfig.worldreloader.option.DESTROY_DEPTH": "破坏深度",
   "text.autoconfig.worldreloader.option.DESTROY_DEPTH.@Tooltip": "表面破坏的深度限制",
@@ -28,7 +29,7 @@
   "text.autoconfig.worldreloader.option.paddingCount.@Tooltip": "非表面生成的填充区块数量",
 
 
-  "text.autoconfig.worldreloader.category.Structure Mappings": "映射",
+  "text.autoconfig.worldreloader.category.Structure Mappings": "映射(开发中)",
   "text.autoconfig.worldreloader.option.structureMappings": "对应关系",
   "text.autoconfig.worldreloader.option.StructureMapping.itemId": "方块ID",
   "text.autoconfig.worldreloader.option.StructureMapping.structureId": "结构ID",

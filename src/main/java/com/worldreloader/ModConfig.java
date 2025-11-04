@@ -17,6 +17,8 @@ class ModConfig implements ConfigData {
     int maxRadius = 88;
     @ConfigEntry.Category("Main")
     int itemCleanupInterval = 20;
+    @ConfigEntry.Category("Main")
+    boolean Debug = true;
     //int lastCleanupRadius = -1;
 
     @ConfigEntry.Category("surface")
@@ -34,6 +36,9 @@ class ModConfig implements ConfigData {
 
     @ConfigEntry.Category("Non-surface")
     int paddingCount = 24;
+    @ConfigEntry.Category("Non-surface")
+    // 控制改造速度的间隔变量 - 改为10刻完成一个半径
+    int totalSteps2 = 10;
 
 
     // ============ 新增的物品-结构映射配置 ============

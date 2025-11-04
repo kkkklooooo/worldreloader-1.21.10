@@ -22,9 +22,17 @@ public class TerrainTransformationTask {
     private final net.minecraft.entity.player.PlayerEntity player;
     private Set<ChunkPos> forcedChunks = new HashSet<>();
 
+
+    // 用于存储当前半径的位置列表
+    private List<BlockPos> currentRadiusPositions = new ArrayList<>();
     private int currentRadius = 0;
     private int paddingCount = WorldReloader.config.paddingCount;
     private int maxRadius = WorldReloader.config.maxRadius;
+
+    // 控制改造速度的间隔变量 - 改为10刻完成一个半径
+    private int totalSteps = WorldReloader.config.totalSteps2;
+    private int currentStep = 0;
+
     private boolean isActive = false;
     private boolean isinit = false;
 
@@ -57,7 +65,7 @@ public class TerrainTransformationTask {
     public void stop() {
         // 任务结束时清理一次物品实体
         cleanupItemEntities();
-        player.sendMessage(net.minecraft.text.Text.literal("§a最终物品清理完成！"), false);
+        if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§a最终物品清理完成！"), false);
 
         this.isActive = false;
     }
@@ -103,48 +111,103 @@ public class TerrainTransformationTask {
 
     private void processNextStep() {
         if (currentRadius > maxRadius) {
-            player.sendMessage(net.minecraft.text.Text.literal("§6地形改造完成！"), false);
+            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§6地形改造完成！"), false);
             stop();
             return;
         }
 
-        // 检查是否需要清理物品实体（每20半径清理一次）
+        // 如果是新的半径，生成所有位置并分成10份
+        if (currentStep == 0) {
+            currentRadiusPositions = generateCirclePositions(currentRadius);
+            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§7开始改造半径: " + currentRadius + "格 (共 " + currentRadiusPositions.size() + " 个位置)"), false);
+        }
         if (currentRadius % itemCleanupInterval == 0 && currentRadius != lastCleanupRadius) {
             cleanupItemEntities();
             lastCleanupRadius = currentRadius;
         }
 
-        // 新增：间隔控制逻辑
-        radiusCounter++;
-        if (radiusCounter < interval) {
-            // 未达到间隔，只发送消息但不进行实际改造
-            player.sendMessage(net.minecraft.text.Text.literal("§7准备改造半径: " + currentRadius + "格 (等待中 " + radiusCounter + "/" + interval + ")"), false);
-            //currentRadius++;
-            /*if (isActive) {
-                //scheduleNextTick();
-            }*/
+
+        // 计算当前步骤需要处理的位置范围
+        int totalPositions = currentRadiusPositions.size();
+        int positionsPerStep = (totalPositions + totalSteps - 1) / totalSteps; // 向上取整
+        int startIndex = currentStep * positionsPerStep;
+        int endIndex = Math.min(startIndex + positionsPerStep, totalPositions);
+
+        if (startIndex >= totalPositions) {
+            // 当前半径处理完成，进入下一个半径
+            currentRadius++;
+            currentStep = 0;
+            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§a完成半径: " + (currentRadius - 1) + "格"), false);
             return;
         }
 
-        // 达到间隔，重置计数器并进行实际改造
-        radiusCounter = 0;
-
-        // 生成当前半径的所有位置（完整的圆环区域）
-        List<BlockPos> circlePositions = generateCirclePositions(currentRadius);
-
-        // 处理当前圆环的所有位置
-        for (BlockPos circlePos : circlePositions) {
-            processPosition(circlePos);
+        // 处理当前步骤的位置 - 合并破坏和复制
+        List<BlockPos> currentStepPositions = currentRadiusPositions.subList(startIndex, endIndex);
+        for(var i :currentStepPositions){
+            processPosition(i);
         }
 
-        player.sendMessage(net.minecraft.text.Text.literal("§e改造半径: " + currentRadius + "格"), false);
 
-        currentRadius++;
+        // 当前步骤完成
+        if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§e完成步骤: 半径 " + currentRadius + "格 (" + (currentStep + 1) + "/" + totalSteps + ")"), false);
+        currentStep++;
 
-        /*if (isActive) {
-            //scheduleNextTick();
-        }*/
+        // 如果当前半径的所有步骤都完成，进入下一个半径
+        if (currentStep >= totalSteps) {
+            currentRadius++;
+            currentStep = 0;
+            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§a完成半径: " + (currentRadius - 1) + "格"), false);
+        }
     }
+
+
+//    private void processNextStep() {
+//        if (currentRadius > maxRadius) {
+//            if (WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§6地形改造完成！"), false);
+//            stop();
+//            return;
+//        }
+//
+//        // 检查是否需要清理物品实体（每20半径清理一次）
+//        if (currentRadius % itemCleanupInterval == 0 && currentRadius != lastCleanupRadius) {
+//            cleanupItemEntities();
+//            lastCleanupRadius = currentRadius;
+//        }
+//
+//        // 新增：间隔控制逻辑
+//        radiusCounter++;
+//        if (radiusCounter < interval) {
+//            // 未达到间隔，只发送消息但不进行实际改造
+//            if(WorldReloader.config.Debug){
+//                player.sendMessage(net.minecraft.text.Text.literal("§7准备改造半径: " + currentRadius + "格 (等待中 " + radiusCounter + "/" + interval + ")"), false);
+//            }
+//
+//            //currentRadius++;
+//            /*if (isActive) {
+//                //scheduleNextTick();
+//            }*/
+//            return;
+//        }
+//
+//        // 达到间隔，重置计数器并进行实际改造
+//        radiusCounter = 0;
+//
+//        // 生成当前半径的所有位置（完整的圆环区域）
+//        List<BlockPos> circlePositions = generateCirclePositions(currentRadius);
+//
+//        // 处理当前圆环的所有位置
+//        for (BlockPos circlePos : circlePositions) {
+//            processPosition(circlePos);
+//        }
+//
+//        if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§e改造半径: " + currentRadius + "格"), false);
+//
+//        currentRadius++;
+//
+//        /*if (isActive) {
+//            //scheduleNextTick();
+//        }*/
+//    }
 
     /**
      * 清理物品实体
@@ -172,7 +235,7 @@ public class TerrainTransformationTask {
             itemsCleared++;
         }
 
-        if (itemsCleared > 0) {
+        if (itemsCleared > 0&&WorldReloader.config.Debug) {
             player.sendMessage(net.minecraft.text.Text.literal("§b清理了 " + itemsCleared + " 个掉落物（半径 " + currentRadius + "）"), false);
         }
     }

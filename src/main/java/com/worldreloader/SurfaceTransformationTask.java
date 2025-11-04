@@ -99,7 +99,7 @@ public class SurfaceTransformationTask {
 
     private void processNextStep() {
         if (currentRadius > maxRadius) {
-            player.sendMessage(net.minecraft.text.Text.literal("§6地形改造完成！"), false);
+            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§6地形改造完成！"), false);
             stop();
             return;
         }
@@ -107,7 +107,7 @@ public class SurfaceTransformationTask {
         // 如果是新的半径，生成所有位置并分成10份
         if (currentStep == 0) {
             currentRadiusPositions = generateCirclePositions(currentRadius);
-            player.sendMessage(net.minecraft.text.Text.literal("§7开始改造半径: " + currentRadius + "格 (共 " + currentRadiusPositions.size() + " 个位置)"), false);
+            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§7开始改造半径: " + currentRadius + "格 (共 " + currentRadiusPositions.size() + " 个位置)"), false);
         }
         if (currentRadius % itemCleanupInterval == 0 && currentRadius != lastCleanupRadius) {
             cleanupItemEntities();
@@ -125,7 +125,7 @@ public class SurfaceTransformationTask {
             // 当前半径处理完成，进入下一个半径
             currentRadius++;
             currentStep = 0;
-            player.sendMessage(net.minecraft.text.Text.literal("§a完成半径: " + (currentRadius - 1) + "格"), false);
+            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§a完成半径: " + (currentRadius - 1) + "格"), false);
             return;
         }
 
@@ -134,14 +134,14 @@ public class SurfaceTransformationTask {
         processPositions(currentStepPositions);
 
         // 当前步骤完成
-        player.sendMessage(net.minecraft.text.Text.literal("§e完成步骤: 半径 " + currentRadius + "格 (" + (currentStep + 1) + "/" + totalSteps + ")"), false);
+        if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§e完成步骤: 半径 " + currentRadius + "格 (" + (currentStep + 1) + "/" + totalSteps + ")"), false);
         currentStep++;
 
         // 如果当前半径的所有步骤都完成，进入下一个半径
         if (currentStep >= totalSteps) {
             currentRadius++;
             currentStep = 0;
-            player.sendMessage(net.minecraft.text.Text.literal("§a完成半径: " + (currentRadius - 1) + "格"), false);
+            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§a完成半径: " + (currentRadius - 1) + "格"), false);
         }
     }
 
@@ -278,7 +278,7 @@ public class SurfaceTransformationTask {
         }
 
         if (itemsCleared > 0) {
-            player.sendMessage(net.minecraft.text.Text.literal("§b清理了 " + itemsCleared + " 个掉落物（半径 " + currentRadius + "）"), false);
+            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§b清理了 " + itemsCleared + " 个掉落物（半径 " + currentRadius + "）"), false);
         }
     }
 

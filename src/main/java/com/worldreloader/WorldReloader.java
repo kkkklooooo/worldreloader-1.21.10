@@ -149,14 +149,6 @@ public class WorldReloader implements ModInitializer {
 
 		BlockPos referencePos = findReferencePosition(world, beaconPos, targetBiome, targetStructure, player);
 
-		if(targetBiome!=null){
-
-		}else{
-			LOGGER.warn(world.getBiome(referencePos).getIdAsString());
-			world.getServer().execute(()->{
-				setBiome(beaconPos,world.getBiome(referencePos),world);
-			});
-		}
 
 		if (referencePos != null) {
 			if(config.UseSurface){
@@ -186,33 +178,6 @@ public class WorldReloader implements ModInitializer {
 		}
 		return null;
 	}
-
-	public static void setBiome(BlockPos pos, RegistryKey<Biome> biome,ServerWorld serverWorld) {
-		// 获取坐标所属区块的起始坐标（区块坐标转换为世界坐标）
-		int chunkX = pos.getX() >> 4; // 除以16得到区块坐标
-		int chunkZ = pos.getZ() >> 4;
-		BlockPos chunkStartPos = new BlockPos(chunkX << 4, serverWorld.getBottomY(), chunkZ << 4); // 乘以16得到世界坐标
-
-		// 计算区块的结束坐标（一个区块是16x16，高度从世界底部到顶部）
-		BlockPos chunkEndPos = new BlockPos(
-				chunkStartPos.getX() + 15,
-				serverWorld.getHeight(),
-				chunkStartPos.getZ() + 15
-		);
-
-		// 使用FillBiomeCommand设置整个区块的生物群系
-		Either<Integer, CommandSyntaxException> either = FillBiomeCommand.fillBiome(
-				serverWorld,
-				chunkStartPos,
-				chunkEndPos,
-
-				serverWorld.getRegistryManager().getOrThrow(RegistryKeys.BIOME).getOrThrow(biome)
-		);
-
-//		if (either.right().isPresent()) {
-//			throw this.createError("test.error.set_biome");
-//		}
-	}
 	public static void setBiome(BlockPos pos, RegistryEntry<Biome> biome, ServerWorld serverWorld) {
 		// 获取坐标所属区块的起始坐标（区块坐标转换为世界坐标）
 		int chunkX = pos.getX() >> 4; // 除以16得到区块坐标
@@ -234,7 +199,7 @@ public class WorldReloader implements ModInitializer {
 
 		// 计算每次处理的高度层（确保每次不超过3000个方块）
 		// 每个水平面有 16 * 16 = 256 个方块
-		int maxBlocksPerCall = 3000;
+		int maxBlocksPerCall = 32768;
 		int maxHeightPerCall = maxBlocksPerCall / 256; // 每次最多处理的高度层数
 
 		if (maxHeightPerCall < 1) {

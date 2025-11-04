@@ -1,5 +1,6 @@
 {
   "mod.worldreloader": "World Reloader",
+  "key.worldloader.open_config": "打开World Reloader菜单",
 
   "text.autoconfig.worldreloader.title": "配置",
 
@@ -10,9 +11,13 @@
   "text.autoconfig.worldreloader.option.maxRadius.@Tooltip": "地形改造的最大半径范围",
   "text.autoconfig.worldreloader.option.itemCleanupInterval": "物品清理间隔",
   "text.autoconfig.worldreloader.option.itemCleanupInterval.@Tooltip": "清理掉落物品的时间间隔（刻）",
+  "text.autoconfig.worldreloader.option.isChangeBiome.@Tooltip": "改变生物群系（会增加改造前加载时间）",
+  "text.autoconfig.worldreloader.option.isChangeBiome": "改变生物群系",
+  "text.autoconfig.worldreloader.option.Debug": "Debug模式",
+  "text.autoconfig.worldreloader.option.Debug.@Tooltip": "是否开启Debug模式",
 
   "text.autoconfig.worldreloader.category.surface": "有损生成模式设置",
-  "text.autoconfig.worldreloader.option.totalSteps": "步骤数",
+  "text.autoconfig.worldreloader.option.totalSteps": "间隔时间（刻）",
   "text.autoconfig.worldreloader.option.totalSteps.@Tooltip": "控制一个半径花费多少刻完成",
   "text.autoconfig.worldreloader.option.DESTROY_DEPTH": "破坏深度",
   "text.autoconfig.worldreloader.option.DESTROY_DEPTH.@Tooltip": "有损生成破坏的深度限制",
@@ -26,6 +31,8 @@
   "text.autoconfig.worldreloader.category.Non-surface": "正常模式设置",
   "text.autoconfig.worldreloader.option.paddingCount": "边缘过渡半径",
   "text.autoconfig.worldreloader.option.paddingCount.@Tooltip": "生成边缘的地形高度过渡半径",
+  "text.autoconfig.worldreloader.option.totalSteps2": "间隔时间（刻）",
+  "text.autoconfig.worldreloader.option.totalSteps2.@Tooltip": "控制一个半径花费多少刻完成",
 
 
   "text.autoconfig.worldreloader.category.Structure Mappings": "映射(开发中)",

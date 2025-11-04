@@ -18,7 +18,9 @@ class ModConfig implements ConfigData {
     @ConfigEntry.Category("Main")
     int itemCleanupInterval = 20;
     @ConfigEntry.Category("Main")
-    boolean Debug = true;
+    boolean isChangeBiome=false;
+    @ConfigEntry.Category("Main")
+    boolean Debug = false;
     //int lastCleanupRadius = -1;
 
     @ConfigEntry.Category("surface")
@@ -37,8 +39,8 @@ class ModConfig implements ConfigData {
     @ConfigEntry.Category("Non-surface")
     int paddingCount = 24;
     @ConfigEntry.Category("Non-surface")
-    // 控制改造速度的间隔变量 - 改为10刻完成一个半径
-    int totalSteps2 = 10;
+    // 控制改造速度的间隔变量
+    int totalSteps2 = 1;
 
 
     // ============ 新增的物品-结构映射配置 ============

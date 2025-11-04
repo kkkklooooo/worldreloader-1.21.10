@@ -46,7 +46,7 @@ public class TerrainTransformationTask {
     //private int tickInterval = 1;
 
     // 新增：控制改造速度的间隔变量，每 interval 次才改造圆环地形
-    private final int interval = 1; // 例如设置为3，表示每3个半径才改造一次
+    private final int interval = 1; // 例如设置为3，表示每3刻才改造一次
     private int radiusCounter = 0; // 用于计数当前累计的半径数
 
     public TerrainTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter, net.minecraft.entity.player.PlayerEntity player,RegistryEntry<Biome> bb) {
@@ -85,6 +85,10 @@ public class TerrainTransformationTask {
                     int chunkRadius = (maxRadius + 15) >> 4; // 向上取整
                     for (int x = -chunkRadius; x <= chunkRadius; x++) {
                         for (int z = -chunkRadius; z <= chunkRadius; z++) {
+                            if(WorldReloader.config.isChangeBiome)
+                            {
+                                WorldReloader.setBiome(center,bb,world);
+                            }
                             ChunkPos chunkPos = new ChunkPos((referenceCenter.getX() >> 4) + x, (referenceCenter.getZ() >> 4) + z);
                             if (!forcedChunks.contains(chunkPos)) {
                                 world.setChunkForced(chunkPos.x, chunkPos.z, true);
@@ -105,13 +109,6 @@ public class TerrainTransformationTask {
     }
 
 
-    private void scheduleNextTick() {
-        world.getServer().execute(() -> {
-            if (isActive) {
-                processNextStep();
-            }
-        });
-    }
 
     private void processNextStep() {
         if (currentRadius > maxRadius) {
@@ -294,7 +291,6 @@ public class TerrainTransformationTask {
     private void processPosition(BlockPos circlePos) {
         int targetX = circlePos.getX();
         int targetZ = circlePos.getZ();
-        WorldReloader.setBiome(circlePos,bb,world);
         if (!world.isChunkLoaded(targetX >> 4, targetZ >> 4)) {
             return;
         }

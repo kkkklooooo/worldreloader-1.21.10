@@ -83,6 +83,10 @@ public class SurfaceTransformationTask {
                     for (int x = -chunkRadius; x <= chunkRadius; x++) {
                         for (int z = -chunkRadius; z <= chunkRadius; z++) {
                             ChunkPos chunkPos = new ChunkPos((referenceCenter.getX() >> 4) + x, (referenceCenter.getZ() >> 4) + z);
+                            if(WorldReloader.config.isChangeBiome)
+                            {
+                                WorldReloader.setBiome(center,bb,world);
+                            }
                             if (!forcedChunks.contains(chunkPos)) {
                                 world.setChunkForced(chunkPos.x, chunkPos.z, true);
                                 forcedChunks.add(chunkPos);
@@ -157,7 +161,6 @@ public class SurfaceTransformationTask {
             int targetX = circlePos.getX();
             int targetZ = circlePos.getZ();
 
-            WorldReloader.setBiome(circlePos,bb,world);
             if (!world.isChunkLoaded(targetX >> 4, targetZ >> 4)) {
                 continue;
             }

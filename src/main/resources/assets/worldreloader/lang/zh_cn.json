@@ -35,11 +35,18 @@
   "text.autoconfig.worldreloader.option.totalSteps2.@Tooltip": "控制一个半径花费多少刻完成",
 
 
-  "text.autoconfig.worldreloader.category.Structure Mappings": "映射(开发中)",
+  "text.autoconfig.worldreloader.category.Structure Mappings": "结构映射",
+  "text.autoconfig.worldreloader.category.Biome Mappings": "生物群系映射",
+  "text.autoconfig.worldreloader.option.biomeMappings": "对应关系",
   "text.autoconfig.worldreloader.option.structureMappings": "对应关系",
   "text.autoconfig.worldreloader.option.StructureMapping.itemId": "方块ID",
+  "text.autoconfig.worldreloader.option.BiomeMapping.itemId": "方块ID",
   "text.autoconfig.worldreloader.option.StructureMapping.structureId": "结构ID",
-  "text.autoconfig.worldreloader.option.StructureMapping.enabled": "是否启用"
+  "text.autoconfig.worldreloader.option.BiomeMapping.BiomeId": "群系ID",
+  "text.autoconfig.worldreloader.option.StructureMapping.enabled": "是否启用",
+  "text.autoconfig.worldreloader.option.BiomeMapping.enabled": "是否启用",
+  "text.autoconfig.worldreloader.option.StructureMapping": "元素",
+  "text.autoconfig.worldreloader.option.BiomeMapping": "元素"
 
 
 }

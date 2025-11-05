@@ -14,13 +14,12 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.impl.biome.modification.BuiltInRegistryKeys;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.registry.BuiltinRegistries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.command.FillBiomeCommand;
 import net.minecraft.test.GameTestState;
 import net.minecraft.test.TestContext;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
@@ -32,7 +31,6 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -174,11 +172,18 @@ public class WorldReloader implements ModInitializer {
 		BlockPos sidePos = beaconPos.east();
 		Block sideBlock = world.getBlockState(sidePos).getBlock();
 
-		for (BlockToBiomeMapping mapping : BLOCK_TO_BIOME_MAPPINGS) {
-			if (mapping.block == sideBlock) {
+//		for (BlockToBiomeMapping mapping : BLOCK_TO_BIOME_MAPPINGS) {
+//			if (mapping.block == sideBlock) {
+//
+//				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + mapping.biomeName + "生物群系"), false);
+//				return mapping.biome;
+//			}
+//		}
+		for (var i:config.biomeMappings){
+			if(Registries.BLOCK.get(Identifier.of(i.itemId))==sideBlock){
+				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.BiomeId + "生物群系"), false);
 
-				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + mapping.biomeName + "生物群系"), false);
-				return mapping.biome;
+				return RegistryKey.of(RegistryKeys.BIOME,Identifier.of(i.BiomeId));
 			}
 		}
 		return null;
@@ -188,10 +193,16 @@ public class WorldReloader implements ModInitializer {
 		BlockPos sidePos = beaconPos.east();
 		Block sideBlock = world.getBlockState(sidePos).getBlock();
 
-		for (BlockToStructureMapping mapping : BLOCK_TO_STRUCTURE_MAPPINGS) {
-			if (mapping.block == sideBlock) {
-				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + mapping.structureName + "结构"), false);
-				return mapping.structureId;
+//		for (BlockToStructureMapping mapping : BLOCK_TO_STRUCTURE_MAPPINGS) {
+//			if (mapping.block == sideBlock) {
+//				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + mapping.structureName + "结构"), false);
+//				return mapping.structureId;
+//			}
+//		}
+		for (var i:config.structureMappings){
+			if(Registries.BLOCK.get(Identifier.of(i.itemId))==sideBlock){
+				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.structureId + "结构"), false);
+				return i.structureId;
 			}
 		}
 		return null;

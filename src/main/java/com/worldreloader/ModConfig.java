@@ -12,9 +12,9 @@ import java.util.List;
 class ModConfig implements ConfigData {
 
     @ConfigEntry.Category("Main")
-    boolean UseSurface = true;
+    boolean UseSurface = false;
     @ConfigEntry.Category("Main")
-    int maxRadius = 88;
+    int maxRadius = 76;
     @ConfigEntry.Category("Main")
     int itemCleanupInterval = 20;
     @ConfigEntry.Category("Main")
@@ -37,10 +37,10 @@ class ModConfig implements ConfigData {
     int COPY_HEIGHT = 15;
 
     @ConfigEntry.Category("Non-surface")
-    int paddingCount = 24;
+    int paddingCount = 12;
     @ConfigEntry.Category("Non-surface")
     // 控制改造速度的间隔变量
-    int totalSteps2 = 1;
+    int totalSteps2 = 3;
 
 
     // ============ 新增的物品-结构映射配置 ============

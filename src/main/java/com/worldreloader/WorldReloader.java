@@ -50,6 +50,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.Objects;
 
+import static com.worldreloader.BaseTransformationTask.isSolidBlock;
+
 public class WorldReloader implements ModInitializer {
 	public static final String MOD_ID = "worldreloader";
 
@@ -95,7 +97,7 @@ public class WorldReloader implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		LOGGER.info("Terrain Transformation Mod Initialized!");
+		LOGGER.info("World Reloader Initialized!");
 
 		GuiRegistry registry = AutoConfig.getGuiRegistry(ModConfig.class);
 //		registry.registerPredicateProvider(new StructureMappingGuiProvider(),
@@ -109,7 +111,9 @@ public class WorldReloader implements ModInitializer {
 			if (world.getBlockState(pos).getBlock() == Blocks.BEACON &&
 					itemStack.getItem() == Items.NETHER_STAR) {
 
-				if (!player.isCreative()) itemStack.decrement(1);
+				if (!player.isCreative()) {
+					itemStack.decrement(1);
+				}
 
 				LOGGER.info("激活地形改造");
 				Objects.requireNonNull(world.getServer()).execute(() -> {
@@ -151,14 +155,15 @@ public class WorldReloader implements ModInitializer {
 
 
 		if (referencePos != null) {
+			//两种改造模式
 			if(config.UseSurface){
-				new SurfaceTransformationTask(world,beaconPos,referencePos,player,world.getBiome(referencePos)).start();
+				new SurfaceTransformationTask(world,beaconPos,referencePos,player).start();
 			}else {
-				new TerrainTransformationTask(world, beaconPos, referencePos, player,world.getBiome(referencePos)).start();
+				new TerrainTransformationTask(world, beaconPos, referencePos, player).start();
 			}
 			//new TerrainTransformationTask(world, beaconPos, referencePos, player).start();
 
-			player.sendMessage(Text.literal("§a地形改造已启动！将先清除区域再复制远处的地表结构。"), false);
+			player.sendMessage(Text.literal("§a地形改造已启动！"), false);
 			LOGGER.info("地形改造任务已启动 - 参考位置: {}", referencePos);
 		} else {
 			sendErrorMessage(player, targetBiome, targetStructure);
@@ -177,78 +182,6 @@ public class WorldReloader implements ModInitializer {
 			}
 		}
 		return null;
-	}
-	public static void setBiome(BlockPos pos, RegistryEntry<Biome> biome, ServerWorld serverWorld) {
-		// 获取坐标所属区块的起始坐标（区块坐标转换为世界坐标）
-		int chunkX = pos.getX() >> 4; // 除以16得到区块坐标
-		int chunkZ = pos.getZ() >> 4;
-		BlockPos chunkStartPos = new BlockPos(chunkX << 4, serverWorld.getBottomY(), chunkZ << 4); // 乘以16得到世界坐标
-
-		// 计算区块的结束坐标（一个区块是16x16，高度从世界底部到顶部）
-		BlockPos chunkEndPos = new BlockPos(
-				chunkStartPos.getX() + 15,
-				serverWorld.getHeight(),
-				chunkStartPos.getZ() + 15
-		);
-
-		LOGGER.warn("区块范围: {} 到 {}", chunkStartPos.toShortString(), chunkEndPos.toShortString());
-
-		int worldBottomY = serverWorld.getBottomY();
-		int worldTopY = serverWorld.getHeight();
-		int totalHeight = worldTopY - worldBottomY;
-
-		// 计算每次处理的高度层（确保每次不超过3000个方块）
-		// 每个水平面有 16 * 16 = 256 个方块
-		int maxBlocksPerCall = 32768;
-		int maxHeightPerCall = maxBlocksPerCall / 256; // 每次最多处理的高度层数
-
-		if (maxHeightPerCall < 1) {
-			maxHeightPerCall = 1; // 至少处理1层
-		}
-
-		LOGGER.info("世界高度范围: {}-{}, 总高度: {}, 每次处理高度: {}",
-				worldBottomY, worldTopY, totalHeight, maxHeightPerCall);
-
-		// 按高度分层处理
-		for (int startY = worldBottomY; startY < worldTopY; startY += maxHeightPerCall) {
-			int endY = Math.min(startY + maxHeightPerCall - 1, worldTopY - 1);
-
-			BlockPos layerStartPos = new BlockPos(chunkStartPos.getX(), startY, chunkStartPos.getZ());
-			BlockPos layerEndPos = new BlockPos(chunkEndPos.getX(), endY, chunkEndPos.getZ());
-
-			int layerHeight = endY - startY + 1;
-			int blocksInThisLayer = 256 * layerHeight;
-
-			LOGGER.info("处理高度层: {}-{}, 方块数: {}", startY, endY, blocksInThisLayer);
-
-			// 使用FillBiomeCommand设置当前高度层的生物群系
-			Either<Integer, CommandSyntaxException> either = FillBiomeCommand.fillBiome(
-					serverWorld,
-					layerStartPos,
-					layerEndPos,
-					biome
-			);
-
-			if (either.right().isPresent()) {
-				CommandSyntaxException error = either.right().get();
-				LOGGER.error("设置生物群系失败 (高度层 {}-{}): {}", startY, endY, error.getMessage());
-				// 可以选择继续处理其他层，或者抛出异常
-				// throw this.createError("test.error.set_biome: " + error.getMessage());
-			} else {
-				Integer modifiedCount = either.left().orElse(0);
-				LOGGER.info("成功设置高度层 {}-{} 的生物群系，修改计数: {}", startY, endY, modifiedCount);
-			}
-
-			// 可选：添加小延迟避免服务器过载
-			try {
-				Thread.sleep(10); // 10毫秒延迟
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-				break;
-			}
-		}
-
-		LOGGER.info("生物群系设置完成");
 	}
 
 	private String detectTargetStructure(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
@@ -280,7 +213,7 @@ public class WorldReloader implements ModInitializer {
 		try {
 			BlockPos biomePos = Objects.requireNonNull(world.locateBiome(
 					b -> b.matchesKey(targetBiome),
-					center, 10000, 8, 64
+					center, 6400, 8, 64
 			)).getFirst();
 
 			if (biomePos != null) {
@@ -369,16 +302,15 @@ public class WorldReloader implements ModInitializer {
 			// 进一步验证找到的高度确实是固体地面
 			surfaceY = validateAndAdjustSurfaceHeight(world, pos.getX(), pos.getZ(), surfaceY);
 
-			if (surfaceY >= 64) {
 				BlockPos surfacePos = new BlockPos(pos.getX(), surfaceY, pos.getZ());
 				BlockState surfaceBlock = world.getBlockState(surfacePos);
 
 				// 检查是否为真正的固体方块
-				if (isSolidGroundBlock(surfaceBlock,world) &&
-						!surfaceBlock.isOf(Blocks.WATER) && !surfaceBlock.isOf(Blocks.LAVA)) {
+				if (isSolidBlock(world, surfaceBlock) &&
+						surfacePos.getY()>=64) {
 					return surfacePos;
 				}
-			}
+
 		} finally {
 			// 取消强制加载
 			world.setChunkForced(chunkPos.x, chunkPos.z, false);
@@ -399,7 +331,7 @@ public class WorldReloader implements ModInitializer {
 			BlockState state = world.getBlockState(pos);
 
 			// 如果是真正的固体地面方块
-			if (isSolidGroundBlock(state,world)) {
+			if (isSolidBlock(world, state)) {
 				return currentY;
 			}
 
@@ -413,51 +345,7 @@ public class WorldReloader implements ModInitializer {
 	/**
 	 * 判断方块是否为真正的固体地面方块
 	 */
-	private boolean isSolidGroundBlock(BlockState state, ServerWorld world) {
-		Block block = state.getBlock();
 
-		// 明确的非地面方块
-		if (block == Blocks.AIR ||
-				block == Blocks.WATER ||
-				block == Blocks.LAVA ||
-				block == Blocks.LEVER ||
-				block == Blocks.OAK_LEAVES ||
-				block == Blocks.SPRUCE_LEAVES ||
-				block == Blocks.BIRCH_LEAVES ||
-				block == Blocks.JUNGLE_LEAVES ||
-				block == Blocks.ACACIA_LEAVES ||
-				block == Blocks.DARK_OAK_LEAVES ||
-				block == Blocks.MANGROVE_LEAVES ||
-				block == Blocks.CHERRY_LEAVES ||
-				block == Blocks.AZALEA_LEAVES ||
-				block == Blocks.FLOWERING_AZALEA_LEAVES ||
-				block == Blocks.TALL_GRASS ||
-				block == Blocks.FERN ||
-				block == Blocks.LARGE_FERN ||
-				block == Blocks.DEAD_BUSH ||
-				block == Blocks.VINE) {
-			return false;
-		}
-
-		// 检查是否为固体方块
-		return state.isSolidBlock(world, new BlockPos(0, 0, 0)) || // 使用虚拟位置进行检查
-				block == Blocks.GRASS_BLOCK ||
-				block == Blocks.DIRT ||
-				block == Blocks.COARSE_DIRT ||
-				block == Blocks.PODZOL ||
-				block == Blocks.MYCELIUM ||
-				block == Blocks.SAND ||
-				block == Blocks.RED_SAND ||
-				block == Blocks.GRAVEL ||
-				block == Blocks.STONE ||
-				block == Blocks.COBBLESTONE ||
-				block == Blocks.MOSS_BLOCK ||
-				block == Blocks.MUD ||
-				block == Blocks.CLAY ||
-				block == Blocks.SNOW_BLOCK ||
-				block == Blocks.ICE ||
-				block == Blocks.PACKED_ICE;
-	}
 
 	private BlockPos findAlternativeBiomePosition(ServerWorld world, BlockPos center, RegistryKey<Biome> targetBiome) {
 		for (int i = 0; i < 10; i++) {
@@ -476,11 +364,11 @@ public class WorldReloader implements ModInitializer {
 	private void sendErrorMessage(net.minecraft.entity.player.PlayerEntity player,
 								  RegistryKey<Biome> targetBiome, String targetStructure) {
 		if (targetBiome != null) {
-			player.sendMessage(Text.literal("§c未找到指定的生物群系！请尝试在其他位置使用。"), false);
+			player.sendMessage(Text.literal("§c群系查找出现问题！"), false);
 		} else if (targetStructure != null) {
-			player.sendMessage(Text.literal("§c未找到指定的结构！请尝试在其他位置使用。"), false);
+			player.sendMessage(Text.literal("§c结构查找出现问题！"), false);
 		} else {
-			player.sendMessage(Text.literal("§c未找到合适的参考地形！请尝试在其他位置使用。"), false);
+			player.sendMessage(Text.literal("§c随机查找出现问题！"), false);
 		}
 	}
 

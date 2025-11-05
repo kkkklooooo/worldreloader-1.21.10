@@ -80,10 +80,9 @@ public class TerrainTransformationTask extends BaseTransformationTask {
 
     @Override
     protected boolean shouldSkipProcessing(int referenceSurfaceYAtTarget, int originalSurfaceY) {
-        return false; // TerrainTransformationTask 不跳过处理
+        return false;
     }
 
-    // TerrainTransformationTask 特有的方法
     private void destroyAtPosition(int targetX, int targetZ) {
         int surfaceY = world.getChunk(targetX >> 4, targetZ >> 4)
                 .getHeightmap(Heightmap.Type.WORLD_SURFACE)
@@ -93,9 +92,9 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             return;
         }
 
-        for (int y = 40; y <= surfaceY + 20; y++) {
+        for (int y = 40; y <= surfaceY + 30; y++) {
             BlockPos targetPos = new BlockPos(targetX, y, targetZ);
-            if (currentRadius <= 3 && shouldPreserveCenterArea(targetPos)) {
+            if (currentRadius <= 8 && shouldPreserveCenterArea(targetPos)) {
                 continue;
             }
             BlockState currentState = world.getBlockState(targetPos);
@@ -125,7 +124,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         List<BlockState> blocks = new ArrayList<>();
         List<Integer> heights = new ArrayList<>();
 
-        for (int y = 40; y <= surfaceY + 20; y++) {
+        for (int y = 40; y <= surfaceY + 30; y++) {
             BlockPos pos = new BlockPos(x, y, z);
             BlockState state = world.getBlockState(pos);
             if (!state.isAir() || y <= surfaceY) {
@@ -149,7 +148,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
 
     private void copyTerrainStructure(int targetX, int targetZ, ReferenceTerrainInfo reference, int originalSurfaceY) {
         if (reference.blocks != null && reference.heights.length != 0) {
-            if (currentRadius <= 3) {
+            if (currentRadius <= 8) {
                 copyWithCenterPreservation(targetX, targetZ, reference);
             } else if (currentRadius < maxRadius - paddingCount) {
                 copyWithoutPreservation(targetX, targetZ, reference);
@@ -158,7 +157,6 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             }
         }
 
-        copyAboveSurfaceBlocks(targetX, targetZ, reference);
     }
 
     private void copyWithCenterPreservation(int targetX, int targetZ, ReferenceTerrainInfo reference) {
@@ -195,20 +193,6 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         }
     }
 
-    private void copyAboveSurfaceBlocks(int targetX, int targetZ, ReferenceTerrainInfo reference) {
-        if (reference.aboveSurfaceBlocks != null && reference.aboveSurfaceHeights != null) {
-            for (int i = 0; i < reference.aboveSurfaceBlocks.length; i++) {
-                int targetY = reference.aboveSurfaceHeights[i] + center.getY() - this.referenceCenter.getY();
-                BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
-                BlockState referenceState = reference.aboveSurfaceBlocks[i];
-
-                BlockState currentState = world.getBlockState(targetPos);
-                if (currentState.isAir() || currentState.isReplaceable()) {
-                    world.setBlockState(targetPos, referenceState, 3);
-                }
-            }
-        }
-    }
 
 
     private void applyPaddingTransition(int targetX, int targetZ, ReferenceTerrainInfo reference, int originalSurfaceY) {
@@ -230,6 +214,10 @@ public class TerrainTransformationTask extends BaseTransformationTask {
                         world.setBlockState(targetPos, referenceState, 3);
                     }
                 }
+            }
+            else if(reference.blocks[i].getFluidState().isStill())
+            {
+                world.setBlockState(new BlockPos(targetX, targetY, targetZ),reference.blocks[i],3);
             }
         }
         cleanFloatingBlocks(targetX, targetZ, transitionSurfaceY);

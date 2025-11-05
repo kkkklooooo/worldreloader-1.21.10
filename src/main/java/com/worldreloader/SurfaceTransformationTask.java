@@ -58,9 +58,15 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         if (shouldSkipProcessing(referenceSurfaceYAtTarget, originalSurfaceY)) {
             return;
         }
-
-        destroyAtPosition(targetX, targetZ, originalSurfaceY);
-        copyFromReference(targetX, targetZ, referenceInfo);
+        if(currentRadius<=8) {
+            destroyAtPositionWithPreserve(targetX, targetZ, originalSurfaceY);
+            copyTerrainStructureTopDownWithPreserve(targetX, targetZ, referenceInfo);
+        }
+        else
+        {
+            destroyAtPosition(targetX, targetZ, originalSurfaceY);
+            copyTerrainStructureTopDown(targetX, targetZ, referenceInfo);
+        }
     }
 
     @Override
@@ -91,7 +97,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         return referenceSurfaceYAtTarget < originalSurfaceY - DESTROY_HEIGHT;
     }
 
-    private void destroyAtPosition(int targetX, int targetZ, int surfaceY) {
+    private void destroyAtPositionWithPreserve(int targetX, int targetZ, int surfaceY) {
         if (surfaceY < 18) {
             return;
         }
@@ -110,8 +116,24 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
             }
         }
     }
+    private void destroyAtPosition(int targetX, int targetZ, int surfaceY) {
+        if (surfaceY < 18) {
+            return;
+        }
 
-    private void copyTerrainStructureTopDown(int targetX, int targetZ, ReferenceTerrainInfo reference) {
+        int startY = Math.max(minY, surfaceY - DESTROY_DEPTH);
+        int endY = surfaceY + DESTROY_HEIGHT;
+
+        for (int y = startY; y <= endY; y++) {
+            BlockPos targetPos = new BlockPos(targetX, y, targetZ);
+            BlockState currentState = world.getBlockState(targetPos);
+            if (!currentState.isAir()) {
+                world.setBlockState(targetPos, Blocks.AIR.getDefaultState(), 3);
+            }
+        }
+    }
+
+    private void copyTerrainStructureTopDownWithPreserve(int targetX, int targetZ, ReferenceTerrainInfo reference) {
         if (reference.aboveSurfaceBlocks != null && reference.aboveSurfaceHeights != null) {
             for (int i = reference.aboveSurfaceBlocks.length - 1; i >= 0; i--) {
                 int targetY = reference.aboveSurfaceHeights[i] + center.getY() - this.referenceCenter.getY();
@@ -138,6 +160,37 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
                 if (shouldPreserveCenterArea(targetPos)) {
                     continue;
                 }
+
+                if (!referenceState.isAir()) {
+                    BlockState currentState = world.getBlockState(targetPos);
+                    if (!currentState.equals(referenceState)) {
+                        world.setBlockState(targetPos, referenceState, 3);
+                    }
+                }
+            }
+        }
+    }
+    private void copyTerrainStructureTopDown(int targetX, int targetZ, ReferenceTerrainInfo reference) {
+        if (reference.aboveSurfaceBlocks != null && reference.aboveSurfaceHeights != null) {
+            for (int i = reference.aboveSurfaceBlocks.length - 1; i >= 0; i--) {
+                int targetY = reference.aboveSurfaceHeights[i] + center.getY() - this.referenceCenter.getY();
+                BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
+                BlockState referenceState = reference.aboveSurfaceBlocks[i];
+
+
+                BlockState currentState = world.getBlockState(targetPos);
+                if (currentState.isAir() || currentState.isReplaceable()) {
+                    world.setBlockState(targetPos, referenceState, 3);
+                }
+            }
+        }
+
+        if (reference.blocks != null && reference.heights.length != 0) {
+            for (int i = reference.blocks.length - 1; i >= 0; i--) {
+                int targetY = reference.heights[i] + center.getY() - this.referenceCenter.getY();
+                BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
+                BlockState referenceState = reference.blocks[i];
+
 
                 if (!referenceState.isAir()) {
                     BlockState currentState = world.getBlockState(targetPos);

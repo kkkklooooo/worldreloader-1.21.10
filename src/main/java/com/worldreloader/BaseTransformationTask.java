@@ -233,12 +233,16 @@ public abstract class BaseTransformationTask {
     }
 
     protected boolean shouldPreserveCenterArea(BlockPos pos) {
-        if (pos.getX() == center.getX() && pos.getY() == center.getY() && pos.getZ() == center.getZ()) {
-            return true;
+        for(int i=0;i<=4;i++)
+        {
+            if(pos.getY() == center.getY() - i &&
+                    Math.abs(pos.getX() - center.getX()) <= i &&
+                    Math.abs(pos.getZ() - center.getZ()) <= i)
+            {
+                return true;
+            }
         }
-        return pos.getY() == center.getY() - 1 &&
-                Math.abs(pos.getX() - center.getX()) <= 1 &&
-                Math.abs(pos.getZ() - center.getZ()) <= 1;
+        return false;
     }
 
 

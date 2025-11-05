@@ -16,12 +16,15 @@ import net.fabricmc.fabric.impl.biome.modification.BuiltInRegistryKeys;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.server.command.FillBiomeCommand;
+import net.minecraft.server.command.LocateCommand;
 import net.minecraft.test.GameTestState;
 import net.minecraft.test.TestContext;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
+import net.minecraft.world.gen.structure.Structure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.fabricmc.api.ModInitializer;
@@ -61,37 +64,6 @@ public class WorldReloader implements ModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 
-	private static final BlockToBiomeMapping[] BLOCK_TO_BIOME_MAPPINGS = {
-
-			new BlockToBiomeMapping(Blocks.GRASS_BLOCK, BiomeKeys.PLAINS, "平原"),
-			new BlockToBiomeMapping(Blocks.JUNGLE_LOG, BiomeKeys.JUNGLE, "丛林"),
-			new BlockToBiomeMapping(Blocks.SAND, BiomeKeys.DESERT, "沙漠"),
-			new BlockToBiomeMapping(Blocks.SNOW_BLOCK, BiomeKeys.SNOWY_PLAINS, "雪原"),
-			new BlockToBiomeMapping(Blocks.DARK_OAK_LOG, BiomeKeys.DARK_FOREST, "黑森林"),
-			new BlockToBiomeMapping(Blocks.MYCELIUM, BiomeKeys.MUSHROOM_FIELDS, "蘑菇岛"),
-			new BlockToBiomeMapping(Blocks.OAK_LOG, BiomeKeys.FOREST, "森林"),
-			new BlockToBiomeMapping(Blocks.AMETHYST_BLOCK, BiomeKeys.FLOWER_FOREST, "繁花森林"),
-			new BlockToBiomeMapping(Blocks.HAY_BLOCK, BiomeKeys.SUNFLOWER_PLAINS, "向日葵平原"),
-			new BlockToBiomeMapping(Blocks.MOSS_BLOCK, BiomeKeys.SWAMP, "沼泽"),
-			new BlockToBiomeMapping(Blocks.PODZOL, BiomeKeys.OLD_GROWTH_PINE_TAIGA, "原始松木针叶林"),
-			new BlockToBiomeMapping(Blocks.MUD, BiomeKeys.MANGROVE_SWAMP, "红树林沼泽"),
-			new BlockToBiomeMapping(Blocks.SANDSTONE, BiomeKeys.BADLANDS, "恶地"),
-			new BlockToBiomeMapping(Blocks.RED_SANDSTONE, BiomeKeys.ERODED_BADLANDS, "被风蚀的恶地"),
-			new BlockToBiomeMapping(Blocks.ICE, BiomeKeys.ICE_SPIKES, "冰刺之地"),
-			new BlockToBiomeMapping(Blocks.PACKED_ICE, BiomeKeys.FROZEN_PEAKS, "冰封山峰"),
-			new BlockToBiomeMapping(Blocks.BIRCH_LOG, BiomeKeys.BIRCH_FOREST, "桦木森林"),
-			new BlockToBiomeMapping(Blocks.SPRUCE_LOG, BiomeKeys.TAIGA, "针叶林"),
-			new BlockToBiomeMapping(Blocks.ACACIA_LOG, BiomeKeys.SAVANNA, "热带草原"),
-			new BlockToBiomeMapping(Blocks.CHERRY_LOG, BiomeKeys.CHERRY_GROVE, "樱花树林")
-	};
-
-	private static final BlockToStructureMapping[] BLOCK_TO_STRUCTURE_MAPPINGS = {
-			new BlockToStructureMapping(Blocks.TARGET, "village", "村庄"),
-			new BlockToStructureMapping(Blocks.COBBLESTONE, "pillager_outpost", "掠夺者前哨站"),
-			new BlockToStructureMapping(Blocks.MOSSY_COBBLESTONE, "jungle_pyramid", "丛林神庙"),
-			new BlockToStructureMapping(Blocks.SMOOTH_SANDSTONE, "desert_pyramid", "沙漠神殿"),
-			new BlockToStructureMapping(Blocks.BOOKSHELF, "mansion", "林地府邸"),
-	};
 
 	@Override
 	public void onInitialize() {
@@ -247,9 +219,9 @@ public class WorldReloader implements ModInitializer {
 										   net.minecraft.entity.player.PlayerEntity player) {
 		try {
 			BlockPos structurePos = world.locateStructure(
-					net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.STRUCTURE,
+					TagKey.of(world.getRegistryManager().getOrThrow(RegistryKeys.STRUCTURE).getKey(),
 							net.minecraft.util.Identifier.of(structureId)),
-					center, 10000, false
+					center, 6400, false
 			);
 
 			if (structurePos != null) {

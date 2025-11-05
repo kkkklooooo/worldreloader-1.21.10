@@ -16,6 +16,7 @@ import net.fabricmc.fabric.impl.biome.modification.BuiltInRegistryKeys;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.registry.entry.RegistryEntryList;
 import net.minecraft.server.command.FillBiomeCommand;
 import net.minecraft.test.GameTestState;
 import net.minecraft.test.TestContext;
@@ -246,11 +247,14 @@ public class WorldReloader implements ModInitializer {
 	private BlockPos findStructurePosition(ServerWorld world, BlockPos center, String structureId,
 										   net.minecraft.entity.player.PlayerEntity player) {
 		try {
-			BlockPos structurePos = world.locateStructure(
-					net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.STRUCTURE,
-							net.minecraft.util.Identifier.of(structureId)),
-					center, 10000, false
-			);
+//			BlockPos structurePos = world.locateStructure(
+//					net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.STRUCTURE,
+//							net.minecraft.util.Identifier.of(structureId)),
+//					center, 10000, false
+//			);
+
+			var a = world.getRegistryManager().getOrThrow(RegistryKeys.STRUCTURE).get(Identifier.of(structureId));
+			BlockPos structurePos = world.getChunkManager().getChunkGenerator().locateStructure(world, RegistryEntryList.of(RegistryEntry.of(a)),center,10000,false).getFirst();
 
 			if (structurePos != null) {
 				BlockPos surfacePos = getValidSurfacePosition(world, structurePos);

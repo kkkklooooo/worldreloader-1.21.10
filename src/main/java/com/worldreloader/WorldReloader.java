@@ -14,13 +14,12 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.impl.biome.modification.BuiltInRegistryKeys;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.registry.BuiltinRegistries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.command.FillBiomeCommand;
 import net.minecraft.test.GameTestState;
 import net.minecraft.test.TestContext;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
@@ -32,7 +31,6 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -62,7 +60,7 @@ public class WorldReloader implements ModInitializer {
 
 
 	private static final BlockToBiomeMapping[] BLOCK_TO_BIOME_MAPPINGS = {
-
+			//Registries.BLOCK.get(Identifier.of())
 			new BlockToBiomeMapping(Blocks.GRASS_BLOCK, BiomeKeys.PLAINS, "平原"),
 			new BlockToBiomeMapping(Blocks.JUNGLE_LOG, BiomeKeys.JUNGLE, "丛林"),
 			new BlockToBiomeMapping(Blocks.SAND, BiomeKeys.DESERT, "沙漠"),
@@ -179,14 +177,19 @@ public class WorldReloader implements ModInitializer {
 		return null;
 	}
 	public static void setBiome(BlockPos pos, RegistryEntry<Biome> biome, ServerWorld serverWorld) {
-		BlockPos a = new BlockPos(pos.getX()-10,pos.getY()-10,pos.getZ());
-		BlockPos b = new BlockPos(pos.getX(),pos.getY()+10,pos.getZ()+10);
+		BlockPos a = new BlockPos(pos.getX(),serverWorld.getBottomY(),pos.getZ());
+		BlockPos b = new BlockPos(pos.getX(),pos.getY()+10,pos.getZ());
 		Either<Integer, CommandSyntaxException> either = FillBiomeCommand.fillBiome(
 					serverWorld,
 					a,
 					b,
 					biome
 			);
+		if (either.right().isPresent()) {
+				CommandSyntaxException error = either.right().get();
+				LOGGER.error("设置生物群系失败 (高度层 {}-{}): {}",1 , 1, error.getMessage());}
+//				// 可以选择继续处理其他层，或者抛出异常
+//				// throw this.createError("test.error.set_biome: " + error.getMessage());
 		// 获取坐标所属区块的起始坐标（区块坐标转换为世界坐标）
 //		int chunkX = pos.getX() >> 4; // 除以16得到区块坐标
 //		int chunkZ = pos.getZ() >> 4;
@@ -263,10 +266,16 @@ public class WorldReloader implements ModInitializer {
 		BlockPos sidePos = beaconPos.east();
 		Block sideBlock = world.getBlockState(sidePos).getBlock();
 
-		for (BlockToStructureMapping mapping : BLOCK_TO_STRUCTURE_MAPPINGS) {
-			if (mapping.block == sideBlock) {
-				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + mapping.structureName + "结构"), false);
-				return mapping.structureId;
+//		for (BlockToStructureMapping mapping : BLOCK_TO_STRUCTURE_MAPPINGS) {
+//			if (mapping.block == sideBlock) {
+//				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + mapping.structureName + "结构"), false);
+//				return mapping.structureId;
+//			}
+//		}
+		for (ModConfig.StructureMapping i: config.structureMappings){
+			if(sideBlock == Registries.BLOCK.get(Identifier.of(i.itemId))){
+				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.structureId + "结构"), false);
+				return i.structureId;
 			}
 		}
 		return null;
@@ -314,6 +323,7 @@ public class WorldReloader implements ModInitializer {
 					net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.STRUCTURE,
 							net.minecraft.util.Identifier.of(structureId)),
 					center, 10000, false
+
 			);
 
 			if (structurePos != null) {

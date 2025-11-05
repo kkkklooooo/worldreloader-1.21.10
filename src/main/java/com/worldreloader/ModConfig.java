@@ -3,6 +3,8 @@ package com.worldreloader;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
+import net.minecraft.block.Blocks;
+import net.minecraft.registry.Registries;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,7 +49,13 @@ class ModConfig implements ConfigData {
     @ConfigEntry.Category("Structure Mappings")
     @ConfigEntry.Gui.Tooltip(count = 2)
     //List<Float> f = new ArrayList<>();
-    public List<StructureMapping> structureMappings = new ArrayList<>();
+    public List<StructureMapping> structureMappings = List.of(
+            new StructureMapping(Registries.BLOCK.getId(Blocks.TARGET).getPath(), "village"),
+            new StructureMapping(Registries.BLOCK.getId(Blocks.COBBLESTONE).getPath(), "pillager_outpost"),
+            new StructureMapping(Registries.BLOCK.getId(Blocks.MOSSY_COBBLESTONE).getPath(), "jungle_pyramid"),
+            new StructureMapping(Registries.BLOCK.getId(Blocks.SMOOTH_SANDSTONE).getPath(), "desert_pyramid"),
+            new StructureMapping(Registries.BLOCK.getId(Blocks.BOOKSHELF).getPath(), "mansion")
+    );
 
 
 

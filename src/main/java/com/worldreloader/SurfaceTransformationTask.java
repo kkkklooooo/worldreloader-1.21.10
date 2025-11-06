@@ -2,11 +2,9 @@ package com.worldreloader;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Heightmap;
-import net.minecraft.world.biome.Biome;
 
 public class SurfaceTransformationTask extends BaseTransformationTask {
     private final int DESTROY_DEPTH;

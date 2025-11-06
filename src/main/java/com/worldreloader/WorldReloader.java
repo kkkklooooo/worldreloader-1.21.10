@@ -30,7 +30,6 @@ import net.minecraft.registry.entry.RegistryEntryList;
 import net.minecraft.registry.entry.RegistryEntryList;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.FillBiomeCommand;
-import net.minecraft.server.command.LookTarget;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.test.GameTestState;
 import net.minecraft.test.TestContext;
@@ -175,6 +174,10 @@ public class WorldReloader implements ModInitializer {
 		if (config.UseSpecificPos){
 
 			 referencePos = config.Pos;
+			 if (referencePos==null){
+				 player.sendMessage(Text.literal("你丫没设置目标点,用setPos命令设置!!!!"));
+				 return;
+			 }
 			 referencePos.add(0,-referencePos.getY(),0);
 		}else{
 			 referencePos = findReferencePosition(world, beaconPos, targetBiome, targetStructure, player);
@@ -210,10 +213,10 @@ public class WorldReloader implements ModInitializer {
 //			}
 //		}
 		for (var i:config.biomeMappings){
-			if(Registries.BLOCK.get(Identifier.of(i.itemId))==sideBlock){
+			if(Registries.BLOCK.get(Identifier.of("minecraft",i.itemId))==sideBlock){
 				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.BiomeId + "生物群系"), false);
 
-				return RegistryKey.of(RegistryKeys.BIOME,Identifier.of(i.BiomeId));
+				return RegistryKey.of(RegistryKeys.BIOME,Identifier.of("minecraft",i.BiomeId));
 			}
 		}
 		return null;
@@ -230,7 +233,7 @@ public class WorldReloader implements ModInitializer {
 //			}
 //		}
 		for (var i:config.structureMappings){
-			if(Registries.BLOCK.get(Identifier.of(i.itemId))==sideBlock){
+			if(Registries.BLOCK.get(Identifier.of("minecraft",i.itemId))==sideBlock){
 				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.structureId + "结构"), false);
 				return i.structureId;
 			}
@@ -282,7 +285,7 @@ public class WorldReloader implements ModInitializer {
 //					center, 10000, false
 //			);
 
-			var a = world.getRegistryManager().getOrThrow(RegistryKeys.STRUCTURE).get(Identifier.of(structureId));
+			var a = world.getRegistryManager().get(RegistryKeys.STRUCTURE).get(Identifier.of("minecraft",structureId));
 			BlockPos structurePos = world.getChunkManager().getChunkGenerator().locateStructure(world, RegistryEntryList.of(RegistryEntry.of(a)),center,10000,false).getFirst();
 
 			if (structurePos != null) {

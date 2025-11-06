@@ -402,7 +402,7 @@ public abstract class BaseTransformationTask {
                 state.isIn(BlockTags.LEAVES) ||
                 state.isIn(BlockTags.FLOWERS) ||
                 state.isIn(BlockTags.CROPS) ||
-                state.isIn(BlockTags.AIR)||
+                //state.isIn(BlockTags.AIR)||
                 state.isIn(BlockTags.LOGS)||
                 state.isIn(BlockTags.MUSHROOM_GROW_BLOCK);
     }

@@ -12,7 +12,7 @@ public class KeyBindings {
         openConfigKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.worldloader.open_config", // 翻译键
                 InputUtil.Type.KEYSYM, // 按键类型
-                GLFW.GLFW_KEY_R,
+                GLFW.GLFW_KEY_Y,
                 KeyBinding.Category.GAMEPLAY
         ));
     }

@@ -37,6 +37,8 @@
   "text.autoconfig.worldreloader.option.paddingCount.@Tooltip": "生成边缘的地形高度过渡半径",
   "text.autoconfig.worldreloader.option.totalSteps2": "间隔时间（刻）",
   "text.autoconfig.worldreloader.option.totalSteps2.@Tooltip": "控制一个半径花费多少刻完成",
+  "text.autoconfig.worldreloader.option.yMin": "最低复制坐标",
+  "text.autoconfig.worldreloader.option.yMaxThanSurface": "最高复制坐标（相对地面）",
 
 
   "text.autoconfig.worldreloader.category.Structure Mappings": "结构映射",

@@ -5,6 +5,7 @@ import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import net.minecraft.block.Blocks;
 import net.minecraft.registry.Registries;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.BiomeKeys;
 
 import java.util.ArrayList;
@@ -14,6 +15,11 @@ import java.util.List;
 @Config(name = "worldreloader")
 class ModConfig implements ConfigData {
 
+    @ConfigEntry.Category("Main")
+    boolean UseSpecificPos = false;
+
+    @ConfigEntry.Category("Main")
+    BlockPos Pos;
     @ConfigEntry.Category("Main")
     boolean UseSurface = false;
     @ConfigEntry.Category("Main")

@@ -1,6 +1,13 @@
 package com.worldreloader;
 
+import com.mojang.brigadier.arguments.FloatArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.mojang.datafixers.util.Either;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
@@ -10,19 +17,26 @@ import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigScreen;
 import net.fabricmc.api.ModInitializer;
 
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.impl.biome.modification.BuiltInRegistryKeys;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.command.argument.*;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.entry.RegistryEntryList;
 import net.minecraft.registry.entry.RegistryEntryList;
+import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.FillBiomeCommand;
+import net.minecraft.server.command.LookTarget;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.test.GameTestState;
 import net.minecraft.test.TestContext;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,12 +58,13 @@ import net.minecraft.world.biome.BiomeKeys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
+import java.io.ObjectInputFilter;
+import java.util.*;
 
 import java.util.Objects;
-import java.util.Set;
-import java.util.Objects;
 
+import static com.mojang.brigadier.builder.LiteralArgumentBuilder.literal;
+import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
 import static com.worldreloader.BaseTransformationTask.isSolidBlock;
 
 public class WorldReloader implements ModInitializer {
@@ -66,6 +81,43 @@ public class WorldReloader implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+//			dispatcher.register(CommandManager.literal("setPos")
+//					.then(CommandManager.argument("PosX",IntegerArgumentType.integer())).then(CommandManager.argument("PosY",IntegerArgumentType.integer())).then(CommandManager.argument("PosZ",IntegerArgumentType.integer())
+//					).executes(e->{
+//
+//						final int x = IntegerArgumentType.getInteger(e,"PosX");
+//						final int y = IntegerArgumentType.getInteger(e,"PosY");
+//						final int z = IntegerArgumentType.getInteger(e,"PosZ");
+//						config.Pos = new BlockPos(x,y,z);
+//                        return 1;
+//                    }));
+
+			dispatcher.register(
+					CommandManager.literal("setPos")
+							.then(CommandManager.argument("x",IntegerArgumentType.integer()).then(CommandManager.argument("y",IntegerArgumentType.integer()).then(CommandManager.argument("z",IntegerArgumentType.integer()).executes(e->{
+								final int x = IntegerArgumentType.getInteger(e,"x");
+								final int y = IntegerArgumentType.getInteger(e,"y");
+								final int z = IntegerArgumentType.getInteger(e,"z");
+								config.Pos = new BlockPos(x,y,z);
+								return 1;
+							}))))
+			);
+//			dispatcher.register(
+//					CommandManager.literal("FuckCommand")
+//							.then(CommandManager.argument("Fuck1",IntegerArgumentType.integer()).then(CommandManager.argument("Fuck2",IntegerArgumentType.integer()).then(CommandManager.argument("Fuck3",IntegerArgumentType.integer()).executes(e->{
+//								final int x = IntegerArgumentType.getInteger(e,"Fuck1");
+//								final int y = IntegerArgumentType.getInteger(e,"Fuck2");
+//								final int z = IntegerArgumentType.getInteger(e,"Fuck3");
+//								config.Pos = new BlockPos(x,y,z);
+//								return 1;
+//							}))))
+//			);
+
+		});
+
+
 		LOGGER.info("World Reloader Initialized!");
 
 		GuiRegistry registry = AutoConfig.getGuiRegistry(ModConfig.class);
@@ -119,8 +171,15 @@ public class WorldReloader implements ModInitializer {
 		RegistryKey<Biome> targetBiome = detectTargetBiome(world, beaconPos, player);
 		String targetStructure = detectTargetStructure(world, beaconPos, player);
 
+		BlockPos referencePos;
+		if (config.UseSpecificPos){
 
-		BlockPos referencePos = findReferencePosition(world, beaconPos, targetBiome, targetStructure, player);
+			 referencePos = config.Pos;
+			 referencePos.add(0,-referencePos.getY(),0);
+		}else{
+			 referencePos = findReferencePosition(world, beaconPos, targetBiome, targetStructure, player);
+		}
+
 
 
 		if (referencePos != null) {

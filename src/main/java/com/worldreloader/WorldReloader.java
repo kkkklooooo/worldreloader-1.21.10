@@ -84,28 +84,7 @@ public class WorldReloader implements ModInitializer {
 	@Override
 	public void onInitialize() {
 
-		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-//			dispatcher.register(CommandManager.literal("setPos")
-//					.then(CommandManager.argument("PosX",IntegerArgumentType.integer())).then(CommandManager.argument("PosY",IntegerArgumentType.integer())).then(CommandManager.argument("PosZ",IntegerArgumentType.integer())
-//					).executes(e->{
-//
-//						final int x = IntegerArgumentType.getInteger(e,"PosX");
-//						final int y = IntegerArgumentType.getInteger(e,"PosY");
-//						final int z = IntegerArgumentType.getInteger(e,"PosZ");
-//						config.Pos = new BlockPos(x,y,z);
-//                        return 1;
-//                    }));
 
-			dispatcher.register(
-					CommandManager.literal("setPos")
-							.then(CommandManager.argument("x",IntegerArgumentType.integer()).then(CommandManager.argument("y",IntegerArgumentType.integer()).then(CommandManager.argument("z",IntegerArgumentType.integer()).executes(e->{
-								final int x = IntegerArgumentType.getInteger(e,"x");
-								final int y = IntegerArgumentType.getInteger(e,"y");
-								final int z = IntegerArgumentType.getInteger(e,"z");
-								config.Pos = new BlockPos(x,y,z);
-								return 1;
-							}))))
-			);
 //			dispatcher.register(
 //					CommandManager.literal("FuckCommand")
 //							.then(CommandManager.argument("Fuck1",IntegerArgumentType.integer()).then(CommandManager.argument("Fuck2",IntegerArgumentType.integer()).then(CommandManager.argument("Fuck3",IntegerArgumentType.integer()).executes(e->{
@@ -117,7 +96,6 @@ public class WorldReloader implements ModInitializer {
 //							}))))
 //			);
 
-		});
 
 
 		LOGGER.info("World Reloader Initialized!");
@@ -176,7 +154,7 @@ public class WorldReloader implements ModInitializer {
 		BlockPos referencePos;
 		if (config.UseSpecificPos){
 
-			 referencePos = config.Pos;
+			 referencePos = new BlockPos(config.Posx,config.Posy,config.Posz);
 			 referencePos.add(0,-referencePos.getY(),0);
 		}else{
 			 referencePos = findReferencePosition(world, beaconPos, targetBiome, targetStructure, player);

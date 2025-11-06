@@ -19,7 +19,11 @@ class ModConfig implements ConfigData {
     boolean UseSpecificPos = false;
 
     @ConfigEntry.Category("Main")
-    BlockPos Pos;
+    int Posx;
+    @ConfigEntry.Category("Main")
+    int Posy;
+    @ConfigEntry.Category("Main")
+    int Posz;
     @ConfigEntry.Category("Main")
     boolean UseSurface = false;
     @ConfigEntry.Category("Main")

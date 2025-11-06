@@ -11,17 +11,32 @@ import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.FillBiomeCommand;
+import net.minecraft.server.command.FillCommand;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
+import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.ChunkSectionPos;
+import net.minecraft.world.GameRules;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
+import net.minecraft.world.biome.source.BiomeCoords;
+import net.minecraft.world.biome.source.BiomeSupplier;
+import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.ChunkStatus;
+import org.apache.commons.lang3.mutable.MutableInt;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
+
+import static com.sun.org.apache.bcel.internal.generic.Type.NULL;
+import static net.minecraft.server.command.FillBiomeCommand.UNLOADED_EXCEPTION;
 
 
 public abstract class BaseTransformationTask {
@@ -350,12 +365,7 @@ public abstract class BaseTransformationTask {
             WorldReloader.LOGGER.info("处理高度层: {}-{}, 方块数: {}", startY, endY, blocksInThisLayer);
 
             // 使用FillBiomeCommand设置当前高度层的生物群系
-            Either<Integer, CommandSyntaxException> either = FillBiomeCommand.fillBiome(
-                    serverWorld,
-                    layerStartPos,
-                    layerEndPos,
-                    biome
-            );
+            Either<Integer, CommandSyntaxException> either = execute(serverWorld.getServer().getCommandSource(),layerStartPos,layerEndPos,);
 
             if (either.right().isPresent()) {
                 CommandSyntaxException error = either.right().get();
@@ -369,6 +379,66 @@ public abstract class BaseTransformationTask {
         }
 
         WorldReloader.LOGGER.info("生物群系设置完成");
+    }
+
+    private static int execute(ServerCommandSource source, BlockPos from, BlockPos to, RegistryEntry<Biome> biome, Predicate<RegistryEntry<Biome>> filter) throws CommandSyntaxException {
+        BlockPos blockPos = convertPos(from);
+        BlockPos blockPos2 = convertPos(to);
+        BlockBox blockBox = BlockBox.create(blockPos, blockPos2);
+        int i = blockBox.getBlockCountX() * blockBox.getBlockCountY() * blockBox.getBlockCountZ();
+        int j = source.getWorld().getGameRules().getInt(GameRules.COMMAND_MODIFICATION_BLOCK_LIMIT);
+        if (i > j) {
+            //throw TOO_BIG_EXCEPTION.create(j, i);
+        } else {
+            ServerWorld serverWorld = source.getWorld();
+            List<Chunk> list = new ArrayList();
+
+            for(int k = ChunkSectionPos.getSectionCoord(blockBox.getMinZ()); k <= ChunkSectionPos.getSectionCoord(blockBox.getMaxZ()); ++k) {
+                for(int l = ChunkSectionPos.getSectionCoord(blockBox.getMinX()); l <= ChunkSectionPos.getSectionCoord(blockBox.getMaxX()); ++l) {
+                    Chunk chunk = serverWorld.getChunk(l, k, ChunkStatus.FULL, false);
+                    if (chunk == null) {
+                        throw UNLOADED_EXCEPTION.create();
+                    }
+
+                    list.add(chunk);
+                }
+            }
+
+            MutableInt mutableInt = new MutableInt(0);
+
+            for(Chunk chunk : list) {
+                chunk.populateBiomes(createBiomeSupplier(mutableInt, chunk, blockBox, biome, filter), serverWorld.getChunkManager().getNoiseConfig().getMultiNoiseSampler());
+                chunk.setNeedsSaving(true);
+            }
+
+            serverWorld.getChunkManager().threadedAnvilChunkStorage.sendChunkBiomePackets(list);
+            source.sendFeedback(() -> Text.translatable("commands.fillbiome.success.count", new Object[]{mutableInt.getValue(), blockBox.getMinX(), blockBox.getMinY(), blockBox.getMinZ(), blockBox.getMaxX(), blockBox.getMaxY(), blockBox.getMaxZ()}), true);
+            return mutableInt.getValue();
+        }
+        return i;
+    }
+
+
+    private static BlockPos convertPos(BlockPos pos) {
+        return new BlockPos(convertCoordinate(pos.getX()), convertCoordinate(pos.getY()), convertCoordinate(pos.getZ()));
+    }
+
+    private static int convertCoordinate(int coordinate) {
+        return BiomeCoords.toBlock(BiomeCoords.fromBlock(coordinate));
+    }
+    private static BiomeSupplier createBiomeSupplier(MutableInt counter, Chunk chunk, BlockBox box, RegistryEntry<Biome> biome, Predicate<RegistryEntry<Biome>> filter) {
+        return (x, y, z, noise) -> {
+            int i = BiomeCoords.toBlock(x);
+            int j = BiomeCoords.toBlock(y);
+            int k = BiomeCoords.toBlock(z);
+            RegistryEntry<Biome> registryEntry2 = chunk.getBiomeForNoiseGen(x, y, z);
+            if (box.contains(i, j, k) && filter.test(registryEntry2)) {
+                counter.increment();
+                return biome;
+            } else {
+                return registryEntry2;
+            }
+        };
     }
 
     // 内部类

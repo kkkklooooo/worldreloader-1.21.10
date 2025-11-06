@@ -5,6 +5,10 @@
   "text.autoconfig.worldreloader.title": "配置",
 
   "text.autoconfig.worldreloader.category.Main": "主要设置",
+  "text.autoconfig.worldreloader.option.UseSpecificPos": "指定目标地形坐标",
+  "text.autoconfig.worldreloader.option.Posx": "指定坐标——x",
+  "text.autoconfig.worldreloader.option.Posy": "指定坐标——y",
+  "text.autoconfig.worldreloader.option.Posz": "指定坐标——z",
   "text.autoconfig.worldreloader.option.UseSurface": "使用有损生成",
   "text.autoconfig.worldreloader.option.UseSurface.@Tooltip": "是否启用有损地形生成功能",
   "text.autoconfig.worldreloader.option.maxRadius": "最大半径",
@@ -33,6 +37,8 @@
   "text.autoconfig.worldreloader.option.paddingCount.@Tooltip": "生成边缘的地形高度过渡半径",
   "text.autoconfig.worldreloader.option.totalSteps2": "间隔时间（刻）",
   "text.autoconfig.worldreloader.option.totalSteps2.@Tooltip": "控制一个半径花费多少刻完成",
+  "text.autoconfig.worldreloader.option.yMin": "最低复制坐标",
+  "text.autoconfig.worldreloader.option.yMaxThanSurface": "最高复制坐标（相对地面）",
 
 
   "text.autoconfig.worldreloader.category.Structure Mappings": "结构映射",

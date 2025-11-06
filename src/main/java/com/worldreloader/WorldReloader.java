@@ -1,6 +1,5 @@
 package com.worldreloader;
 
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.gui.registry.GuiRegistry;
@@ -8,12 +7,10 @@ import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.entry.RegistryEntryList;
-import net.minecraft.server.command.CommandManager;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,40 +46,7 @@ public class WorldReloader implements ModInitializer {
 	@Override
 	public void onInitialize() {
 
-		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-//			dispatcher.register(CommandManager.literal("setPos")
-//					.then(CommandManager.argument("PosX",IntegerArgumentType.integer())).then(CommandManager.argument("PosY",IntegerArgumentType.integer())).then(CommandManager.argument("PosZ",IntegerArgumentType.integer())
-//					).executes(e->{
-//
-//						final int x = IntegerArgumentType.getInteger(e,"PosX");
-//						final int y = IntegerArgumentType.getInteger(e,"PosY");
-//						final int z = IntegerArgumentType.getInteger(e,"PosZ");
-//						config.Pos = new BlockPos(x,y,z);
-//                        return 1;
-//                    }));
 
-			dispatcher.register(
-					CommandManager.literal("setPos")
-							.then(CommandManager.argument("x",IntegerArgumentType.integer()).then(CommandManager.argument("y",IntegerArgumentType.integer()).then(CommandManager.argument("z",IntegerArgumentType.integer()).executes(e->{
-								final int x = IntegerArgumentType.getInteger(e,"x");
-								final int y = IntegerArgumentType.getInteger(e,"y");
-								final int z = IntegerArgumentType.getInteger(e,"z");
-								config.Pos = new BlockPos(x,y,z);
-								return 1;
-							}))))
-			);
-//			dispatcher.register(
-//					CommandManager.literal("FuckCommand")
-//							.then(CommandManager.argument("Fuck1",IntegerArgumentType.integer()).then(CommandManager.argument("Fuck2",IntegerArgumentType.integer()).then(CommandManager.argument("Fuck3",IntegerArgumentType.integer()).executes(e->{
-//								final int x = IntegerArgumentType.getInteger(e,"Fuck1");
-//								final int y = IntegerArgumentType.getInteger(e,"Fuck2");
-//								final int z = IntegerArgumentType.getInteger(e,"Fuck3");
-//								config.Pos = new BlockPos(x,y,z);
-//								return 1;
-//							}))))
-//			);
-
-		});
 
 
 		LOGGER.info("World Reloader Initialized!");

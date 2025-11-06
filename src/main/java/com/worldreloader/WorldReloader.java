@@ -9,6 +9,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.mojang.datafixers.util.Either;
+import com.mojang.datafixers.util.Pair;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.gui.registry.GuiRegistry;
@@ -38,6 +39,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import net.minecraft.world.gen.structure.Structure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.fabricmc.api.ModInitializer;
@@ -283,7 +285,21 @@ public class WorldReloader implements ModInitializer {
 //			);
 
 			var a = world.getRegistryManager().getOrThrow(RegistryKeys.STRUCTURE).get(Identifier.of(structureId));
-			BlockPos structurePos = world.getChunkManager().getChunkGenerator().locateStructure(world, RegistryEntryList.of(RegistryEntry.of(a)),center,10000,false).getFirst();
+			Pair<BlockPos, RegistryEntry<Structure>> pair = world.getChunkManager().getChunkGenerator().locateStructure(world, RegistryEntryList.of(RegistryEntry.of(a)), center, 6400, false);
+			//上面这个负责村庄外结构，村庄必须使用下面这个查询
+			BlockPos structurePos;
+			if(pair==null)
+			{
+				structurePos = world.locateStructure(
+					net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.STRUCTURE,
+							net.minecraft.util.Identifier.of(structureId)),
+				center, 6400, false
+			);
+			}
+			else
+			{
+				structurePos=pair.getFirst();
+			}
 
 			if (structurePos != null) {
 				BlockPos surfacePos = getValidSurfacePosition(world, structurePos);

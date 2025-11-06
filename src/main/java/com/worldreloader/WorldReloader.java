@@ -105,7 +105,7 @@ public class WorldReloader implements ModInitializer {
 		BlockPos referencePos;
 		if (config.UseSpecificPos){
 
-			 referencePos = config.Pos;
+			 referencePos = new BlockPos(config.Posx,config.Posy,config.Posz);
 			 if (referencePos==null){
 				 player.sendMessage(Text.literal("你丫没设置目标点,用setPos命令设置!!!!"));
 				 return;

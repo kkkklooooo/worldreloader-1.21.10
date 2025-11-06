@@ -5,10 +5,8 @@ import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import net.minecraft.block.Blocks;
 import net.minecraft.registry.Registries;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.BiomeKeys;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -19,7 +17,11 @@ class ModConfig implements ConfigData {
     boolean UseSpecificPos = false;
 
     @ConfigEntry.Category("Main")
-    BlockPos Pos;
+    int Posx;
+    @ConfigEntry.Category("Main")
+    int Posy;
+    @ConfigEntry.Category("Main")
+    int Posz;
     @ConfigEntry.Category("Main")
     boolean UseSurface = false;
     @ConfigEntry.Category("Main")
@@ -50,13 +52,19 @@ class ModConfig implements ConfigData {
     @ConfigEntry.Category("Non-surface")
     // 控制改造速度的间隔变量
     int totalSteps2 = 3;
+    @ConfigEntry.Category("Non-surface")
+    // 控制改造速度的间隔变量
+    int yMin = 40;
+    @ConfigEntry.Category("Non-surface")
+    // 控制改造速度的间隔变量
+    int yMaxThanSurface = 30;
 
 
     // ============ 新增的物品-结构映射配置 ============
     @ConfigEntry.Category("Structure Mappings")
     //List<Float> f = new ArrayList<>();
     public List<StructureMapping> structureMappings = List.of(
-            new StructureMapping(Registries.BLOCK.getId(Blocks.TARGET).getPath(), "minecraft:village"),
+            new StructureMapping(Registries.BLOCK.getId(Blocks.TARGET).getPath(), "village"),
             new StructureMapping(Registries.BLOCK.getId(Blocks.COBBLESTONE).getPath(), "minecraft:pillager_outpost"),
             new StructureMapping(Registries.BLOCK.getId(Blocks.MOSSY_COBBLESTONE).getPath(), "minecraft:jungle_pyramid"),
             new StructureMapping(Registries.BLOCK.getId(Blocks.SMOOTH_SANDSTONE).getPath(), "minecraft:desert_pyramid"),

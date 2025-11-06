@@ -13,6 +13,8 @@ import java.util.List;
 
 public class TerrainTransformationTask extends BaseTransformationTask {
     private final int paddingCount;
+    private final int yMin;
+    private final int yMax;
 
     public TerrainTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter,
                                      PlayerEntity player) {
@@ -21,6 +23,8 @@ public class TerrainTransformationTask extends BaseTransformationTask {
                 WorldReloader.config.totalSteps2,
                 WorldReloader.config.itemCleanupInterval);
         this.paddingCount = WorldReloader.config.paddingCount;
+        this.yMax=WorldReloader.config.yMaxThanSurface;
+        this.yMin=WorldReloader.config.yMin;
     }
 
     @Override
@@ -61,7 +65,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
                 .getHeightmap(Heightmap.Type.MOTION_BLOCKING)
                 .get(referenceX & 15, referenceZ & 15);
 
-        if (referenceSurfaceY < 19) {
+        if (referenceSurfaceY <yMin-1) {
             return null;
         }
 
@@ -88,11 +92,11 @@ public class TerrainTransformationTask extends BaseTransformationTask {
                 .getHeightmap(Heightmap.Type.WORLD_SURFACE)
                 .get(targetX & 15, targetZ & 15);
 
-        if (surfaceY < 18) {
+        if (surfaceY <yMin-1) {
             return;
         }
 
-        for (int y = 40; y <= surfaceY + 30; y++) {
+        for (int y = yMin; y <= surfaceY + yMax; y++) {
             BlockPos targetPos = new BlockPos(targetX, y, targetZ);
             if (currentRadius <= 8 && shouldPreserveCenterArea(targetPos)) {
                 continue;
@@ -124,7 +128,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         List<BlockState> blocks = new ArrayList<>();
         List<Integer> heights = new ArrayList<>();
 
-        for (int y = 40; y <= surfaceY + 30; y++) {
+        for (int y = yMin; y <= surfaceY + yMax; y++) {
             BlockPos pos = new BlockPos(x, y, z);
             BlockState state = world.getBlockState(pos);
             if (!state.isAir() || y <= surfaceY) {

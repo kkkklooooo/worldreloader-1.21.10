@@ -5,10 +5,8 @@ import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import net.minecraft.block.Blocks;
 import net.minecraft.registry.Registries;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.BiomeKeys;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -54,6 +52,12 @@ class ModConfig implements ConfigData {
     @ConfigEntry.Category("Non-surface")
     // 控制改造速度的间隔变量
     int totalSteps2 = 3;
+    @ConfigEntry.Category("Non-surface")
+    // 控制改造速度的间隔变量
+    int yMin = 40;
+    @ConfigEntry.Category("Non-surface")
+    // 控制改造速度的间隔变量
+    int yMaxThanSurface = 30;
 
 
     // ============ 新增的物品-结构映射配置 ============

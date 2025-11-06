@@ -3,13 +3,13 @@
 	"id": "worldreloader",
 	"version": "${version}",
 	"name": "WorldReloader",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "拿下界之星右键信标改造地形，信标周围放上方块指定群系，按Y打开设置界面......这是一个兼具美观性和建筑实用性的地形生成mod",
 	"authors": [
-		"Me!"
+		"CheesePaste(bilibili:销账号已注),Victory_FX(bilibili:Victory_FX)"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"sources": "https://github.com/kkkklooooo/worldreloader-1.21.10"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/worldreloader/icon.png",

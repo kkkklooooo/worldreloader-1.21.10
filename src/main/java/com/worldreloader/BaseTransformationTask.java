@@ -15,10 +15,7 @@ import net.minecraft.server.command.FillCommand;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockBox;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.ChunkSectionPos;
+import net.minecraft.util.math.*;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
@@ -35,7 +32,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static com.sun.org.apache.bcel.internal.generic.Type.NULL;
 import static net.minecraft.server.command.FillBiomeCommand.UNLOADED_EXCEPTION;
 
 
@@ -326,97 +322,36 @@ public abstract class BaseTransformationTask {
         }
 
     public static void setBiome(BlockPos pos, RegistryEntry<Biome> biome, ServerWorld serverWorld) {
-        // 获取坐标所属区块的起始坐标（区块坐标转换为世界坐标）
-        int chunkX = pos.getX() >> 4; // 除以16得到区块坐标
+        int chunkX = pos.getX() >> 4;
         int chunkZ = pos.getZ() >> 4;
-        BlockPos chunkStartPos = new BlockPos(chunkX << 4, serverWorld.getBottomY(), chunkZ << 4); // 乘以16得到世界坐标
 
-        // 计算区块的结束坐标（一个区块是16x16，高度从世界底部到顶部）
-        BlockPos chunkEndPos = new BlockPos(
-                chunkStartPos.getX() + 15,
-                serverWorld.getHeight(),
-                chunkStartPos.getZ() + 15
+        // 获取目标区块
+        Chunk chunk = serverWorld.getChunk(chunkX, chunkZ);
+
+        // 计算区块内需要修改生物群系的区域（这里是整个区块）
+        BlockBox chunkBox = BlockBox.create(
+                new Vec3i(chunkX << 4, serverWorld.getBottomY(), chunkZ << 4),
+                new Vec3i((chunkX << 4) + 15, serverWorld.getTopY(), (chunkZ << 4) + 15)
         );
 
-        WorldReloader.LOGGER.warn("区块范围: {} 到 {}", chunkStartPos.toShortString(), chunkEndPos.toShortString());
+        // 使用一个MutableInt来计数修改的方块数
+        MutableInt modifiedCount = new MutableInt(0);
 
-        int worldBottomY = serverWorld.getBottomY();
-        int worldTopY = serverWorld.getHeight();
-        int totalHeight = worldTopY - worldBottomY;
+        // 创建生物群系供应商，这里filter直接设置为 biome -> true，表示替换所有原有生物群系
+        BiomeSupplier biomeSupplier = createBiomeSupplier(modifiedCount, chunk, chunkBox, biome, b -> true);
 
-        // 计算每次处理的高度层（确保每次不超过3000个方块）
-        // 每个水平面有 16 * 16 = 256 个方块
-        int maxBlocksPerCall = 32768;
-        int maxHeightPerCall = maxBlocksPerCall / 256; // 每次最多处理的高度层数
+        // 为区块设置新的生物群系
+        chunk.populateBiomes(biomeSupplier, serverWorld.getChunkManager().getNoiseConfig().getMultiNoiseSampler());
+        chunk.setNeedsSaving(true); // 标记区块需要保存
 
-        WorldReloader.LOGGER.info("世界高度范围: {}-{}, 总高度: {}, 每次处理高度: {}",
-                worldBottomY, worldTopY, totalHeight, maxHeightPerCall);
+        // 发送更新包给客户端
+        serverWorld.getChunkManager().threadedAnvilChunkStorage.sendChunkBiomePackets(List.of(chunk));
 
-        // 按高度分层处理
-        for (int startY = worldBottomY; startY < worldTopY; startY += maxHeightPerCall) {
-            int endY = Math.min(startY + maxHeightPerCall - 1, worldTopY - 1);
-
-            BlockPos layerStartPos = new BlockPos(chunkStartPos.getX(), startY, chunkStartPos.getZ());
-            BlockPos layerEndPos = new BlockPos(chunkEndPos.getX(), endY, chunkEndPos.getZ());
-
-            int layerHeight = endY - startY + 1;
-            int blocksInThisLayer = 256 * layerHeight;
-
-            WorldReloader.LOGGER.info("处理高度层: {}-{}, 方块数: {}", startY, endY, blocksInThisLayer);
-
-            // 使用FillBiomeCommand设置当前高度层的生物群系
-            Either<Integer, CommandSyntaxException> either = execute(serverWorld.getServer().getCommandSource(),layerStartPos,layerEndPos,);
-
-            if (either.right().isPresent()) {
-                CommandSyntaxException error = either.right().get();
-                WorldReloader.LOGGER.error("设置生物群系失败 (高度层 {}-{}): {}", startY, endY, error.getMessage());
-                // 可以选择继续处理其他层，或者抛出异常
-                // throw this.createError("test.error.set_biome: " + error.getMessage());
-            } else {
-                Integer modifiedCount = either.left().orElse(0);
-                WorldReloader.LOGGER.info("成功设置高度层 {}-{} 的生物群系，修改计数: {}", startY, endY, modifiedCount);
-            }
-        }
-
-        WorldReloader.LOGGER.info("生物群系设置完成");
+        WorldReloader.LOGGER.info("成功设置区块 [{}, {}] 的生物群系，修改了 {} 个方块", chunkX, chunkZ, modifiedCount.getValue());
     }
 
-    private static int execute(ServerCommandSource source, BlockPos from, BlockPos to, RegistryEntry<Biome> biome, Predicate<RegistryEntry<Biome>> filter) throws CommandSyntaxException {
-        BlockPos blockPos = convertPos(from);
-        BlockPos blockPos2 = convertPos(to);
-        BlockBox blockBox = BlockBox.create(blockPos, blockPos2);
-        int i = blockBox.getBlockCountX() * blockBox.getBlockCountY() * blockBox.getBlockCountZ();
-        int j = source.getWorld().getGameRules().getInt(GameRules.COMMAND_MODIFICATION_BLOCK_LIMIT);
-        if (i > j) {
-            //throw TOO_BIG_EXCEPTION.create(j, i);
-        } else {
-            ServerWorld serverWorld = source.getWorld();
-            List<Chunk> list = new ArrayList();
+    // 保持你原有的 createBiomeSupplier 方法不变
 
-            for(int k = ChunkSectionPos.getSectionCoord(blockBox.getMinZ()); k <= ChunkSectionPos.getSectionCoord(blockBox.getMaxZ()); ++k) {
-                for(int l = ChunkSectionPos.getSectionCoord(blockBox.getMinX()); l <= ChunkSectionPos.getSectionCoord(blockBox.getMaxX()); ++l) {
-                    Chunk chunk = serverWorld.getChunk(l, k, ChunkStatus.FULL, false);
-                    if (chunk == null) {
-                        throw UNLOADED_EXCEPTION.create();
-                    }
-
-                    list.add(chunk);
-                }
-            }
-
-            MutableInt mutableInt = new MutableInt(0);
-
-            for(Chunk chunk : list) {
-                chunk.populateBiomes(createBiomeSupplier(mutableInt, chunk, blockBox, biome, filter), serverWorld.getChunkManager().getNoiseConfig().getMultiNoiseSampler());
-                chunk.setNeedsSaving(true);
-            }
-
-            serverWorld.getChunkManager().threadedAnvilChunkStorage.sendChunkBiomePackets(list);
-            source.sendFeedback(() -> Text.translatable("commands.fillbiome.success.count", new Object[]{mutableInt.getValue(), blockBox.getMinX(), blockBox.getMinY(), blockBox.getMinZ(), blockBox.getMaxX(), blockBox.getMaxY(), blockBox.getMaxZ()}), true);
-            return mutableInt.getValue();
-        }
-        return i;
-    }
 
 
     private static BlockPos convertPos(BlockPos pos) {

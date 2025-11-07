@@ -33,12 +33,12 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation 'com.google.code.gson:gson:2.13.2'
-	modApi("me.shedaniel.cloth:cloth-config-fabric:20.0.149") {
+	modApi("me.shedaniel.cloth:cloth-config-fabric:18.0.145") {
 		exclude(group: "net.fabricmc.fabric-api")
 	}
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	
+
 }
 
 processResources {

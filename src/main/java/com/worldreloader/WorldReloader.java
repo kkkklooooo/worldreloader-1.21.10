@@ -1,5 +1,6 @@
 package com.worldreloader;
 
+import com.mojang.datafixers.util.Pair;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.gui.registry.GuiRegistry;
@@ -12,6 +13,7 @@ import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.entry.RegistryEntryList;
 import net.minecraft.util.Identifier;
+import net.minecraft.world.gen.structure.Structure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.minecraft.block.Block;
@@ -216,10 +218,35 @@ public class WorldReloader implements ModInitializer {
 //							net.minecraft.util.Identifier.of(structureId)),
 //					center, 10000, false
 //			);
-
-			var a = world.getRegistryManager().get(RegistryKeys.STRUCTURE).get(Identifier.of("minecraft",structureId));
-			BlockPos structurePos = world.getChunkManager().getChunkGenerator().locateStructure(world, RegistryEntryList.of(RegistryEntry.of(a)),center,10000,false).getFirst();
-
+			String[] strings = structureId.split(":");
+			String namespace;
+			String path;
+			if(strings.length==1)
+			{
+				namespace="minecraft";
+				path=strings[0];
+			}
+			else
+			{
+				namespace=strings[0];
+				path=strings[1];
+			}
+			var a = world.getRegistryManager().get(RegistryKeys.STRUCTURE).get(Identifier.of(namespace,path));
+			Pair<BlockPos, RegistryEntry<Structure>> pair = world.getChunkManager().getChunkGenerator().locateStructure(world, RegistryEntryList.of(RegistryEntry.of(a)), center, 6400, false);
+			//上面这个负责村庄外结构，村庄必须使用下面这个查询
+			BlockPos structurePos;
+			if(pair==null)
+			{
+				structurePos = world.locateStructure(
+						net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.STRUCTURE,
+								net.minecraft.util.Identifier.of(namespace,path)),
+						center, 6400, false
+				);
+			}
+			else
+			{
+				structurePos=pair.getFirst();
+			}
 			if (structurePos != null) {
 				BlockPos surfacePos = getValidSurfacePosition(world, structurePos);
 				if (surfacePos != null) {

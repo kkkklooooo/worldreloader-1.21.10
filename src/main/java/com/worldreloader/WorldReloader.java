@@ -9,9 +9,11 @@ import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.entry.RegistryEntryList;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.gen.structure.Structure;
 import org.slf4j.Logger;
@@ -218,7 +220,7 @@ public class WorldReloader implements ModInitializer {
 	}
 
 	private BlockPos findStructurePosition(ServerWorld world, BlockPos center, String structureId,
-										   net.minecraft.entity.player.PlayerEntity player) {
+										   PlayerEntity player) {
 		try {
 //			BlockPos structurePos = world.locateStructure(
 //					net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.STRUCTURE,
@@ -233,10 +235,10 @@ public class WorldReloader implements ModInitializer {
 			if(pair==null)
 			{
 				structurePos = world.locateStructure(
-					net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.STRUCTURE,
-							net.minecraft.util.Identifier.of(structureId)),
-				center, 6400, false
-			);
+						TagKey.of(RegistryKeys.STRUCTURE,
+								Identifier.of(structureId)),
+						center, 6400, false
+				);
 			}
 			else
 			{

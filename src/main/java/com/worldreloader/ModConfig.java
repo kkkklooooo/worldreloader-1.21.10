@@ -32,7 +32,6 @@ class ModConfig implements ConfigData {
     boolean isChangeBiome=false;
     @ConfigEntry.Category("Main")
     boolean Debug = false;
-    public String minPermission = "op";
     //int lastCleanupRadius = -1;
 
     @ConfigEntry.Category("surface")

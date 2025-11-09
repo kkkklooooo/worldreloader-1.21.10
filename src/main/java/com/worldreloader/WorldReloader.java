@@ -46,6 +46,7 @@ public class WorldReloader implements ModInitializer {
 	public static ModConfig config;
 	public static ConfigHolder ch = AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+	public String minPermission="op";
 
 	@Override
 	public void onInitialize() {
@@ -181,7 +182,7 @@ public class WorldReloader implements ModInitializer {
 	 * 检查玩家权限
 	 */
 	private boolean checkPermission(net.minecraft.entity.player.PlayerEntity player) {
-		String permission = config.minPermission;
+		String permission = minPermission;
 
 		if ("disabled".equals(permission)) {
 			return false;
@@ -201,7 +202,7 @@ public class WorldReloader implements ModInitializer {
 			return 0;
 		}
 
-		config.minPermission = permission;
+		minPermission = permission;
 		ch.save();
 
 		source.sendMessage(Text.literal("§a地形改造权限已设置为: " + permission));

@@ -402,7 +402,7 @@ public class WorldReloader implements ModInitializer {
 	private BlockPos findBiomePosition(ServerWorld world, BlockPos center, Predicate<RegistryEntry<Biome>> targetBiome,
 									   net.minecraft.entity.player.PlayerEntity player) {
 		try {
-			Pair<BlockPos,RegistryEntry<Biome>> p = world.locateBiome(targetBiome,center,6400,32,64);
+			Pair<BlockPos,RegistryEntry<Biome>> p = world.locateBiome(targetBiome,center,config.searchRadius,32,64);
 			BlockPos biomePos = p.getFirst();
 //			BlockPos biomePos = Objects.requireNonNull(world.locateBiome(
 //					b -> b.matchesKey(targetBiome),
@@ -436,7 +436,7 @@ public class WorldReloader implements ModInitializer {
 				structurePos = world.locateStructure(
 						net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.STRUCTURE,
 								net.minecraft.util.Identifier.of(structureId)),
-						center, 6400, false
+						center, config.searchRadius, false
 				);
 			} else {
 				structurePos = pair.getFirst();
@@ -462,7 +462,7 @@ public class WorldReloader implements ModInitializer {
 
 		for (int i = 0; i < 20; i++) {
 			double angle = world.random.nextDouble() * 2 * Math.PI;
-			int distance = 2000 + world.random.nextInt(500);
+			int distance = config.randomRadius + world.random.nextInt(500);
 
 			int refX = center.getX() + (int) (Math.cos(angle) * distance);
 			int refZ = center.getZ() + (int) (Math.sin(angle) * distance);

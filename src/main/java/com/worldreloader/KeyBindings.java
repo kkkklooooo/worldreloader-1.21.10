@@ -14,6 +14,7 @@ public class KeyBindings {
                 InputUtil.Type.KEYSYM, // 按键类型
                 GLFW.GLFW_KEY_Y,
                 KeyBinding.Category.GAMEPLAY
+
         ));
     }
 }

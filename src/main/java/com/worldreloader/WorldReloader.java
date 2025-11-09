@@ -231,6 +231,8 @@ public class WorldReloader implements ModInitializer {
 		return 1;
 	}
 
+
+
 	/**
 	 * 在玩家位置执行地形改造指令
 	 */
@@ -255,6 +257,8 @@ public class WorldReloader implements ModInitializer {
 
 		return 1;
 	}
+
+
 
 	/**
 	 * 在指定位置开始地形改造（指令版本）
@@ -403,6 +407,9 @@ public class WorldReloader implements ModInitializer {
 									   net.minecraft.entity.player.PlayerEntity player) {
 		try {
 			Pair<BlockPos,RegistryEntry<Biome>> p = world.locateBiome(targetBiome,center,config.searchRadius,32,64);
+			if(p==null){
+				player.sendMessage(Text.literal("无法找到结构,请尝试使用locate命令测试或检查拼写错误"),false);
+			}
 			BlockPos biomePos = p.getFirst();
 //			BlockPos biomePos = Objects.requireNonNull(world.locateBiome(
 //					b -> b.matchesKey(targetBiome),

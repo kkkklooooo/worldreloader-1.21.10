@@ -17,6 +17,8 @@
   "text.autoconfig.worldreloader.option.itemCleanupInterval.@Tooltip": "清理掉落物品的时间间隔（刻）",
   "text.autoconfig.worldreloader.option.isChangeBiome.@Tooltip": "改变生物群系（会增加改造前加载时间）",
   "text.autoconfig.worldreloader.option.isChangeBiome": "改变生物群系",
+  "text.autoconfig.worldreloader.option.randomRadius": "随机地形模式距离",
+  "text.autoconfig.worldreloader.option.searchRadius": "群系和结构的查找距离",
   "text.autoconfig.worldreloader.option.Debug": "Debug模式",
   "text.autoconfig.worldreloader.option.Debug.@Tooltip": "是否开启Debug模式",
 

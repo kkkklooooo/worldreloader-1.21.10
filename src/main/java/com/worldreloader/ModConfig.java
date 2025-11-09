@@ -29,6 +29,10 @@ class ModConfig implements ConfigData {
     @ConfigEntry.Category("Main")
     int itemCleanupInterval = 20;
     @ConfigEntry.Category("Main")
+    int searchRadius = 6400;
+    @ConfigEntry.Category("Main")
+    int randomRadius = 10000;
+    @ConfigEntry.Category("Main")
     boolean isChangeBiome=false;
     @ConfigEntry.Category("Main")
     boolean Debug = false;

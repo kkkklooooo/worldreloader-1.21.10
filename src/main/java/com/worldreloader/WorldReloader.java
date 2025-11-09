@@ -9,9 +9,11 @@ import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.minecraft.command.argument.RegistryEntryPredicateArgumentType;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.entry.RegistryEntryList;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.gen.structure.Structure;
 import org.slf4j.Logger;
@@ -30,6 +32,7 @@ import net.minecraft.world.Heightmap;
 import net.minecraft.world.biome.Biome;
 
 import java.util.Objects;
+import java.util.function.Predicate;
 
 import static com.worldreloader.BaseTransformationTask.isSolidBlock;
 
@@ -112,7 +115,7 @@ public class WorldReloader implements ModInitializer {
 	private void startTerrainTransformation(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
 		LOGGER.info("开始地形改造过程 - 信标位置: {}", beaconPos);
 
-		RegistryKey<Biome> targetBiome = detectTargetBiome(world, beaconPos, player);
+		Predicate<RegistryEntry<Biome>> targetBiome = detectTargetBiome(world, beaconPos, player);
 		String targetStructure = detectTargetStructure(world, beaconPos, player);
 
 		BlockPos referencePos;
@@ -121,6 +124,7 @@ public class WorldReloader implements ModInitializer {
 			 referencePos = new BlockPos(config.Posx,config.Posy,config.Posz);
 			 referencePos.add(0,-referencePos.getY(),0);
 		}else{
+
 			 referencePos = findReferencePosition(world, beaconPos, targetBiome, targetStructure, player);
 		}
 
@@ -142,7 +146,7 @@ public class WorldReloader implements ModInitializer {
 		}
 	}
 
-	private RegistryKey<Biome> detectTargetBiome(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
+	private Predicate<RegistryEntry<Biome>> detectTargetBiome(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
 		BlockPos sidePos = beaconPos.east();
 		Block sideBlock = world.getBlockState(sidePos).getBlock();
 
@@ -156,8 +160,24 @@ public class WorldReloader implements ModInitializer {
 		for (var i:config.biomeMappings){
 			if(Registries.BLOCK.get(Identifier.of(i.itemId))==sideBlock){
 				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.BiomeId + "生物群系"), false);
+				Predicate<RegistryEntry<Biome>> p;
 
-				return RegistryKey.of(RegistryKeys.BIOME,Identifier.of(i.BiomeId));
+				if(i.BiomeId.startsWith("#")){
+					Identifier tagId = Identifier.of(i.BiomeId.substring(1)); // "biome_tag_villagers:villager_jungle"
+					TagKey<Biome> biomeTag = TagKey.of(RegistryKeys.BIOME, tagId);
+
+					p = (entry)->{
+                        return entry.isIn(biomeTag);
+					};
+				}else{
+					RegistryKey<Biome> k =RegistryKey.of(RegistryKeys.BIOME,Identifier.of(i.BiomeId));
+					p = (entry)->{
+						return entry.matchesKey(k);
+					};
+				}
+				//RegistryEntryPredicateArgumentType.EntryPredicate<Biome> a =
+
+				return p;
 			}
 		}
 		return null;
@@ -182,7 +202,7 @@ public class WorldReloader implements ModInitializer {
 		return null;
 	}
 
-	private BlockPos findReferencePosition(ServerWorld world, BlockPos center, RegistryKey<Biome> targetBiome,
+	private BlockPos findReferencePosition(ServerWorld world, BlockPos center, Predicate<RegistryEntry<Biome>> targetBiome,
 										   String targetStructure, net.minecraft.entity.player.PlayerEntity player) {
 		if (targetStructure != null) {
 			return findStructurePosition(world, center, targetStructure, player);
@@ -193,13 +213,17 @@ public class WorldReloader implements ModInitializer {
 		}
 	}
 
-	private BlockPos findBiomePosition(ServerWorld world, BlockPos center, RegistryKey<Biome> targetBiome,
+	private BlockPos findBiomePosition(ServerWorld world, BlockPos center, Predicate<RegistryEntry<Biome>> targetBiome,
 									   net.minecraft.entity.player.PlayerEntity player) {
 		try {
-			BlockPos biomePos = Objects.requireNonNull(world.locateBiome(
-					b -> b.matchesKey(targetBiome),
-					center, 6400, 8, 64
-			)).getFirst();
+
+
+			Pair<BlockPos,RegistryEntry<Biome>> p = world.locateBiome(targetBiome,center,6400,32,64);
+			BlockPos biomePos = p.getFirst();
+//			BlockPos biomePos = Objects.requireNonNull(world.locateBiome(
+//					b -> b.matchesKey(targetBiome),
+//					center, 6400, 32, 64
+//			)).getFirst();
 
 			if (biomePos != null) {
 				BlockPos surfacePos = getValidSurfacePosition(world, biomePos);
@@ -349,13 +373,13 @@ public class WorldReloader implements ModInitializer {
 	 */
 
 
-	private BlockPos findAlternativeBiomePosition(ServerWorld world, BlockPos center, RegistryKey<Biome> targetBiome) {
+	private BlockPos findAlternativeBiomePosition(ServerWorld world, BlockPos center, Predicate<RegistryEntry<Biome>> targetBiome) {
 		for (int i = 0; i < 10; i++) {
 			int offsetX = world.random.nextInt(400) - 200;
 			int offsetZ = world.random.nextInt(400) - 200;
 			BlockPos testPos = center.add(offsetX, 0, offsetZ);
 
-			if (world.getBiome(testPos).matchesKey(targetBiome)) {
+			if (targetBiome.test(world.getBiome(testPos))) {
 				BlockPos surfacePos = getValidSurfacePosition(world, testPos);
 				if (surfacePos != null) return surfacePos;
 			}
@@ -364,7 +388,7 @@ public class WorldReloader implements ModInitializer {
 	}
 
 	private void sendErrorMessage(net.minecraft.entity.player.PlayerEntity player,
-								  RegistryKey<Biome> targetBiome, String targetStructure) {
+								  Predicate<RegistryEntry<Biome>> targetBiome, String targetStructure) {
 		if (targetBiome != null) {
 			player.sendMessage(Text.literal("§c群系查找出现问题！"), false);
 		} else if (targetStructure != null) {

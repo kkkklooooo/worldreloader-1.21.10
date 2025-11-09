@@ -17,6 +17,8 @@
   "text.autoconfig.worldreloader.option.itemCleanupInterval.@Tooltip": "Time interval (in ticks) for cleaning up dropped items",
   "text.autoconfig.worldreloader.option.isChangeBiome.@Tooltip": "Change biomes (increases pre-transformation loading time)",
   "text.autoconfig.worldreloader.option.isChangeBiome": "Change Biomes",
+  "text.autoconfig.worldreloader.option.randomRadius": "Random Raidus",
+  "text.autoconfig.worldreloader.option.searchRadius": "Biome/Structure Search Radius",
   "text.autoconfig.worldreloader.option.Debug": "Debug Mode",
   "text.autoconfig.worldreloader.option.Debug.@Tooltip": "Enable Debug Mode",
 

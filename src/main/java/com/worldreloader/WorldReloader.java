@@ -230,7 +230,7 @@ public class WorldReloader implements ModInitializer {
 				}
 				BlockPos res = findAlternativeBiomePosition(world, biomePos, targetBiome);
 				if(res==null){
-					player.sendMessage(Text.literal("无法找到目标群落,请考虑关闭Y>64选项"));
+					player.sendMessage(Text.literal("无法找到目标群落,请考虑降低目标最低高度"));
 				}
 				return res;
 			}
@@ -344,7 +344,7 @@ public class WorldReloader implements ModInitializer {
 
 				// 检查是否为真正的固体方块
 				if (isSolidBlock(world, surfaceBlock) &&
-						(surfacePos.getY()>=64||!config.big64)) {
+						(surfacePos.getY()>= config.targetYmin)) {
 					return surfacePos;
 				}
 

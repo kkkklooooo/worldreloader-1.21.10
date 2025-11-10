@@ -12,8 +12,8 @@ import java.util.List;
 
 @Config(name = "worldreloader")
 class ModConfig implements ConfigData {
-
-    public boolean big64 = true;
+    @ConfigEntry.Category("Main")
+    public int targetYmin=64;
     @ConfigEntry.Category("Main")
     boolean UseSpecificPos = false;
 
@@ -65,7 +65,7 @@ class ModConfig implements ConfigData {
     @ConfigEntry.Category("Structure Mappings")
     //List<Float> f = new ArrayList<>();
     public List<StructureMapping> structureMappings = List.of(
-            new StructureMapping(Registries.BLOCK.getId(Blocks.TARGET).getPath(), "village"),
+            new StructureMapping(Registries.BLOCK.getId(Blocks.TARGET).getPath(), "village_plains"),
             new StructureMapping(Registries.BLOCK.getId(Blocks.COBBLESTONE).getPath(), "minecraft:pillager_outpost"),
             new StructureMapping(Registries.BLOCK.getId(Blocks.MOSSY_COBBLESTONE).getPath(), "minecraft:jungle_pyramid"),
             new StructureMapping(Registries.BLOCK.getId(Blocks.SMOOTH_SANDSTONE).getPath(), "minecraft:desert_pyramid"),

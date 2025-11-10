@@ -276,12 +276,12 @@ public class WorldReloader implements ModInitializer {
 				if (target != null) {
 
 					if(target.startsWith("#")){
-						Identifier tagId = Identifier.of(target.substring(1)); // "biome_tag_villagers:villager_jungle"
+						Identifier tagId = Identifier.splitOn(target.substring(1),':'); // "biome_tag_villagers:villager_jungle"
 						TagKey<Biome> biomeTag = TagKey.of(RegistryKeys.BIOME, tagId);
 
 						targetBiome = (entry)-> entry.isIn(biomeTag);
 					}else{
-						RegistryKey<Biome> k =RegistryKey.of(RegistryKeys.BIOME,Identifier.of(target));
+						RegistryKey<Biome> k =RegistryKey.of(RegistryKeys.BIOME,Identifier.splitOn(target,':'));
 						targetBiome = (entry)-> entry.matchesKey(k);
 					}
 					player.sendMessage(Text.literal("§6目标生物群系: " + target), false);
@@ -365,19 +365,19 @@ public class WorldReloader implements ModInitializer {
 		Block sideBlock = world.getBlockState(sidePos).getBlock();
 
 		for (var i:config.biomeMappings) {
-			if (Registries.BLOCK.get(Identifier.of(i.itemId)) == sideBlock) {
+			if (Registries.BLOCK.get(Identifier.splitOn(i.itemId,':')) == sideBlock) {
 				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.BiomeId + "生物群系"), false);
 				Predicate<RegistryEntry<Biome>> p;
 
 				if (i.BiomeId.startsWith("#")) {
-					Identifier tagId = Identifier.of(i.BiomeId.substring(1)); // "biome_tag_villagers:villager_jungle"
+					Identifier tagId = Identifier.splitOn(i.BiomeId.substring(1),':'); // "biome_tag_villagers:villager_jungle"
 					TagKey<Biome> biomeTag = TagKey.of(RegistryKeys.BIOME, tagId);
 
 					p = (entry) -> {
 						return entry.isIn(biomeTag);
 					};
 				} else {
-					RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.of(i.BiomeId));
+					RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.splitOn(i.BiomeId,':'));
 					p = (entry) -> {
 						return entry.matchesKey(k);
 					};
@@ -395,7 +395,7 @@ public class WorldReloader implements ModInitializer {
 		Block sideBlock = world.getBlockState(sidePos).getBlock();
 
 		for (var i : config.structureMappings) {
-			if (Registries.BLOCK.get(Identifier.of(i.itemId)) == sideBlock) {
+			if (Registries.BLOCK.get(Identifier.splitOn(i.itemId,':')) == sideBlock) {
 				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.structureId + "结构"), false);
 				return i.structureId;
 			}
@@ -435,7 +435,7 @@ public class WorldReloader implements ModInitializer {
 	private BlockPos findStructurePosition(ServerWorld world, BlockPos center, String structureId,
 										   net.minecraft.entity.player.PlayerEntity player) {
 		try {
-			var a = world.getRegistryManager().get(RegistryKeys.STRUCTURE).get(Identifier.of(structureId));
+			var a = world.getRegistryManager().get(RegistryKeys.STRUCTURE).get(Identifier.splitOn(structureId,':'));
 			Pair<BlockPos, RegistryEntry<Structure>> pair = world.getChunkManager().getChunkGenerator().locateStructure(world, RegistryEntryList.of(RegistryEntry.of(a)), center, 6400, false);
 			//上面这个负责村庄外结构，村庄必须使用下面这个查询
 			BlockPos structurePos;
@@ -443,7 +443,7 @@ public class WorldReloader implements ModInitializer {
 			{
 				structurePos = world.locateStructure(
 						net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.STRUCTURE,
-								net.minecraft.util.Identifier.of(structureId)),
+								net.minecraft.util.Identifier.splitOn(structureId,':')),
 						center, 6400, false
 				);
 			}

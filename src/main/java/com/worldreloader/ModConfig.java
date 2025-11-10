@@ -13,6 +13,7 @@ import java.util.List;
 @Config(name = "worldreloader")
 class ModConfig implements ConfigData {
 
+    public boolean big64 = true;
     @ConfigEntry.Category("Main")
     boolean UseSpecificPos = false;
 

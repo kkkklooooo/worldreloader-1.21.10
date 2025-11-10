@@ -228,7 +228,11 @@ public class WorldReloader implements ModInitializer {
 					player.sendMessage(Text.literal("§a成功找到目标生物群系，距离: " + String.format("%.1f", distance) + " 格"), false);
 					return surfacePos;
 				}
-				return findAlternativeBiomePosition(world, biomePos, targetBiome);
+				BlockPos res = findAlternativeBiomePosition(world, biomePos, targetBiome);
+				if(res==null){
+					player.sendMessage(Text.literal("无法找到目标群落,请考虑关闭Y>64选项"));
+				}
+				return res;
 			}
 		} catch (Exception e) {
 			LOGGER.error("查找生物群系时发生错误 %s".formatted(e.getMessage()));
@@ -340,7 +344,7 @@ public class WorldReloader implements ModInitializer {
 
 				// 检查是否为真正的固体方块
 				if (isSolidBlock(world, surfaceBlock) &&
-						true) {
+						(surfacePos.getY()>=64||!config.big64)) {
 					return surfacePos;
 				}
 

@@ -137,6 +137,8 @@ public class WorldReloader implements ModInitializer {
 		}
 	}
 
+
+
 	private Predicate<RegistryEntry<Biome>> detectTargetBiome(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
 		BlockPos sidePos = beaconPos.east();
 		Block sideBlock = world.getBlockState(sidePos).getBlock();
@@ -154,16 +156,16 @@ public class WorldReloader implements ModInitializer {
 				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.BiomeId + "生物群系"), false);
 
 				if (i.BiomeId.startsWith("#")) {
-					String sp[]=i.BiomeId.substring(1).split(":");
-					Identifier tagId = Identifier.of(sp[0]==""?"minecraft":sp[0],sp[1]); // "biome_tag_villagers:villager_jungle"
+					//String sp[]=i.BiomeId.substring(1).split(":");
+					Identifier tagId = Identifier.splitOn(i.BiomeId.substring(1),':'); // "biome_tag_villagers:villager_jungle"
 					TagKey<Biome> biomeTag = TagKey.of(RegistryKeys.BIOME, tagId);
 
 					p = (entry) -> {
 						return entry.isIn(biomeTag);
 					};
 				} else {
-					String sp[]=i.BiomeId.substring(1).split(":");
-					RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.of(sp[0]==""?"minecraft":sp[0],sp[1]));
+					//String sp[]=i.BiomeId.substring(1).split(":");
+					RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.splitOn(i.BiomeId,':'));
 
 					p = (entry) -> {
 						return entry.matchesKey(k);
@@ -229,7 +231,7 @@ public class WorldReloader implements ModInitializer {
 				return findAlternativeBiomePosition(world, biomePos, targetBiome);
 			}
 		} catch (Exception e) {
-			LOGGER.error("查找生物群系时发生错误", e);
+			LOGGER.error("查找生物群系时发生错误 %s".formatted(e.getMessage()));
 			player.sendMessage(Text.literal("§c查找生物群系时发生错误: " + e.getMessage()), false);
 		}
 		return null;
@@ -338,7 +340,7 @@ public class WorldReloader implements ModInitializer {
 
 				// 检查是否为真正的固体方块
 				if (isSolidBlock(world, surfaceBlock) &&
-						surfacePos.getY()>=64) {
+						true) {
 					return surfacePos;
 				}
 

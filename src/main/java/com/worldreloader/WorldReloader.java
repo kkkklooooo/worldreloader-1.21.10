@@ -47,6 +47,7 @@ public class WorldReloader implements ModInitializer {
 	public static ConfigHolder ch = AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public String minPermission="op";
+	private static boolean isLock=false;
 
 	@Override
 	public void onInitialize() {
@@ -315,6 +316,10 @@ public class WorldReloader implements ModInitializer {
 
 	// 修改原有的startTerrainTransformation方法，添加权限检查
 	private void startTerrainTransformation(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
+		if(isLock){
+			player.sendMessage(Text.literal("另一个改造正在进行,请等待"),false);
+			return;
+		}
 		// 权限检查
 		if (!checkPermission(player)) {
 			player.sendMessage(Text.literal("§c你没有权限使用地形改造功能！"), false);
@@ -344,7 +349,9 @@ public class WorldReloader implements ModInitializer {
 			LOGGER.info("地形改造任务已启动 - 参考位置: {}", referencePos);
 		} else {
 			sendErrorMessage(player, targetBiome, targetStructure);
+
 		}
+		isLock=false;
 	}
 
 	// 修改findReferencePosition方法以支持指令调用

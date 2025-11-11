@@ -49,6 +49,11 @@ public class WorldReloader implements ModInitializer {
 	public String minPermission="op";
 	private static boolean isLock=false;
 
+
+	public static void SetLocker(boolean isLock1){
+		isLock=isLock1;
+	}
+
 	@Override
 	public void onInitialize() {
 		LOGGER.info("World Reloader Initialized!");
@@ -158,9 +163,15 @@ public class WorldReloader implements ModInitializer {
 				}
 
 				LOGGER.info("激活地形改造");
-				Objects.requireNonNull(world.getServer()).execute(() -> {
-					startTerrainTransformation((ServerWorld) world, pos, player);
-				});
+				if(!isLock){
+					Objects.requireNonNull(world.getServer()).execute(() -> {
+						startTerrainTransformation((ServerWorld) world, pos, player);
+						//isLock=false;
+					});
+				}else {
+					player.sendMessage(Text.literal("另一个改造正在进行,请等待"),false);
+
+				}
 
 				return ActionResult.SUCCESS;
 			}
@@ -316,13 +327,11 @@ public class WorldReloader implements ModInitializer {
 
 	// 修改原有的startTerrainTransformation方法，添加权限检查
 	private void startTerrainTransformation(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
-		if(isLock){
-			player.sendMessage(Text.literal("另一个改造正在进行,请等待"),false);
-			return;
-		}
+
 		// 权限检查
 		if (!checkPermission(player)) {
 			player.sendMessage(Text.literal("§c你没有权限使用地形改造功能！"), false);
+
 			return;
 		}
 
@@ -351,7 +360,6 @@ public class WorldReloader implements ModInitializer {
 			sendErrorMessage(player, targetBiome, targetStructure);
 
 		}
-		isLock=false;
 	}
 
 	// 修改findReferencePosition方法以支持指令调用

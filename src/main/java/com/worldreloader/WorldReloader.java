@@ -3,9 +3,6 @@ package com.worldreloader;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.datafixers.util.Pair;
-import com.worldreloader.transformationtasks.SurfaceTransformationTask;
-import com.worldreloader.transformationtasks.TerrainTransformationTask;
-import com.worldreloader.transformationtasks.TerrainTransformationBuilder;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.gui.registry.GuiRegistry;
@@ -49,7 +46,13 @@ public class WorldReloader implements ModInitializer {
 	public static ModConfig config;
 	public static ConfigHolder ch = AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-	public String minPermission = "op";
+	public String minPermission="op";
+	private static boolean isLock=false;
+
+
+	public static void SetLocker(boolean isLock1){
+		isLock=isLock1;
+	}
 
 	@Override
 	public void onInitialize() {
@@ -143,6 +146,8 @@ public class WorldReloader implements ModInitializer {
 		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
 			if (world.isClient()) return ActionResult.PASS;
 
+			// 检查权限
+
 			ItemStack itemStack = player.getStackInHand(hand);
 			BlockPos pos = hitResult.getBlockPos();
 
@@ -158,9 +163,15 @@ public class WorldReloader implements ModInitializer {
 				}
 
 				LOGGER.info("激活地形改造");
-				Objects.requireNonNull(world.getServer()).execute(() -> {
-					startTerrainTransformation((ServerWorld) world, pos, player);
-				});
+				if(!isLock){
+					Objects.requireNonNull(world.getServer()).execute(() -> {
+						startTerrainTransformation((ServerWorld) world, pos, player);
+						//isLock=false;
+					});
+				}else {
+					player.sendMessage(Text.literal("另一个改造正在进行,请等待"),false);
+
+				}
 
 				return ActionResult.SUCCESS;
 			}
@@ -220,6 +231,8 @@ public class WorldReloader implements ModInitializer {
 			return 0;
 		}
 
+
+
 		BlockPos pos = new BlockPos(x, y, z);
 		source.sendMessage(Text.literal("§6开始在地点 " + x + ", " + y + ", " + z + " 执行地形改造..."));
 
@@ -229,6 +242,8 @@ public class WorldReloader implements ModInitializer {
 
 		return 1;
 	}
+
+
 
 	/**
 	 * 在玩家位置执行地形改造指令
@@ -301,15 +316,12 @@ public class WorldReloader implements ModInitializer {
 				break;
 			case "structure":
 				if (target != null) {
+					targetStructure = target;
 					player.sendMessage(Text.literal("§6目标结构: " + target), false);
-					builder.setStructurePos(centerPos, target, config.searchRadius);
-					foundReference = true;
 				}
 				break;
 			case "random":
 				player.sendMessage(Text.literal("§6随机模式"), false);
-				builder.setRandomPos(centerPos, config.randomRadius);
-				foundReference = true;
 				break;
 		}
 
@@ -406,24 +418,31 @@ public class WorldReloader implements ModInitializer {
         }
     }
 
-	// 以下辅助方法保持不变
+	// 其余现有方法保持不变...
 	private Predicate<RegistryEntry<Biome>> detectTargetBiome(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
 		BlockPos sidePos = beaconPos.east();
 		Block sideBlock = world.getBlockState(sidePos).getBlock();
 
-		for (var i : config.biomeMappings) {
+		for (var i:config.biomeMappings) {
 			if (Registries.BLOCK.get(Identifier.of(i.itemId)) == sideBlock) {
 				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.BiomeId + "生物群系"), false);
 				Predicate<RegistryEntry<Biome>> p;
 
 				if (i.BiomeId.startsWith("#")) {
-					Identifier tagId = Identifier.of(i.BiomeId.substring(1));
+					Identifier tagId = Identifier.of(i.BiomeId.substring(1)); // "biome_tag_villagers:villager_jungle"
 					TagKey<Biome> biomeTag = TagKey.of(RegistryKeys.BIOME, tagId);
-					p = (entry) -> entry.isIn(biomeTag);
+
+					p = (entry) -> {
+						return entry.isIn(biomeTag);
+					};
 				} else {
 					RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.of(i.BiomeId));
-					p = (entry) -> entry.matchesKey(k);
+					p = (entry) -> {
+						return entry.matchesKey(k);
+					};
 				}
+				//RegistryEntryPredicateArgumentType.EntryPredicate<Biome> a =
+
 				return p;
 			}
 		}

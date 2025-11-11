@@ -64,6 +64,7 @@ public abstract class BaseTransformationTask {
 
     // 公共方法
     public void start() {
+        WorldReloader.SetLocker(true);
         this.isActive = true;
     }
 
@@ -71,6 +72,7 @@ public abstract class BaseTransformationTask {
         //cleanupItemEntities();
         if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§a最终物品清理完成！"), false);
         this.isActive = false;
+        WorldReloader.SetLocker(false);
         currentRadiusPositions.clear();
         currentStep = 0;
         lastCleanupRadius = -1;

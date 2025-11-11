@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 
 @Config(name = "worldreloader")
-class ModConfig implements ConfigData {
+public class ModConfig implements ConfigData {
 
     @ConfigEntry.Category("Main")
     boolean UseSpecificPos = false;
@@ -35,21 +35,16 @@ class ModConfig implements ConfigData {
     @ConfigEntry.Category("Main")
     boolean isChangeBiome=true;
     @ConfigEntry.Category("Main")
-    boolean Debug = false;
+    public boolean Debug = false;
     //int lastCleanupRadius = -1;
 
     @ConfigEntry.Category("surface")
-    // 控制改造速度的间隔变量 - 改为10刻完成一个半径
     @ConfigEntry.Gui.Tooltip(count = 1)
     int totalSteps = 10;
     @ConfigEntry.Category("surface")
-    int DESTROY_DEPTH = 15;
+    int HEIGHT = 15;
     @ConfigEntry.Category("surface")
-    int DESTROY_HEIGHT = 15;
-    @ConfigEntry.Category("surface")
-    int COPY_DEPTH = 15;
-    @ConfigEntry.Category("surface")
-    int COPY_HEIGHT = 15;
+    int DEPTH = 15;
 
     @ConfigEntry.Category("Non-surface")
     int paddingCount = 12;

@@ -1,27 +1,26 @@
-package com.worldreloader;
+package com.worldreloader.transformationtasks;
 
+import com.worldreloader.WorldReloader;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Heightmap;
+import net.minecraft.world.gen.structure.Structure;
 
 public class SurfaceTransformationTask extends BaseTransformationTask {
-    private final int DESTROY_DEPTH;
-    private final int DESTROY_HEIGHT;
-    private final int COPY_DEPTH;
-    private final int COPY_HEIGHT;
+    private final int DEPTH;
+    private final int HEIGHT;
 
-    public SurfaceTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter,
-                                     net.minecraft.entity.player.PlayerEntity player) {
-        super(world, center, referenceCenter, player,
-                WorldReloader.config.maxRadius,
-                WorldReloader.config.totalSteps,
-                WorldReloader.config.itemCleanupInterval);
-        this.DESTROY_DEPTH = WorldReloader.config.DESTROY_DEPTH;
-        this.DESTROY_HEIGHT = WorldReloader.config.DESTROY_HEIGHT;
-        this.COPY_DEPTH = WorldReloader.config.COPY_DEPTH;
-        this.COPY_HEIGHT = WorldReloader.config.COPY_HEIGHT;
+    public SurfaceTransformationTask(TerrainTransformationBuilder builder) {
+        //建议使用builder.buildSurface()方法，带有异常检测
+        super(builder.world, builder.changePos, builder.targetPos, builder.player,
+                builder.radius,
+                builder.steps,
+                builder.itemCleanupInterval,
+                builder.isChangeBiome);
+        this.DEPTH = builder.yMin;
+        this.HEIGHT = builder.yMax;
     }
 
     @Override
@@ -82,7 +81,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         }
 
         referenceSurfaceY = validateAndAdjustHeight(world, referenceX, referenceZ, referenceSurfaceY, minY);
-        return analyzeTerrain(world, referenceX, referenceZ, referenceSurfaceY, minY, COPY_DEPTH, COPY_HEIGHT);
+        return analyzeTerrain(world, referenceX, referenceZ, referenceSurfaceY, minY, DEPTH, HEIGHT);
     }
 
     @Override
@@ -92,7 +91,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
 
     @Override
     protected boolean shouldSkipProcessing(int referenceSurfaceYAtTarget, int originalSurfaceY) {
-        return referenceSurfaceYAtTarget < originalSurfaceY - DESTROY_HEIGHT;
+        return referenceSurfaceYAtTarget < originalSurfaceY - HEIGHT;
     }
 
     private void destroyAtPositionWithPreserve(int targetX, int targetZ, int surfaceY) {
@@ -100,8 +99,8 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
             return;
         }
 
-        int startY = Math.max(minY, surfaceY - DESTROY_DEPTH);
-        int endY = surfaceY + DESTROY_HEIGHT;
+        int startY = Math.max(minY, surfaceY - DEPTH);
+        int endY = surfaceY + HEIGHT;
 
         for (int y = startY; y <= endY; y++) {
             BlockPos targetPos = new BlockPos(targetX, y, targetZ);
@@ -119,8 +118,8 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
             return;
         }
 
-        int startY = Math.max(minY, surfaceY - DESTROY_DEPTH);
-        int endY = surfaceY + DESTROY_HEIGHT;
+        int startY = Math.max(minY, surfaceY - DEPTH);
+        int endY = surfaceY + HEIGHT;
 
         for (int y = startY; y <= endY; y++) {
             BlockPos targetPos = new BlockPos(targetX, y, targetZ);

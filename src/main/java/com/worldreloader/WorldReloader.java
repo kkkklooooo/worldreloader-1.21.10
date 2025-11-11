@@ -3,6 +3,9 @@ package com.worldreloader;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.datafixers.util.Pair;
+import com.worldreloader.transformationtasks.SurfaceTransformationTask;
+import com.worldreloader.transformationtasks.TerrainTransformationTask;
+import com.worldreloader.transformationtasks.TerrainTransformationBuilder;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.gui.registry.GuiRegistry;
@@ -36,7 +39,7 @@ import net.minecraft.world.biome.Biome;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import static com.worldreloader.BaseTransformationTask.isSolidBlock;
+import static com.worldreloader.transformationtasks.BaseTransformationTask.isSolidBlock;
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
 
@@ -46,7 +49,7 @@ public class WorldReloader implements ModInitializer {
 	public static ModConfig config;
 	public static ConfigHolder ch = AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-	public String minPermission="op";
+	public String minPermission = "op";
 
 	@Override
 	public void onInitialize() {
@@ -140,8 +143,6 @@ public class WorldReloader implements ModInitializer {
 		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
 			if (world.isClient()) return ActionResult.PASS;
 
-			// 检查权限
-
 			ItemStack itemStack = player.getStackInHand(hand);
 			BlockPos pos = hitResult.getBlockPos();
 
@@ -219,8 +220,6 @@ public class WorldReloader implements ModInitializer {
 			return 0;
 		}
 
-
-
 		BlockPos pos = new BlockPos(x, y, z);
 		source.sendMessage(Text.literal("§6开始在地点 " + x + ", " + y + ", " + z + " 执行地形改造..."));
 
@@ -231,8 +230,6 @@ public class WorldReloader implements ModInitializer {
 		return 1;
 	}
 
-
-
 	/**
 	 * 在玩家位置执行地形改造指令
 	 */
@@ -241,7 +238,6 @@ public class WorldReloader implements ModInitializer {
 			source.sendError(Text.literal("§c只有玩家可以执行此命令"));
 			return 0;
 		}
-
 
 		BlockPos pos = source.getPlayer().getBlockPos();
 		source.sendMessage(Text.literal("§6开始在玩家位置执行地形改造..."));
@@ -258,62 +254,93 @@ public class WorldReloader implements ModInitializer {
 		return 1;
 	}
 
-
-
 	/**
-	 * 在指定位置开始地形改造（指令版本）
+	 * 在指定位置开始地形改造（指令版本）- 使用Builder模式
 	 */
 	private void startTerrainTransformationAt(ServerWorld world, BlockPos centerPos,
 											  net.minecraft.entity.player.PlayerEntity player,
 											  String mode, String target) {
 		LOGGER.info("指令启动地形改造 - 位置: {}, 模式: {}, 目标: {}", centerPos, mode, target);
 
-		Predicate<RegistryEntry<Biome>> targetBiome=null;
-		String targetStructure = null;
+		TerrainTransformationBuilder builder = new TerrainTransformationBuilder(world, player)
+				.setChangePos(centerPos)
+				.setRadius(config.maxRadius)
+				.setPadding(config.paddingCount)
+				.setSteps(config.totalSteps2)
+				.setItemCleanupInterval(config.itemCleanupInterval)
+				.changeBiome(config.isChangeBiome);
+
+		// 设置高度参数
+		if (config.UseSurface) {
+			builder.setYMin(config.DEPTH)
+					.setYMax(config.HEIGHT);
+		} else {
+			builder.setYMin(config.yMin)
+					.setYMax(config.yMaxThanSurface);
+		}
+
+		BlockPos referencePos = null;
+		boolean foundReference = false;
 
 		switch (mode) {
 			case "biome":
 				if (target != null) {
-
-					if(target.startsWith("#")){
-						Identifier tagId = Identifier.of(target.substring(1)); // "biome_tag_villagers:villager_jungle"
+					Predicate<RegistryEntry<Biome>> targetBiome;
+					if (target.startsWith("#")) {
+						Identifier tagId = Identifier.of(target.substring(1));
 						TagKey<Biome> biomeTag = TagKey.of(RegistryKeys.BIOME, tagId);
-
-						targetBiome = (entry)-> entry.isIn(biomeTag);
-					}else{
-						RegistryKey<Biome> k =RegistryKey.of(RegistryKeys.BIOME,Identifier.of(target));
-						targetBiome = (entry)-> entry.matchesKey(k);
+						targetBiome = (entry) -> entry.isIn(biomeTag);
+					} else {
+						RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.of(target));
+						targetBiome = (entry) -> entry.matchesKey(k);
 					}
 					player.sendMessage(Text.literal("§6目标生物群系: " + target), false);
+					builder.setBiomePos(centerPos, targetBiome, config.searchRadius);
+					foundReference = true;
 				}
 				break;
 			case "structure":
 				if (target != null) {
-					targetStructure = target;
 					player.sendMessage(Text.literal("§6目标结构: " + target), false);
+					builder.setStructurePos(centerPos, target, config.searchRadius);
+					foundReference = true;
 				}
 				break;
 			case "random":
 				player.sendMessage(Text.literal("§6随机模式"), false);
+				builder.setRandomPos(centerPos, config.randomRadius);
+				foundReference = true;
 				break;
 		}
 
-		BlockPos referencePos = findReferencePosition(world, centerPos, targetBiome, targetStructure, player);
-
-		if (referencePos != null) {
+		if (foundReference) {
 			if (config.UseSurface) {
-				new SurfaceTransformationTask(world, centerPos, referencePos, player).start();
+				SurfaceTransformationTask task = builder.buildSurface();
+				if (task != null) {
+					task.start();
+					player.sendMessage(Text.literal("§a地表地形改造已启动！"), false);
+					LOGGER.info("地表地形改造任务已启动 - 中心位置: {}", centerPos);
+				} else {
+					player.sendMessage(Text.literal("§c无法启动地表地形改造任务！"), false);
+				}
 			} else {
-				new TerrainTransformationTask(world, centerPos, referencePos, player).start();
+				TerrainTransformationTask task = builder.buildStandard();
+				if (task != null) {
+					task.start();
+					player.sendMessage(Text.literal("§a完整地形改造已启动！"), false);
+					LOGGER.info("完整地形改造任务已启动 - 中心位置: {}", centerPos);
+				} else {
+					player.sendMessage(Text.literal("§c无法启动完整地形改造任务！"), false);
+				}
 			}
-			player.sendMessage(Text.literal("§a地形改造已启动！"), false);
-			LOGGER.info("地形改造任务已启动 - 中心位置: {}, 参考位置: {}", centerPos, referencePos);
 		} else {
-			sendErrorMessage(player, targetBiome, targetStructure);
+			player.sendMessage(Text.literal("§c无法找到合适的参考位置！"), false);
 		}
 	}
 
-	// 修改原有的startTerrainTransformation方法，添加权限检查
+	/**
+	 * 信标激活的地形改造 - 使用Builder模式
+	 */
 	private void startTerrainTransformation(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
 		// 权限检查
 		if (!checkPermission(player)) {
@@ -323,67 +350,80 @@ public class WorldReloader implements ModInitializer {
 
 		LOGGER.info("开始地形改造过程 - 信标位置: {}", beaconPos);
 
-		Predicate<RegistryEntry<Biome>> targetBiome = detectTargetBiome(world, beaconPos, player);
-		String targetStructure = detectTargetStructure(world, beaconPos, player);
+		TerrainTransformationBuilder builder = new TerrainTransformationBuilder(world, player)
+				.setChangePos(beaconPos)
+				.setRadius(config.maxRadius)
+				.setPadding(config.paddingCount)
+				.setSteps(config.totalSteps2)
+				.setItemCleanupInterval(config.itemCleanupInterval)
+				.changeBiome(config.isChangeBiome);
 
-		BlockPos referencePos;
-		if (config.UseSpecificPos) {
-			referencePos = new BlockPos(config.Posx, config.Posy, config.Posz);
-			referencePos.add(0, -referencePos.getY(), 0);
+		// 设置高度参数
+		if (config.UseSurface) {
+			builder.setYMin(config.DEPTH)
+					.setYMax(config.HEIGHT);
 		} else {
-			referencePos = findReferencePosition(world, beaconPos, targetBiome, targetStructure, player);
+			builder.setYMin(config.yMin)
+					.setYMax(config.yMaxThanSurface);
 		}
 
-		if (referencePos != null) {
-			if (config.UseSurface) {
-				new SurfaceTransformationTask(world, beaconPos, referencePos, player).start();
-			} else {
-				new TerrainTransformationTask(world, beaconPos, referencePos, player).start();
+        if (config.UseSpecificPos) {
+			BlockPos specificPos = new BlockPos(config.Posx, config.Posy, config.Posz);
+			builder.setTargetPos(specificPos);
+            player.sendMessage(Text.literal("§6使用特定位置: " + specificPos), false);
+		} else {
+			Predicate<RegistryEntry<Biome>> targetBiome = detectTargetBiome(world, beaconPos, player);
+			String targetStructure = detectTargetStructure(world, beaconPos, player);
+
+			if (targetBiome != null) {
+				builder.setBiomePos(beaconPos, targetBiome, config.searchRadius);
+            } else if (targetStructure != null) {
+				builder.setStructurePos(beaconPos, targetStructure, config.searchRadius);
+            } else {
+				builder.setRandomPos(beaconPos, config.randomRadius);
+                player.sendMessage(Text.literal("§6使用随机位置"), false);
 			}
-			player.sendMessage(Text.literal("§a地形改造已启动！"), false);
-			LOGGER.info("地形改造任务已启动 - 参考位置: {}", referencePos);
-		} else {
-			sendErrorMessage(player, targetBiome, targetStructure);
 		}
-	}
 
-	// 修改findReferencePosition方法以支持指令调用
-	private BlockPos findReferencePosition(ServerWorld world, BlockPos center, Predicate<RegistryEntry<Biome>> targetBiome,
-										   String targetStructure, net.minecraft.entity.player.PlayerEntity player) {
-		if (targetStructure != null) {
-			return findStructurePosition(world, center, targetStructure, player);
-		} else if (targetBiome != null) {
-			return findBiomePosition(world, center, targetBiome, player);
-		} else {
-			return findRandomPosition(world, center);
-		}
-	}
+        if (config.UseSurface) {
+            SurfaceTransformationTask task = builder.buildSurface();
+            if (task != null) {
+                task.start();
+                player.sendMessage(Text.literal("§a地表地形改造已启动！"), false);
+                LOGGER.info("地表地形改造任务已启动 - 信标位置: {}", beaconPos);
+            } else {
+                player.sendMessage(Text.literal("§c无法启动地表地形改造任务！"), false);
+            }
+        } else {
+            TerrainTransformationTask task = builder.buildStandard();
+            if (task != null) {
+                task.start();
+                player.sendMessage(Text.literal("§a完整地形改造已启动！"), false);
+                LOGGER.info("完整地形改造任务已启动 - 信标位置: {}", beaconPos);
+            } else {
+                player.sendMessage(Text.literal("§c无法启动完整地形改造任务！"), false);
+            }
+        }
+    }
 
-	// 其余现有方法保持不变...
+	// 以下辅助方法保持不变
 	private Predicate<RegistryEntry<Biome>> detectTargetBiome(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
 		BlockPos sidePos = beaconPos.east();
 		Block sideBlock = world.getBlockState(sidePos).getBlock();
 
-		for (var i:config.biomeMappings) {
+		for (var i : config.biomeMappings) {
 			if (Registries.BLOCK.get(Identifier.of(i.itemId)) == sideBlock) {
 				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.BiomeId + "生物群系"), false);
 				Predicate<RegistryEntry<Biome>> p;
 
 				if (i.BiomeId.startsWith("#")) {
-					Identifier tagId = Identifier.of(i.BiomeId.substring(1)); // "biome_tag_villagers:villager_jungle"
+					Identifier tagId = Identifier.of(i.BiomeId.substring(1));
 					TagKey<Biome> biomeTag = TagKey.of(RegistryKeys.BIOME, tagId);
-
-					p = (entry) -> {
-						return entry.isIn(biomeTag);
-					};
+					p = (entry) -> entry.isIn(biomeTag);
 				} else {
 					RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.of(i.BiomeId));
-					p = (entry) -> {
-						return entry.matchesKey(k);
-					};
+					p = (entry) -> entry.matchesKey(k);
 				}
-				//RegistryEntryPredicateArgumentType.EntryPredicate<Biome> a =
-
 				return p;
 			}
 		}
@@ -402,163 +442,4 @@ public class WorldReloader implements ModInitializer {
 		}
 		return null;
 	}
-
-	private BlockPos findBiomePosition(ServerWorld world, BlockPos center, Predicate<RegistryEntry<Biome>> targetBiome,
-									   net.minecraft.entity.player.PlayerEntity player) {
-		try {
-			Pair<BlockPos,RegistryEntry<Biome>> p = world.locateBiome(targetBiome,center,config.searchRadius,32,64);
-			if(p==null){
-				player.sendMessage(Text.literal("无法找到结构,请尝试使用locate命令测试或检查拼写错误"),false);
-			}
-			BlockPos biomePos = p.getFirst();
-//			BlockPos biomePos = Objects.requireNonNull(world.locateBiome(
-//					b -> b.matchesKey(targetBiome),
-//					center, 6400, 32, 64
-//			)).getFirst();
-
-			if (biomePos != null) {
-				BlockPos surfacePos = getValidSurfacePosition(world, biomePos);
-				if (surfacePos != null) {
-					double distance = Math.sqrt(center.getSquaredDistance(surfacePos));
-					player.sendMessage(Text.literal("§a成功找到目标生物群系，距离: " + String.format("%.1f", distance) + " 格"), false);
-					return surfacePos;
-				}
-				return findAlternativeBiomePosition(world, biomePos, targetBiome);
-			}
-		} catch (Exception e) {
-			LOGGER.error("查找生物群系时发生错误", e);
-			player.sendMessage(Text.literal("§c查找生物群系时发生错误: " + e.getMessage()), false);
-		}
-		return null;
-	}
-
-	private BlockPos findStructurePosition(ServerWorld world, BlockPos center, String structureId,
-										   net.minecraft.entity.player.PlayerEntity player) {
-		try {
-			var a = world.getRegistryManager().getOrThrow(RegistryKeys.STRUCTURE).get(Identifier.of(structureId));
-			Pair<BlockPos, RegistryEntry<Structure>> pair = world.getChunkManager().getChunkGenerator().locateStructure(world, RegistryEntryList.of(RegistryEntry.of(a)), center, 6400, false);
-
-			BlockPos structurePos;
-			if (pair == null) {
-				structurePos = world.locateStructure(
-						net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.STRUCTURE,
-								net.minecraft.util.Identifier.of(structureId)),
-						center, config.searchRadius, false
-				);
-			} else {
-				structurePos = pair.getFirst();
-			}
-
-			if (structurePos != null) {
-				BlockPos surfacePos = getValidSurfacePosition(world, structurePos);
-				if (surfacePos != null) {
-					double distance = Math.sqrt(center.getSquaredDistance(surfacePos));
-					player.sendMessage(Text.literal("§a成功找到目标结构，距离: " + String.format("%.1f", distance) + " 格"), false);
-					return surfacePos;
-				}
-			}
-		} catch (Exception e) {
-			LOGGER.error("查找结构时发生错误", e);
-			player.sendMessage(Text.literal("§c查找结构时发生错误: " + e.getMessage()), false);
-		}
-		return null;
-	}
-
-	private BlockPos findRandomPosition(ServerWorld world, BlockPos center) {
-		LOGGER.info("开始随机查找参考位置 - 中心: {}", center);
-
-		for (int i = 0; i < 20; i++) {
-			double angle = world.random.nextDouble() * 2 * Math.PI;
-			int distance = config.randomRadius + world.random.nextInt(500);
-
-			int refX = center.getX() + (int) (Math.cos(angle) * distance);
-			int refZ = center.getZ() + (int) (Math.sin(angle) * distance);
-			BlockPos testPos = new BlockPos(refX, 0, refZ);
-
-			BlockPos surfacePos = getValidSurfacePosition(world, testPos);
-			if (surfacePos != null) {
-				LOGGER.info("成功找到随机位置: {}", surfacePos);
-				return surfacePos;
-			}
-		}
-
-		LOGGER.info("随机查找失败");
-		return null;
-	}
-
-	private BlockPos getValidSurfacePosition(ServerWorld world, BlockPos pos) {
-		ChunkPos chunkPos = new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4);
-
-		if (!world.isChunkLoaded(chunkPos.x, chunkPos.z)) {
-			world.setChunkForced(chunkPos.x, chunkPos.z, true);
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-				return null;
-			}
-		}
-
-		try {
-			int surfaceY = world.getTopY(Heightmap.Type.MOTION_BLOCKING, pos.getX(), pos.getZ());
-			surfaceY = validateAndAdjustSurfaceHeight(world, pos.getX(), pos.getZ(), surfaceY);
-
-			BlockPos surfacePos = new BlockPos(pos.getX(), surfaceY, pos.getZ());
-			BlockState surfaceBlock = world.getBlockState(surfacePos);
-
-			if (isSolidBlock(world, surfaceBlock) && surfacePos.getY() >= 64) {
-				return surfacePos;
-			}
-
-		} finally {
-			world.setChunkForced(chunkPos.x, chunkPos.z, false);
-		}
-
-		return null;
-	}
-
-	private int validateAndAdjustSurfaceHeight(ServerWorld world, int x, int z, int initialHeight) {
-		int currentY = initialHeight;
-
-		while (currentY > world.getBottomY() + 10) {
-			BlockPos pos = new BlockPos(x, currentY, z);
-			BlockState state = world.getBlockState(pos);
-
-			if (isSolidBlock(world, state)) {
-				return currentY;
-			}
-
-			currentY--;
-		}
-
-		return initialHeight;
-	}
-
-	private BlockPos findAlternativeBiomePosition(ServerWorld world, BlockPos center, Predicate<RegistryEntry<Biome>> targetBiome) {
-		for (int i = 0; i < 10; i++) {
-			int offsetX = world.random.nextInt(400) - 200;
-			int offsetZ = world.random.nextInt(400) - 200;
-			BlockPos testPos = center.add(offsetX, 0, offsetZ);
-
-			if (targetBiome.test(world.getBiome(testPos))) {
-				BlockPos surfacePos = getValidSurfacePosition(world, testPos);
-				if (surfacePos != null) return surfacePos;
-			}
-		}
-		return null;
-	}
-
-	private void sendErrorMessage(net.minecraft.entity.player.PlayerEntity player,
-								  Predicate<RegistryEntry<Biome>> targetBiome, String targetStructure) {
-		if (targetBiome != null) {
-			player.sendMessage(Text.literal("§c群系查找出现问题！"), false);
-		} else if (targetStructure != null) {
-			player.sendMessage(Text.literal("§c结构查找出现问题！"), false);
-		} else {
-			player.sendMessage(Text.literal("§c随机查找出现问题！"), false);
-		}
-	}
-
-	private record BlockToBiomeMapping(Block block, RegistryKey<Biome> biome, String biomeName) {}
-	private record BlockToStructureMapping(Block block, String structureId, String structureName) {}
 }

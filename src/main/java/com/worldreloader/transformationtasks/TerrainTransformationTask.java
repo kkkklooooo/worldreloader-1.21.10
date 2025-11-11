@@ -1,5 +1,6 @@
-package com.worldreloader;
+package com.worldreloader.transformationtasks;
 
+import com.worldreloader.WorldReloader;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
@@ -15,15 +16,16 @@ public class TerrainTransformationTask extends BaseTransformationTask {
     private final int yMin;
     private final  int yMax;
 
-    public TerrainTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter,
-                                     PlayerEntity player) {
-        super(world, center, referenceCenter, player,
-                WorldReloader.config.maxRadius,
-                WorldReloader.config.totalSteps2,
-                WorldReloader.config.itemCleanupInterval);
-        this.paddingCount = WorldReloader.config.paddingCount;
-        this.yMin =WorldReloader.config.yMin;
-        this.yMax =WorldReloader.config.yMaxThanSurface;
+    public TerrainTransformationTask(TerrainTransformationBuilder builder) {
+        //建议使用builder.buildStandard()方法，带有异常检测
+        super(builder.world, builder.changePos, builder.targetPos, builder.player,
+                builder.radius,
+                builder.steps,
+                builder.itemCleanupInterval,
+                builder.isChangeBiome);
+        this.paddingCount = builder.padding;
+        this.yMin = builder.yMin;
+        this.yMax = builder.yMax;
     }
 
     @Override

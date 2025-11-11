@@ -291,7 +291,6 @@ public class WorldReloader implements ModInitializer {
 					.setYMax(config.yMaxThanSurface);
 		}
 
-		boolean foundReference = false;
 
 		switch (mode) {
 			case "biome":
@@ -307,24 +306,20 @@ public class WorldReloader implements ModInitializer {
 					}
 					player.sendMessage(Text.literal("§6目标生物群系: " + target), false);
 					builder.setBiomePos(centerPos, targetBiome, config.searchRadius);
-					foundReference = true;
 				}
 				break;
 			case "structure":
 				if (target != null) {
 					player.sendMessage(Text.literal("§6目标结构: " + target), false);
 					builder.setStructurePos(centerPos, target, config.searchRadius);
-					foundReference = true;
 				}
 				break;
 			case "random":
 				player.sendMessage(Text.literal("§6随机模式"), false);
 				builder.setRandomPos(centerPos, config.randomRadius);
-				foundReference = true;
 				break;
 		}
 
-		if (foundReference) {
 			if (config.UseSurface) {
 				SurfaceTransformationTask task = builder.buildSurface();
 				if (task != null) {
@@ -344,9 +339,7 @@ public class WorldReloader implements ModInitializer {
 					player.sendMessage(Text.literal("§c无法启动完整地形改造任务！"), false);
 				}
 			}
-		} else {
-			player.sendMessage(Text.literal("§c无法找到合适的参考位置！"), false);
-		}
+
 	}
 
 	/**
@@ -402,7 +395,6 @@ public class WorldReloader implements ModInitializer {
 			}
 		}
 
-		if (foundReference) {
 			if (config.UseSurface) {
 				SurfaceTransformationTask task = builder.buildSurface();
 				if (task != null) {
@@ -422,9 +414,6 @@ public class WorldReloader implements ModInitializer {
 					player.sendMessage(Text.literal("§c无法启动完整地形改造任务！"), false);
 				}
 			}
-		} else {
-			player.sendMessage(Text.literal("§c无法找到合适的参考位置！"), false);
-		}
 	}
 
 	// 其余现有方法保持不变...

@@ -168,7 +168,6 @@ public class WorldReloader implements ModInitializer {
 				if(!isLock){
 					Objects.requireNonNull(world.getServer()).execute(() -> {
 						startTerrainTransformation((ServerWorld) world, pos, player);
-						//isLock=false;
 					});
 				}else {
 					player.sendMessage(Text.literal("另一个改造正在进行,请等待"),false);

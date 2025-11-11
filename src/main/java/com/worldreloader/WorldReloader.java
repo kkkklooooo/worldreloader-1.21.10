@@ -3,6 +3,9 @@ package com.worldreloader;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.datafixers.util.Pair;
+import com.worldreloader.transformationtasks.SurfaceTransformationTask;
+import com.worldreloader.transformationtasks.TerrainTransformationBuilder;
+import com.worldreloader.transformationtasks.TerrainTransformationTask;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.gui.registry.GuiRegistry;
@@ -48,7 +51,6 @@ public class WorldReloader implements ModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public String minPermission="op";
 	private static boolean isLock=false;
-
 
 	public static void SetLocker(boolean isLock1){
 		isLock=isLock1;
@@ -231,8 +233,6 @@ public class WorldReloader implements ModInitializer {
 			return 0;
 		}
 
-
-
 		BlockPos pos = new BlockPos(x, y, z);
 		source.sendMessage(Text.literal("§6开始在地点 " + x + ", " + y + ", " + z + " 执行地形改造..."));
 
@@ -242,8 +242,6 @@ public class WorldReloader implements ModInitializer {
 
 		return 1;
 	}
-
-
 
 	/**
 	 * 在玩家位置执行地形改造指令
@@ -294,7 +292,6 @@ public class WorldReloader implements ModInitializer {
 					.setYMax(config.yMaxThanSurface);
 		}
 
-		BlockPos referencePos = null;
 		boolean foundReference = false;
 
 		switch (mode) {
@@ -316,12 +313,15 @@ public class WorldReloader implements ModInitializer {
 				break;
 			case "structure":
 				if (target != null) {
-					targetStructure = target;
 					player.sendMessage(Text.literal("§6目标结构: " + target), false);
+					builder.setStructurePos(centerPos, target, config.searchRadius);
+					foundReference = true;
 				}
 				break;
 			case "random":
 				player.sendMessage(Text.literal("§6随机模式"), false);
+				builder.setRandomPos(centerPos, config.randomRadius);
+				foundReference = true;
 				break;
 		}
 
@@ -379,44 +379,54 @@ public class WorldReloader implements ModInitializer {
 					.setYMax(config.yMaxThanSurface);
 		}
 
-        if (config.UseSpecificPos) {
+		boolean foundReference = false;
+
+		if (config.UseSpecificPos) {
 			BlockPos specificPos = new BlockPos(config.Posx, config.Posy, config.Posz);
 			builder.setTargetPos(specificPos);
-            player.sendMessage(Text.literal("§6使用特定位置: " + specificPos), false);
+			foundReference = true;
+			player.sendMessage(Text.literal("§6使用特定位置: " + specificPos), false);
 		} else {
 			Predicate<RegistryEntry<Biome>> targetBiome = detectTargetBiome(world, beaconPos, player);
 			String targetStructure = detectTargetStructure(world, beaconPos, player);
 
 			if (targetBiome != null) {
 				builder.setBiomePos(beaconPos, targetBiome, config.searchRadius);
-            } else if (targetStructure != null) {
+				foundReference = true;
+			} else if (targetStructure != null) {
 				builder.setStructurePos(beaconPos, targetStructure, config.searchRadius);
-            } else {
+				foundReference = true;
+			} else {
 				builder.setRandomPos(beaconPos, config.randomRadius);
-                player.sendMessage(Text.literal("§6使用随机位置"), false);
+				foundReference = true;
+				player.sendMessage(Text.literal("§6使用随机位置"), false);
 			}
 		}
 
-        if (config.UseSurface) {
-            SurfaceTransformationTask task = builder.buildSurface();
-            if (task != null) {
-                task.start();
-                player.sendMessage(Text.literal("§a地表地形改造已启动！"), false);
-                LOGGER.info("地表地形改造任务已启动 - 信标位置: {}", beaconPos);
-            } else {
-                player.sendMessage(Text.literal("§c无法启动地表地形改造任务！"), false);
-            }
-        } else {
-            TerrainTransformationTask task = builder.buildStandard();
-            if (task != null) {
-                task.start();
-                player.sendMessage(Text.literal("§a完整地形改造已启动！"), false);
-                LOGGER.info("完整地形改造任务已启动 - 信标位置: {}", beaconPos);
-            } else {
-                player.sendMessage(Text.literal("§c无法启动完整地形改造任务！"), false);
-            }
-        }
-    }
+		if (foundReference) {
+			if (config.UseSurface) {
+				SurfaceTransformationTask task = builder.buildSurface();
+				if (task != null) {
+					task.start();
+					player.sendMessage(Text.literal("§a地表地形改造已启动！"), false);
+					LOGGER.info("地表地形改造任务已启动 - 信标位置: {}", beaconPos);
+				} else {
+					player.sendMessage(Text.literal("§c无法启动地表地形改造任务！"), false);
+				}
+			} else {
+				TerrainTransformationTask task = builder.buildStandard();
+				if (task != null) {
+					task.start();
+					player.sendMessage(Text.literal("§a完整地形改造已启动！"), false);
+					LOGGER.info("完整地形改造任务已启动 - 信标位置: {}", beaconPos);
+				} else {
+					player.sendMessage(Text.literal("§c无法启动完整地形改造任务！"), false);
+				}
+			}
+		} else {
+			player.sendMessage(Text.literal("§c无法找到合适的参考位置！"), false);
+		}
+	}
 
 	// 其余现有方法保持不变...
 	private Predicate<RegistryEntry<Biome>> detectTargetBiome(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {

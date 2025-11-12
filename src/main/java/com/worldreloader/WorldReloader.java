@@ -13,6 +13,7 @@ import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
@@ -59,7 +60,9 @@ public class WorldReloader implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		LOGGER.info("World Reloader Initialized!");
-
+		ServerWorldEvents.LOAD.register((w,e)->{
+			SetLocker(false);
+		});
 		// 注册指令
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 			// 设置权限指令

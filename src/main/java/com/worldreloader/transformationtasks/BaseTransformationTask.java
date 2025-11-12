@@ -32,7 +32,7 @@ public abstract class BaseTransformationTask {
     protected final net.minecraft.entity.player.PlayerEntity player;
     protected Set<ChunkPos> forcedChunks = new HashSet<>();
 
-    protected int currentRadius = 1;
+    protected int currentRadius = 0;
     protected final int maxRadius;
     protected boolean isActive = false;
     protected boolean isinit = false;

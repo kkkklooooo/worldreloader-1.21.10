@@ -2,7 +2,6 @@ package com.worldreloader;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.datafixers.util.Pair;
 import com.worldreloader.transformationtasks.SurfaceTransformationTask;
 import com.worldreloader.transformationtasks.TerrainTransformationBuilder;
 import com.worldreloader.transformationtasks.TerrainTransformationTask;
@@ -17,15 +16,12 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.registry.entry.RegistryEntryList;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.Identifier;
-import net.minecraft.world.gen.structure.Structure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -33,14 +29,11 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.Heightmap;
 import net.minecraft.world.biome.Biome;
 
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import static com.worldreloader.transformationtasks.BaseTransformationTask.isSolidBlock;
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
 
@@ -283,8 +276,7 @@ public class WorldReloader implements ModInitializer {
 				.setPadding(config.paddingCount)
 				.setSteps(config.totalSteps2)
 				.setItemCleanupInterval(config.itemCleanupInterval)
-				.changeBiome(config.isChangeBiome)
-				.SetUseBreakLimitTopY(config.UseBreakLimitTopY, config.LimitYFromBeacon);
+				.changeBiome(config.isChangeBiome);
 
 		// 设置高度参数
 		if (config.UseSurface) {
@@ -364,8 +356,7 @@ public class WorldReloader implements ModInitializer {
 				.setPadding(config.paddingCount)
 				.setSteps(config.totalSteps2)
 				.setItemCleanupInterval(config.itemCleanupInterval)
-				.changeBiome(config.isChangeBiome)
-				.SetUseBreakLimitTopY(config.UseBreakLimitTopY, config.LimitYFromBeacon);
+				.changeBiome(config.isChangeBiome);
 
 		// 设置高度参数
 		if (config.UseSurface) {

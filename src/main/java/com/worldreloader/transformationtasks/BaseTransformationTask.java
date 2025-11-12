@@ -45,13 +45,11 @@ public abstract class BaseTransformationTask {
     protected int lastCleanupRadius = -1;
     protected  boolean isChangeBiome=true;
 
-    protected boolean UseBreakLimitTopY=false;
-    protected int LimitYFromBeacon=-10;
     protected List<BlockPos> currentRadiusPositions = new ArrayList<>();
 
     protected BaseTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter,
                                   net.minecraft.entity.player.PlayerEntity player,
-                                  int maxRadius, int totalSteps, int itemCleanupInterval,boolean isChangeBiome,int LimitYFromBeacon,boolean UseBreakLimitTopY) {
+                                  int maxRadius, int totalSteps, int itemCleanupInterval,boolean isChangeBiome) {
         this.world = world;
         this.center = center;
         this.referenceCenter = referenceCenter;
@@ -62,8 +60,6 @@ public abstract class BaseTransformationTask {
         this.itemCleanupInterval = itemCleanupInterval;
         registerToTick();
         this.isChangeBiome=isChangeBiome;
-        this.LimitYFromBeacon=LimitYFromBeacon;
-        this.UseBreakLimitTopY = UseBreakLimitTopY;
     }
 
     // 公共方法

@@ -13,11 +13,6 @@ import java.util.List;
 @Config(name = "worldreloader")
 public class ModConfig implements ConfigData {
 
-    @ConfigEntry.Category("Main")
-    boolean UseBreakLimitTopY=false;
-    @ConfigEntry.Category("Main")
-    int LimitYFromBeacon=-10;
-
 
     @ConfigEntry.Category("Main")
     boolean UseSpecificPos = false;

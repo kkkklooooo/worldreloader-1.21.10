@@ -1,12 +1,9 @@
 package com.worldreloader.transformationtasks;
 
-import com.worldreloader.WorldReloader;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Heightmap;
-import net.minecraft.world.gen.structure.Structure;
 
 public class SurfaceTransformationTask extends BaseTransformationTask {
     private final int DEPTH;
@@ -18,9 +15,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
                 builder.radius,
                 builder.steps,
                 builder.itemCleanupInterval,
-                builder.isChangeBiome,
-                builder.LimitYFromBeacon,
-                builder.UseBreakLimitTopY);
+                builder.isChangeBiome);
         this.DEPTH = builder.yMin;
         this.HEIGHT = builder.yMax;
     }
@@ -105,9 +100,6 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         int endY = surfaceY + HEIGHT;
 
         for (int y = startY; y <= endY; y++) {
-            if(UseBreakLimitTopY&&y>referenceCenter.getY()+LimitYFromBeacon){
-                continue;
-            }
             BlockPos targetPos = new BlockPos(targetX, y, targetZ);
             if (shouldPreserveCenterArea(targetPos)) {
                 continue;
@@ -127,7 +119,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         int endY = surfaceY + HEIGHT;
 
         for (int y = startY; y <= endY; y++) {
-            if(UseBreakLimitTopY&&y>referenceCenter.getY()+LimitYFromBeacon){
+            if(y>referenceCenter.getY()+HEIGHT){
                 continue;
             }
             BlockPos targetPos = new BlockPos(targetX, y, targetZ);
@@ -142,9 +134,6 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         if (reference.aboveSurfaceBlocks != null && reference.aboveSurfaceHeights != null) {
             for (int i = reference.aboveSurfaceBlocks.length - 1; i >= 0; i--) {
                 int targetY = reference.aboveSurfaceHeights[i] + center.getY() - this.referenceCenter.getY();
-                if(UseBreakLimitTopY&&targetY>referenceCenter.getY()+LimitYFromBeacon){
-                    continue;
-                }
                 BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
                 BlockState referenceState = reference.aboveSurfaceBlocks[i];
 
@@ -162,9 +151,6 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         if (reference.blocks != null && reference.heights.length != 0) {
             for (int i = reference.blocks.length - 1; i >= 0; i--) {
                 int targetY = reference.heights[i] + center.getY() - this.referenceCenter.getY();
-                if(UseBreakLimitTopY&&targetY>referenceCenter.getY()+LimitYFromBeacon){
-                    continue;
-                }
                 BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
                 BlockState referenceState = reference.blocks[i];
 
@@ -185,9 +171,6 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         if (reference.aboveSurfaceBlocks != null && reference.aboveSurfaceHeights != null) {
             for (int i = reference.aboveSurfaceBlocks.length - 1; i >= 0; i--) {
                 int targetY = reference.aboveSurfaceHeights[i] + center.getY() - this.referenceCenter.getY();
-                if(UseBreakLimitTopY&&targetY>referenceCenter.getY()+LimitYFromBeacon){
-                    continue;
-                }
                 BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
                 BlockState referenceState = reference.aboveSurfaceBlocks[i];
 
@@ -202,9 +185,6 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         if (reference.blocks != null && reference.heights.length != 0) {
             for (int i = reference.blocks.length - 1; i >= 0; i--) {
                 int targetY = reference.heights[i] + center.getY() - this.referenceCenter.getY();
-                if(UseBreakLimitTopY&&targetY>referenceCenter.getY()+LimitYFromBeacon){
-                    continue;
-                }
                 BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
                 BlockState referenceState = reference.blocks[i];
 

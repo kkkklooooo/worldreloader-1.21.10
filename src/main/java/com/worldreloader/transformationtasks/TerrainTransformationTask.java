@@ -1,10 +1,7 @@
 package com.worldreloader.transformationtasks;
 
-import com.worldreloader.WorldReloader;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Heightmap;
 
@@ -22,9 +19,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
                 builder.radius,
                 builder.steps,
                 builder.itemCleanupInterval,
-                builder.isChangeBiome,
-                builder.LimitYFromBeacon,
-                builder.UseBreakLimitTopY);
+                builder.isChangeBiome);
         this.paddingCount = builder.padding;
         this.yMin = builder.yMin;
         this.yMax = builder.yMax;
@@ -104,7 +99,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             if (currentRadius <= 8 && shouldPreserveCenterArea(targetPos)) {
                 continue;
             }
-            if(UseBreakLimitTopY&&y>referenceCenter.getY()+LimitYFromBeacon){
+            if(y>referenceCenter.getY()+yMax){
                 continue;
             }
             BlockState currentState = world.getBlockState(targetPos);
@@ -172,7 +167,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
     private void copyWithCenterPreservation(int targetX, int targetZ, ReferenceTerrainInfo reference) {
         for (int i = 0; i < reference.blocks.length; i++) {
             int targetY = reference.heights[i] + center.getY() - this.referenceCenter.getY();
-            if(UseBreakLimitTopY&&targetY>referenceCenter.getY()+LimitYFromBeacon){
+            if(targetY>referenceCenter.getY()+yMax){
                 continue;
             }
             BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
@@ -194,7 +189,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
     private void copyWithoutPreservation(int targetX, int targetZ, ReferenceTerrainInfo reference) {
         for (int i = 0; i < reference.blocks.length; i++) {
             int targetY = reference.heights[i] + center.getY() - this.referenceCenter.getY();
-            if(UseBreakLimitTopY&&targetY>referenceCenter.getY()+LimitYFromBeacon){
+            if(targetY>referenceCenter.getY()+yMax){
                 continue;
             }
             BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);

@@ -283,7 +283,8 @@ public class WorldReloader implements ModInitializer {
 				.setPadding(config.paddingCount)
 				.setSteps(config.totalSteps2)
 				.setItemCleanupInterval(config.itemCleanupInterval)
-				.changeBiome(config.isChangeBiome);
+				.changeBiome(config.isChangeBiome)
+				.SetUseBreakLimitTopY(config.UseBreakLimitTopY, config.LimitYFromBeacon);
 
 		// 设置高度参数
 		if (config.UseSurface) {
@@ -363,7 +364,8 @@ public class WorldReloader implements ModInitializer {
 				.setPadding(config.paddingCount)
 				.setSteps(config.totalSteps2)
 				.setItemCleanupInterval(config.itemCleanupInterval)
-				.changeBiome(config.isChangeBiome);
+				.changeBiome(config.isChangeBiome)
+				.SetUseBreakLimitTopY(config.UseBreakLimitTopY, config.LimitYFromBeacon);
 
 		// 设置高度参数
 		if (config.UseSurface) {

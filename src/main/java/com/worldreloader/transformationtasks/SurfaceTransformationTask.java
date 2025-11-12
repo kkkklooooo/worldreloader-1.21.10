@@ -18,7 +18,9 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
                 builder.radius,
                 builder.steps,
                 builder.itemCleanupInterval,
-                builder.isChangeBiome);
+                builder.isChangeBiome,
+                builder.LimitYFromBeacon,
+                builder.UseBreakLimitTopY);
         this.DEPTH = builder.yMin;
         this.HEIGHT = builder.yMax;
     }
@@ -103,6 +105,9 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         int endY = surfaceY + HEIGHT;
 
         for (int y = startY; y <= endY; y++) {
+            if(UseBreakLimitTopY&&y>referenceCenter.getY()+LimitYFromBeacon){
+                continue;
+            }
             BlockPos targetPos = new BlockPos(targetX, y, targetZ);
             if (shouldPreserveCenterArea(targetPos)) {
                 continue;
@@ -122,6 +127,9 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         int endY = surfaceY + HEIGHT;
 
         for (int y = startY; y <= endY; y++) {
+            if(UseBreakLimitTopY&&y>referenceCenter.getY()+LimitYFromBeacon){
+                continue;
+            }
             BlockPos targetPos = new BlockPos(targetX, y, targetZ);
             BlockState currentState = world.getBlockState(targetPos);
             if (!currentState.isAir()) {
@@ -134,6 +142,9 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         if (reference.aboveSurfaceBlocks != null && reference.aboveSurfaceHeights != null) {
             for (int i = reference.aboveSurfaceBlocks.length - 1; i >= 0; i--) {
                 int targetY = reference.aboveSurfaceHeights[i] + center.getY() - this.referenceCenter.getY();
+                if(UseBreakLimitTopY&&targetY>referenceCenter.getY()+LimitYFromBeacon){
+                    continue;
+                }
                 BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
                 BlockState referenceState = reference.aboveSurfaceBlocks[i];
 
@@ -151,6 +162,9 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         if (reference.blocks != null && reference.heights.length != 0) {
             for (int i = reference.blocks.length - 1; i >= 0; i--) {
                 int targetY = reference.heights[i] + center.getY() - this.referenceCenter.getY();
+                if(UseBreakLimitTopY&&targetY>referenceCenter.getY()+LimitYFromBeacon){
+                    continue;
+                }
                 BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
                 BlockState referenceState = reference.blocks[i];
 
@@ -171,6 +185,9 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         if (reference.aboveSurfaceBlocks != null && reference.aboveSurfaceHeights != null) {
             for (int i = reference.aboveSurfaceBlocks.length - 1; i >= 0; i--) {
                 int targetY = reference.aboveSurfaceHeights[i] + center.getY() - this.referenceCenter.getY();
+                if(UseBreakLimitTopY&&targetY>referenceCenter.getY()+LimitYFromBeacon){
+                    continue;
+                }
                 BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
                 BlockState referenceState = reference.aboveSurfaceBlocks[i];
 
@@ -185,6 +202,9 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         if (reference.blocks != null && reference.heights.length != 0) {
             for (int i = reference.blocks.length - 1; i >= 0; i--) {
                 int targetY = reference.heights[i] + center.getY() - this.referenceCenter.getY();
+                if(UseBreakLimitTopY&&targetY>referenceCenter.getY()+LimitYFromBeacon){
+                    continue;
+                }
                 BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
                 BlockState referenceState = reference.blocks[i];
 

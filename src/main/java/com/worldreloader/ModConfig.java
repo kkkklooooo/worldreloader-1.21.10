@@ -14,6 +14,12 @@ import java.util.List;
 public class ModConfig implements ConfigData {
 
     @ConfigEntry.Category("Main")
+    boolean UseBreakLimitTopY=false;
+    @ConfigEntry.Category("Main")
+    int LimitYFromBeacon=-10;
+
+
+    @ConfigEntry.Category("Main")
     boolean UseSpecificPos = false;
 
     @ConfigEntry.Category("Main")

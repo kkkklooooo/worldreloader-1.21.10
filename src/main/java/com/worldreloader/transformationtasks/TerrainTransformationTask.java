@@ -22,7 +22,9 @@ public class TerrainTransformationTask extends BaseTransformationTask {
                 builder.radius,
                 builder.steps,
                 builder.itemCleanupInterval,
-                builder.isChangeBiome);
+                builder.isChangeBiome,
+                builder.LimitYFromBeacon,
+                builder.UseBreakLimitTopY);
         this.paddingCount = builder.padding;
         this.yMin = builder.yMin;
         this.yMax = builder.yMax;
@@ -102,6 +104,9 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             if (currentRadius <= 8 && shouldPreserveCenterArea(targetPos)) {
                 continue;
             }
+            if(UseBreakLimitTopY&&y>referenceCenter.getY()+LimitYFromBeacon){
+                continue;
+            }
             BlockState currentState = world.getBlockState(targetPos);
             if (!currentState.isAir()) {
                 world.setBlockState(targetPos, Blocks.AIR.getDefaultState(), 3);
@@ -167,6 +172,9 @@ public class TerrainTransformationTask extends BaseTransformationTask {
     private void copyWithCenterPreservation(int targetX, int targetZ, ReferenceTerrainInfo reference) {
         for (int i = 0; i < reference.blocks.length; i++) {
             int targetY = reference.heights[i] + center.getY() - this.referenceCenter.getY();
+            if(UseBreakLimitTopY&&targetY>referenceCenter.getY()+LimitYFromBeacon){
+                continue;
+            }
             BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
             BlockState referenceState = reference.blocks[i];
 
@@ -186,6 +194,9 @@ public class TerrainTransformationTask extends BaseTransformationTask {
     private void copyWithoutPreservation(int targetX, int targetZ, ReferenceTerrainInfo reference) {
         for (int i = 0; i < reference.blocks.length; i++) {
             int targetY = reference.heights[i] + center.getY() - this.referenceCenter.getY();
+            if(UseBreakLimitTopY&&targetY>referenceCenter.getY()+LimitYFromBeacon){
+                continue;
+            }
             BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
             BlockState referenceState = reference.blocks[i];
 

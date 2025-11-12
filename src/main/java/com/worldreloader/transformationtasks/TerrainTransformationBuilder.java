@@ -34,12 +34,23 @@ public class TerrainTransformationBuilder {
     int steps=3;
     int itemCleanupInterval=20;
     PlayerEntity player;
+    boolean UseBreakLimitTopY=false;
+    int LimitYFromBeacon=-10;
     public TerrainTransformationBuilder(ServerWorld world,PlayerEntity player)
     {
         this.world=world;
         this.player=player;
     }
 
+    public TerrainTransformationBuilder SetUseBreakLimitTopY(boolean value){
+        this.UseBreakLimitTopY=value;
+        return this;
+    }
+    public TerrainTransformationBuilder SetUseBreakLimitTopY(boolean value,int LimitYFromBeacon){
+        this.UseBreakLimitTopY=value;
+        this.LimitYFromBeacon=LimitYFromBeacon;
+        return this;
+    }
     public TerrainTransformationBuilder changeBiome(boolean isChangeBiome)
     {
         this.isChangeBiome=isChangeBiome;

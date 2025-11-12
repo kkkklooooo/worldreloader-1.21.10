@@ -102,8 +102,6 @@ public class ModConfig implements ConfigData {
         public String structureId;
         public boolean enabled = true;
 
-        public StructureMapping() {}
-
         public StructureMapping(String itemId, String structureId) {
             this.itemId = itemId;
             this.structureId = structureId;
@@ -117,7 +115,6 @@ public class ModConfig implements ConfigData {
         public String BiomeId;
         public boolean enabled = true;
 
-        public BiomeMapping() {}
 
         public BiomeMapping(String itemId, String BiomeId) {
             this.itemId = itemId;

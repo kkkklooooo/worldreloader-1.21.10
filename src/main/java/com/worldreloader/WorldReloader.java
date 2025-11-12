@@ -374,27 +374,21 @@ public class WorldReloader implements ModInitializer {
 					.setYMax(config.yMaxThanSurface);
 		}
 
-		boolean foundReference = false;
-
-		if (config.UseSpecificPos) {
+        if (config.UseSpecificPos) {
 			BlockPos specificPos = new BlockPos(config.Posx, config.Posy, config.Posz);
 			builder.setTargetPos(specificPos);
-			foundReference = true;
-			player.sendMessage(Text.literal("§6使用特定位置: " + specificPos), false);
+            player.sendMessage(Text.literal("§6使用特定位置: " + specificPos), false);
 		} else {
 			Predicate<RegistryEntry<Biome>> targetBiome = detectTargetBiome(world, beaconPos, player);
 			String targetStructure = detectTargetStructure(world, beaconPos, player);
 
 			if (targetBiome != null) {
 				builder.setBiomePos(beaconPos, targetBiome, config.searchRadius);
-				foundReference = true;
-			} else if (targetStructure != null) {
+            } else if (targetStructure != null) {
 				builder.setStructurePos(beaconPos, targetStructure, config.searchRadius);
-				foundReference = true;
-			} else {
+            } else {
 				builder.setRandomPos(beaconPos, config.randomRadius);
-				foundReference = true;
-				player.sendMessage(Text.literal("§6使用随机位置"), false);
+                player.sendMessage(Text.literal("§6使用随机位置"), false);
 			}
 		}
 
@@ -425,7 +419,7 @@ public class WorldReloader implements ModInitializer {
 		Block sideBlock = world.getBlockState(sidePos).getBlock();
 
 		for (var i:config.biomeMappings) {
-			if (Registries.BLOCK.get(Identifier.of(i.itemId)) == sideBlock) {
+			if (Registries.BLOCK.get(Identifier.of(i.itemId)) == sideBlock&&i.enabled) {
 				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.BiomeId + "生物群系"), false);
 				Predicate<RegistryEntry<Biome>> p;
 
@@ -455,7 +449,7 @@ public class WorldReloader implements ModInitializer {
 		Block sideBlock = world.getBlockState(sidePos).getBlock();
 
 		for (var i : config.structureMappings) {
-			if (Registries.BLOCK.get(Identifier.of(i.itemId)) == sideBlock) {
+			if (Registries.BLOCK.get(Identifier.of(i.itemId)) == sideBlock&&i.enabled) {
 				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.structureId + "结构"), false);
 				return i.structureId;
 			}

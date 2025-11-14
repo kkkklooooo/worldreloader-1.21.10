@@ -268,6 +268,9 @@ public class WorldReloader implements ModInitializer {
 	private void startTerrainTransformationAt(ServerWorld world, BlockPos centerPos,
 											  net.minecraft.entity.player.PlayerEntity player,
 											  String mode, String target) {
+
+
+
 		LOGGER.info("指令启动地形改造 - 位置: {}, 模式: {}, 目标: {}", centerPos, mode, target);
 
 		TerrainTransformationBuilder builder = new TerrainTransformationBuilder(world, player)

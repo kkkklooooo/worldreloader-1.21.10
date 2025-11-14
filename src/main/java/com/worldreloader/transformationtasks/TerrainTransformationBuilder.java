@@ -1,6 +1,7 @@
 package com.worldreloader.transformationtasks;
 
 import com.mojang.datafixers.util.Pair;
+import com.worldreloader.WorldReloader;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.RegistryKeys;
@@ -224,7 +225,14 @@ public class TerrainTransformationBuilder {
     }
     private boolean isValidated()
     {
-        return radius>0&&targetPos!=null&&changePos!=null;
+
+        boolean res=radius>0&&targetPos!=null&&changePos!=null;
+        if(!this.targetPos.isWithinDistance(this.changePos,radius*2)){
+            WorldReloader.LOGGER.error("Within!");
+            player.sendMessage(Text.literal("失败:目标点和改造点距离过近"),false);
+            return false;
+        }
+        return res;
     }
     private BlockPos getValidSurfacePosition(BlockPos pos) {
         ChunkPos chunkPos = new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4);

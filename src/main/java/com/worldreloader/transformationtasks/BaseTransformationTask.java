@@ -64,6 +64,7 @@ public abstract class BaseTransformationTask {
 
     // 公共方法
     public void start() {
+
         WorldReloader.SetLocker(true);
         this.isActive = true;
     }

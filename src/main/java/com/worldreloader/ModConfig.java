@@ -64,7 +64,7 @@ public class ModConfig implements ConfigData {
     @ConfigEntry.Category("Structure Mappings")
     //List<Float> f = new ArrayList<>();
     public List<StructureMapping> structureMappings = List.of(
-            new StructureMapping(Registries.BLOCK.getId(Blocks.TARGET).getPath(), "village"),
+            new StructureMapping(Registries.BLOCK.getId(Blocks.TARGET).getPath(), "village_snowy"),
             new StructureMapping(Registries.BLOCK.getId(Blocks.COBBLESTONE).getPath(), "minecraft:pillager_outpost"),
             new StructureMapping(Registries.BLOCK.getId(Blocks.MOSSY_COBBLESTONE).getPath(), "minecraft:jungle_pyramid"),
             new StructureMapping(Registries.BLOCK.getId(Blocks.SMOOTH_SANDSTONE).getPath(), "minecraft:desert_pyramid"),
@@ -99,13 +99,15 @@ public class ModConfig implements ConfigData {
 
 
     public static class StructureMapping {
-        public String itemId;
-        public String structureId;
+        public String itemId="";
+        public String structureId="";
         public boolean enabled = true;
 
         public StructureMapping(String itemId, String structureId) {
             this.itemId = itemId;
             this.structureId = structureId;
+        }
+        public StructureMapping() {
         }
 
     }
@@ -120,6 +122,8 @@ public class ModConfig implements ConfigData {
             this.itemId = itemId;
             this.BiomeId = BiomeId;
 
+        }
+        public BiomeMapping() {
         }
 
     }

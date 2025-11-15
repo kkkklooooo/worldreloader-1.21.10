@@ -227,11 +227,6 @@ public class TerrainTransformationBuilder {
     {
 
         boolean res=radius>0&&targetPos!=null&&changePos!=null;
-        if(!this.targetPos.isWithinDistance(this.changePos,radius*2)){
-            WorldReloader.LOGGER.error("Within!");
-            player.sendMessage(Text.literal("失败:目标点和改造点距离过近"),false);
-            return false;
-        }
         return res;
     }
     private BlockPos getValidSurfacePosition(BlockPos pos) {

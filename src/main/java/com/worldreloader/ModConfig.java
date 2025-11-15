@@ -106,7 +106,6 @@ public class ModConfig implements ConfigData {
         public StructureMapping(String itemId, String structureId) {
             this.itemId = itemId;
             this.structureId = structureId;
-
         }
 
     }

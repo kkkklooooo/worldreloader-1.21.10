@@ -1,7 +1,6 @@
 package com.worldreloader.transformationtasks;
 
 import com.mojang.datafixers.util.Pair;
-import com.worldreloader.WorldReloader;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.RegistryKeys;
@@ -225,9 +224,7 @@ public class TerrainTransformationBuilder {
     }
     private boolean isValidated()
     {
-
-        boolean res=radius>0&&targetPos!=null&&changePos!=null;
-        return res;
+        return radius>0&&targetPos!=null&&changePos!=null;
     }
     private BlockPos getValidSurfacePosition(BlockPos pos) {
         ChunkPos chunkPos = new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4);

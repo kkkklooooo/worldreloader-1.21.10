@@ -111,7 +111,7 @@ public class WorldReloader implements ModInitializer {
 
 			 referencePos = new BlockPos(config.Posx,config.Posy,config.Posz);
 			 if (referencePos==null){
-				 player.sendMessage(Text.literal("你丫没设置目标点,用setPos命令设置!!!!"));
+				 player.sendMessage(Text.literal("你丫没设置目标点,用setPos命令设置!!!!"),false);
 				 return;
 			 }
 			 referencePos.add(0,-referencePos.getY(),0);
@@ -230,7 +230,7 @@ public class WorldReloader implements ModInitializer {
 				}
 				BlockPos res = findAlternativeBiomePosition(world, biomePos, targetBiome);
 				if(res==null){
-					player.sendMessage(Text.literal("无法找到目标群落,请考虑降低目标最低高度"));
+					player.sendMessage(Text.literal("无法找到目标群落,请考虑降低目标最低高度"),false);
 				}
 				return res;
 			}

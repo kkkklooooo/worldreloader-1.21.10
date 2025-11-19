@@ -156,7 +156,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
 
             if (false) {
                 copyWithCenterPreservation(targetX, targetZ, reference);
-            } else if (Math.abs(targetZ - center.getZ()) > paddingCount) {
+            } else if (Math.abs(targetZ - center.getZ()) < width-paddingCount) {
                 copyWithoutPreservation(targetX, targetZ, reference);
             } else {
                 applyPaddingTransition(targetX, targetZ, reference, originalSurfaceY);
@@ -195,7 +195,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
     }
 
     private void applyPaddingTransition(int targetX, int targetZ, ReferenceTerrainInfo reference, int originalSurfaceY) {
-        float progress = (float) Math.abs(targetZ - center.getZ()) / paddingCount;
+        float progress =1- ((float) (width-Math.abs(targetZ - center.getZ())) / paddingCount);
         int referenceTargetY = reference.surfaceY + center.getY() - this.referenceCenter.getY();
         int transitionSurfaceY = (int) (referenceTargetY + (originalSurfaceY - referenceTargetY) * progress);
 

@@ -340,18 +340,32 @@ public abstract class BaseTransformationTask {
         List<ModConfig.SavedPosition> savePositions = WorldReloader.config.savedPositions;
         List<BlockPos> positions1 = new ArrayList<>();
 
-        // 如果是宽度0，生成从center到第一个保存点的路径上的所有点
+        // 如果是宽度0，生成从center到所有保存点的完整路径
         if (currentWidth == 0) {
             positions.clear();
 
             if (!savePositions.isEmpty()) {
-                // 获取第一个保存点（按x排序后的第一个）
+                // 生成从center到第一个保存点的路径
                 ModConfig.SavedPosition firstSave = savePositions.get(0);
                 BlockPos firstSavePos = new BlockPos(firstSave.x, 0, firstSave.z);
+                List<BlockPos> pathToFirst = generateLinePositions(center, firstSavePos);
+                positions.addAll(pathToFirst);
 
-                // 使用Bresenham直线算法生成从center到第一个保存点的路径
-                List<BlockPos> linePath = generateLinePositions(center, firstSavePos);
-                positions.addAll(linePath);
+                // 生成保存点之间的路径
+                for (int i = 0; i < savePositions.size() - 1; i++) {
+                    ModConfig.SavedPosition currentSave = savePositions.get(i);
+                    ModConfig.SavedPosition nextSave = savePositions.get(i + 1);
+
+                    BlockPos currentPos = new BlockPos(currentSave.x, 0, currentSave.z);
+                    BlockPos nextPos = new BlockPos(nextSave.x, 0, nextSave.z);
+
+                    List<BlockPos> segmentPath = generateLinePositions(currentPos, nextPos);
+                    // 移除起点避免重复（因为上一段的终点就是这一段的起点）
+                    if (!segmentPath.isEmpty()) {
+                        segmentPath.remove(0);
+                    }
+                    positions.addAll(segmentPath);
+                }
             }
 
             return positions;

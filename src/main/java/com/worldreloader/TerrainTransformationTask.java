@@ -153,9 +153,9 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         if (reference.blocks != null && reference.heights.length != 0) {
             BlockPos newcenter=new BlockPos(center.getX(),0,center.getY());
 
-            if (new BlockPos(targetX,0,targetZ).isWithinDistance(newcenter,3)) {
+            if (false) {
                 copyWithCenterPreservation(targetX, targetZ, reference);
-            } else if (Math.abs(targetZ-center.getZ())>width) {
+            } else if (Math.abs(targetZ-center.getZ())>paddingCount) {
                 copyWithoutPreservation(targetX, targetZ, reference);
             } else {
                 applyPaddingTransition(targetX, targetZ, reference, originalSurfaceY);
@@ -170,9 +170,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
             BlockState referenceState = reference.blocks[i];
 
-            if (shouldPreserveCenterArea(targetPos)) {
-                continue;
-            }
+
 
             if (!referenceState.isAir()) {
                 BlockState currentState = world.getBlockState(targetPos);
@@ -189,6 +187,11 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
             BlockState referenceState = reference.blocks[i];
 
+
+
+
+
+
             if (!referenceState.isAir()) {
                 BlockState currentState = world.getBlockState(targetPos);
                 if (!currentState.equals(referenceState)) {
@@ -201,7 +204,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
 
 
     private void applyPaddingTransition(int targetX, int targetZ, ReferenceTerrainInfo reference, int originalSurfaceY) {
-        float progress = 1.0f - (float)(width - (targetZ-center.getZ())) / paddingCount;
+        float progress = (float)Math.abs(targetZ-center.getZ()) / paddingCount;
         int referenceTargetY = reference.surfaceY + center.getY() - this.referenceCenter.getY();
         int transitionSurfaceY = (int)(referenceTargetY + (originalSurfaceY - referenceTargetY) * progress);
 

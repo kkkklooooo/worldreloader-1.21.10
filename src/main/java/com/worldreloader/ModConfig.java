@@ -11,6 +11,7 @@ import net.minecraft.world.biome.BiomeKeys;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 @Config(name = "worldreloader")
 class ModConfig implements ConfigData {
@@ -58,6 +59,49 @@ class ModConfig implements ConfigData {
     int yMin = 40;
     @ConfigEntry.Category("Non-surface")
     int yMaxThanSurface = 30;
+    @ConfigEntry.Category("Position Management")
+    @ConfigEntry.Gui.Tooltip(count = 2)
+    public List<SavedPosition> savedPositions = new ArrayList<>();
+
+    // ... 现有的其他字段和方法 ...
+
+    public static class SavedPosition {
+        public int x;
+        public int y;
+        public int z;
+        public long timestamp;
+
+        public SavedPosition() {}
+
+        public SavedPosition(int x, int y, int z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        public BlockPos toBlockPos() {
+            return new BlockPos(x, y, z);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("(%d, %d, %d)", x, y, z);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            SavedPosition that = (SavedPosition) obj;
+            return x == that.x && y == that.y && z == that.z;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(x, y, z);
+        }
+    }
 
     // ============ 原有的物品-结构映射配置 ============
     @ConfigEntry.Category("Structure Mappings")

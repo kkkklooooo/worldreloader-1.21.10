@@ -8,12 +8,14 @@ import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.entry.RegistryEntryList;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.Identifier;
+import net.minecraft.world.World;
 import net.minecraft.world.gen.structure.Structure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +32,7 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.biome.Biome;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -44,6 +47,7 @@ public class WorldReloader implements ModInitializer {
 	// It is considered best practice to use your mod id as the logger's name.
 	// That way, it's clear which mod wrote info, warnings, and errors.
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+	private static String currentPositionName = "未命名坐标";
 
 
 
@@ -76,6 +80,40 @@ public class WorldReloader implements ModInitializer {
 					startTerrainTransformation((ServerWorld) world, pos, player);
 				});
 
+				return ActionResult.SUCCESS;
+			}
+
+			return ActionResult.PASS;
+		});
+		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
+			if (world.isClient()) return ActionResult.PASS;
+
+			ItemStack itemStack = player.getStackInHand(hand);
+			BlockPos pos = hitResult.getBlockPos();
+
+			// 检查是否是木铲右键
+			if (itemStack.getItem() == Items.WOODEN_SHOVEL) {
+				addSavedPosition(world, pos, player);
+				return ActionResult.SUCCESS;
+			}
+
+			// 原有的信标激活逻辑
+			if (world.getBlockState(pos).getBlock() == Blocks.BEACON &&
+					itemStack.getItem() == Items.NETHER_STAR) {
+				// ... 原有的信标处理代码 ...
+			}
+
+			return ActionResult.PASS;
+		});
+
+		// 注册木铲左键移除坐标事件
+		AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
+			if (world.isClient()) return ActionResult.PASS;
+
+			ItemStack itemStack = player.getStackInHand(hand);
+
+			if (itemStack.getItem() == Items.WOODEN_SHOVEL) {
+				removeSavedPosition(world, pos, player);
 				return ActionResult.SUCCESS;
 			}
 
@@ -136,6 +174,80 @@ public class WorldReloader implements ModInitializer {
 			sendErrorMessage(player, targetBiome, targetStructure);
 		}
 	}
+	/**
+	 * 添加坐标到保存列表
+	 */
+	private void addSavedPosition(World world, BlockPos pos, net.minecraft.entity.player.PlayerEntity player) {
+		ModConfig.SavedPosition newPos = new ModConfig.SavedPosition(pos.getX(), pos.getY(), pos.getZ());
+
+		// 检查是否已存在相同坐标
+		if (config.savedPositions.contains(newPos)) {
+			player.sendMessage(Text.literal("§7该坐标已存在: " + newPos), false);
+			return;
+		}
+
+		config.savedPositions.add(newPos);
+
+		// 保存配置
+		AutoConfig.getConfigHolder(ModConfig.class).save();
+
+		player.sendMessage(Text.literal("§a已添加坐标: " + newPos), false);
+		LOGGER.info("添加坐标: {}", newPos);
+
+		// 显示当前坐标总数
+		player.sendMessage(Text.literal("§7当前保存的坐标数: " + config.savedPositions.size()), false);
+	}
+
+	/**
+	 * 从保存列表中移除坐标
+	 */
+	private void removeSavedPosition(World world, BlockPos pos, net.minecraft.entity.player.PlayerEntity player) {
+		ModConfig.SavedPosition targetPos = new ModConfig.SavedPosition(pos.getX(), pos.getY(), pos.getZ());
+		boolean removed = config.savedPositions.remove(targetPos);
+
+		if (removed) {
+			AutoConfig.getConfigHolder(ModConfig.class).save();
+			player.sendMessage(Text.literal("§c已移除坐标: " + targetPos), false);
+			LOGGER.info("移除坐标: {}", targetPos);
+			player.sendMessage(Text.literal("§7剩余坐标数: " + config.savedPositions.size()), false);
+		} else {
+			player.sendMessage(Text.literal("§7未找到该位置的坐标"), false);
+		}
+	}
+
+	/**
+	 * 获取所有保存的坐标
+	 */
+	public static List<ModConfig.SavedPosition> getSavedPositions() {
+		return config.savedPositions;
+	}
+
+	/**
+	 * 清空所有保存的坐标
+	 */
+	public static void clearSavedPositions(net.minecraft.entity.player.PlayerEntity player) {
+		int count = config.savedPositions.size();
+		config.savedPositions.clear();
+		AutoConfig.getConfigHolder(ModConfig.class).save();
+		player.sendMessage(Text.literal("§c已清空所有保存的坐标 (" + count + " 个)"), false);
+	}
+
+	/**
+	 * 显示所有保存的坐标
+	 */
+	public static void listSavedPositions(net.minecraft.entity.player.PlayerEntity player) {
+		List<ModConfig.SavedPosition> positions = getSavedPositions();
+		if (positions.isEmpty()) {
+			player.sendMessage(Text.literal("§7没有保存的坐标"), false);
+		} else {
+			player.sendMessage(Text.literal("§6保存的坐标列表 (" + positions.size() + " 个):"), false);
+			for (int i = 0; i < positions.size(); i++) {
+				ModConfig.SavedPosition pos = positions.get(i);
+				player.sendMessage(Text.literal("§a" + (i + 1) + ". §f" + pos), false);
+			}
+		}
+	}
+
 
 
 

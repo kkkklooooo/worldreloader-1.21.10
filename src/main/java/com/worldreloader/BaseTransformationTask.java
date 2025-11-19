@@ -208,7 +208,7 @@ public abstract class BaseTransformationTask {
         }
 
         // 生成当前宽度的所有位置（从中心向两侧）
-        currentRadiusPositions = generateExpandingWidthPositions(currentWidth);
+        currentRadiusPositions = generateExpandingWidthSave(currentWidth);
 
         if (currentRadiusPositions.isEmpty()) {
             currentWidth++;
@@ -314,26 +314,100 @@ public abstract class BaseTransformationTask {
 
         return positions;
     }
-    protected List<BlockPos> generateExpandingWidthSave(int currentWidth) {
-        List<ModConfig.SavedPosition> savepositions =WorldReloader.config.savedPositions;
-        List<BlockPos> positions1=new ArrayList<>();
+//    protected List<BlockPos> generateExpandingWidthSave(int currentWidth) {
+//        List<ModConfig.SavedPosition> savepositions =WorldReloader.config.savedPositions;
+//        List<BlockPos> positions1=new ArrayList<>();
+//
+//        // 如果是宽度0，生成中心线的所有长度位置
+//        if (currentWidth == 0) {
+//            positions.clear();
+//            for (ModConfig.SavedPosition saveposition : savepositions) {
+//                positions.add(new BlockPos(saveposition.x, 0, saveposition.z));
+//            }
+//            return positions;
+//        }
+//        // 对于其他宽度，生成两侧的所有长度位置
+//        for (BlockPos position : positions) {
+//            // 生成两侧位置
+//            positions1.add(new BlockPos(position.getX(), 0, position.getZ() + currentWidth));
+//            positions1.add(new BlockPos(position.getX(), 0, position.getZ() - currentWidth));
+//        }
+//
+//        return positions1;
+//    }
 
-        // 如果是宽度0，生成中心线的所有长度位置
+    protected List<BlockPos> generateExpandingWidthSave(int currentWidth) {
+        List<ModConfig.SavedPosition> savePositions = WorldReloader.config.savedPositions;
+        List<BlockPos> positions1 = new ArrayList<>();
+
+        // 如果是宽度0，生成从center到第一个保存点的路径上的所有点
         if (currentWidth == 0) {
             positions.clear();
-            for (ModConfig.SavedPosition saveposition : savepositions) {
-                positions.add(new BlockPos(saveposition.x, 0, saveposition.z));
+
+            if (!savePositions.isEmpty()) {
+                // 获取第一个保存点（按x排序后的第一个）
+                ModConfig.SavedPosition firstSave = savePositions.get(0);
+                BlockPos firstSavePos = new BlockPos(firstSave.x, 0, firstSave.z);
+
+                // 使用Bresenham直线算法生成从center到第一个保存点的路径
+                List<BlockPos> linePath = generateLinePositions(center, firstSavePos);
+                positions.addAll(linePath);
             }
+
             return positions;
         }
-        // 对于其他宽度，生成两侧的所有长度位置
-        for (BlockPos position : positions) {
+
+        // 对于其他宽度，生成两侧的所有位置
+        for (BlockPos pos : positions) {
             // 生成两侧位置
-            positions1.add(new BlockPos(position.getX(), 0, position.getZ() + currentWidth));
-            positions1.add(new BlockPos(position.getX(), 0, position.getZ() - currentWidth));
+            positions1.add(new BlockPos(pos.getX(), 0, pos.getZ() + currentWidth));
+            positions1.add(new BlockPos(pos.getX(), 0, pos.getZ() - currentWidth));
         }
 
         return positions1;
+    }
+
+    // Bresenham直线算法生成两点之间的所有整数坐标点
+    protected List<BlockPos> generateLinePositions(BlockPos start, BlockPos end) {
+        List<BlockPos> linePositions = new ArrayList<>();
+
+        int x1 = start.getX();
+        int z1 = start.getZ();
+        int x2 = end.getX();
+        int z2 = end.getZ();
+
+        int dx = Math.abs(x2 - x1);
+        int dz = Math.abs(z2 - z1);
+
+        int sx = (x1 < x2) ? 1 : -1;
+        int sz = (z1 < z2) ? 1 : -1;
+
+        int err = dx - dz;
+
+        int x = x1;
+        int z = z1;
+
+        while (true) {
+            linePositions.add(new BlockPos(x, 0, z));
+
+            if (x == x2 && z == z2) {
+                break;
+            }
+
+            int err2 = 2 * err;
+
+            if (err2 > -dz) {
+                err -= dz;
+                x += sx;
+            }
+
+            if (err2 < dx) {
+                err += dx;
+                z += sz;
+            }
+        }
+
+        return linePositions;
     }
 
     protected void cleanupItemEntities() {

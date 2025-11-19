@@ -5,8 +5,10 @@ import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import net.minecraft.block.Blocks;
 import net.minecraft.registry.Registries;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.BiomeKeys;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -33,10 +35,10 @@ class ModConfig implements ConfigData {
     boolean isChangeBiome=false;
     @ConfigEntry.Category("Main")
     boolean Debug = false;
-    //int lastCleanupRadius = -1;
 
+
+    // ============ 原有的配置项 ============
     @ConfigEntry.Category("surface")
-    // 控制改造速度的间隔变量 - 改为10刻完成一个半径
     @ConfigEntry.Gui.Tooltip(count = 1)
     int totalSteps = 10;
     @ConfigEntry.Category("surface")
@@ -51,19 +53,14 @@ class ModConfig implements ConfigData {
     @ConfigEntry.Category("Non-surface")
     int paddingCount = 12;
     @ConfigEntry.Category("Non-surface")
-    // 控制改造速度的间隔变量
     int totalSteps2 = 3;
     @ConfigEntry.Category("Non-surface")
-    // 控制改造速度的间隔变量
     int yMin = 40;
     @ConfigEntry.Category("Non-surface")
-    // 控制改造速度的间隔变量
     int yMaxThanSurface = 30;
 
-
-    // ============ 新增的物品-结构映射配置 ============
+    // ============ 原有的物品-结构映射配置 ============
     @ConfigEntry.Category("Structure Mappings")
-    //List<Float> f = new ArrayList<>();
     public List<StructureMapping> structureMappings = List.of(
             new StructureMapping(Registries.BLOCK.getId(Blocks.TARGET).getPath(), "village_plains"),
             new StructureMapping(Registries.BLOCK.getId(Blocks.COBBLESTONE).getPath(), "minecraft:pillager_outpost"),
@@ -74,7 +71,6 @@ class ModConfig implements ConfigData {
 
     @ConfigEntry.Category("Biome Mappings")
     public List<BiomeMapping> biomeMappings = List.of(
-
             new BiomeMapping(Registries.BLOCK.getId(Blocks.GRASS_BLOCK).getPath(), BiomeKeys.PLAINS.getValue().getPath()),
             new BiomeMapping(Registries.BLOCK.getId(Blocks.JUNGLE_LOG).getPath(), BiomeKeys.JUNGLE.getValue().getPath()),
             new BiomeMapping(Registries.BLOCK.getId(Blocks.SAND).getPath(), BiomeKeys.DESERT.getValue().getPath()),
@@ -97,6 +93,8 @@ class ModConfig implements ConfigData {
             new BiomeMapping(Registries.BLOCK.getId(Blocks.CHERRY_LOG).getPath(), BiomeKeys.CHERRY_GROVE.getValue().getPath())
     );
 
+    // ============ 新增的曲线相关类 ============
+
 
 
     public static class StructureMapping {
@@ -109,9 +107,7 @@ class ModConfig implements ConfigData {
         public StructureMapping(String itemId, String structureId) {
             this.itemId = itemId;
             this.structureId = structureId;
-
         }
-
     }
 
     public static class BiomeMapping {
@@ -124,9 +120,7 @@ class ModConfig implements ConfigData {
         public BiomeMapping(String itemId, String BiomeId) {
             this.itemId = itemId;
             this.BiomeId = BiomeId;
-
         }
-
     }
 
     public HashMap<String,String> ToHash(){
@@ -138,14 +132,4 @@ class ModConfig implements ConfigData {
     }
 
 
-//    @ConfigEntry.Gui.CollapsibleObject
-//    InnerStuff stuff = new InnerStuff();
-//
-//    @ConfigEntry.Gui.Excluded
-//    InnerStuff invisibleStuff = new InnerStuff();
-//
-//    static class InnerStuff {
-//        int a = 0;
-//        int b = 1;
-//    }
 }

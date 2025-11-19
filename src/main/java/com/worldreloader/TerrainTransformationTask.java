@@ -64,7 +64,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
                 .getHeightmap(Heightmap.Type.MOTION_BLOCKING)
                 .get(referenceX & 15, referenceZ & 15);
 
-        if (referenceSurfaceY <yMin-1) {
+        if (referenceSurfaceY < yMin - 1) {
             return null;
         }
 
@@ -91,13 +91,14 @@ public class TerrainTransformationTask extends BaseTransformationTask {
                 .getHeightmap(Heightmap.Type.WORLD_SURFACE)
                 .get(targetX & 15, targetZ & 15);
 
-        if (surfaceY <yMin-1) {
+        if (surfaceY < yMin - 1) {
             return;
         }
 
         for (int y = yMin; y <= surfaceY + yMax; y++) {
             BlockPos targetPos = new BlockPos(targetX, y, targetZ);
-            if (currentRadius <= 8 && shouldPreserveCenterArea(targetPos)) {
+            // 修改：使用currentWidth来判断是否保留中心区域
+            if (currentWidth <= 8 && shouldPreserveCenterArea(targetPos)) {
                 continue;
             }
             BlockState currentState = world.getBlockState(targetPos);
@@ -112,7 +113,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         while (currentY > minY + 10) {
             BlockPos pos = new BlockPos(x, currentY, z);
             BlockState state = world.getBlockState(pos);
-            if (isSolidBlock(world,state)) {
+            if (isSolidBlock(world, state)) {
                 return currentY;
             }
             currentY--;
@@ -151,17 +152,16 @@ public class TerrainTransformationTask extends BaseTransformationTask {
 
     private void copyTerrainStructure(int targetX, int targetZ, ReferenceTerrainInfo reference, int originalSurfaceY) {
         if (reference.blocks != null && reference.heights.length != 0) {
-            BlockPos newcenter=new BlockPos(center.getX(),0,center.getY());
+            BlockPos newcenter = new BlockPos(center.getX(), 0, center.getY());
 
             if (false) {
                 copyWithCenterPreservation(targetX, targetZ, reference);
-            } else if (Math.abs(targetZ-center.getZ())>paddingCount) {
+            } else if (Math.abs(targetZ - center.getZ()) > paddingCount) {
                 copyWithoutPreservation(targetX, targetZ, reference);
             } else {
                 applyPaddingTransition(targetX, targetZ, reference, originalSurfaceY);
             }
         }
-
     }
 
     private void copyWithCenterPreservation(int targetX, int targetZ, ReferenceTerrainInfo reference) {
@@ -169,8 +169,6 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             int targetY = reference.heights[i] + center.getY() - this.referenceCenter.getY();
             BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
             BlockState referenceState = reference.blocks[i];
-
-
 
             if (!referenceState.isAir()) {
                 BlockState currentState = world.getBlockState(targetPos);
@@ -187,11 +185,6 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
             BlockState referenceState = reference.blocks[i];
 
-
-
-
-
-
             if (!referenceState.isAir()) {
                 BlockState currentState = world.getBlockState(targetPos);
                 if (!currentState.equals(referenceState)) {
@@ -201,12 +194,10 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         }
     }
 
-
-
     private void applyPaddingTransition(int targetX, int targetZ, ReferenceTerrainInfo reference, int originalSurfaceY) {
-        float progress = (float)Math.abs(targetZ-center.getZ()) / paddingCount;
+        float progress = (float) Math.abs(targetZ - center.getZ()) / paddingCount;
         int referenceTargetY = reference.surfaceY + center.getY() - this.referenceCenter.getY();
-        int transitionSurfaceY = (int)(referenceTargetY + (originalSurfaceY - referenceTargetY) * progress);
+        int transitionSurfaceY = (int) (referenceTargetY + (originalSurfaceY - referenceTargetY) * progress);
 
         for (int i = 0; i < reference.blocks.length; i++) {
             int referenceY = reference.heights[i];
@@ -214,7 +205,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             int transitionY = calculateTransitionHeight(referenceY, reference.surfaceY, targetY, transitionSurfaceY, progress);
 
             BlockPos targetPos = new BlockPos(targetX, transitionY, targetZ);
-            if (isSolidBlock(world,reference.blocks[i])) {
+            if (isSolidBlock(world, reference.blocks[i])) {
                 BlockState referenceState = reference.blocks[i];
                 if (!referenceState.isAir()) {
                     BlockState currentState = world.getBlockState(targetPos);
@@ -222,10 +213,8 @@ public class TerrainTransformationTask extends BaseTransformationTask {
                         world.setBlockState(targetPos, referenceState, 3);
                     }
                 }
-            }
-            else if(reference.blocks[i].getFluidState().isStill())
-            {
-                world.setBlockState(new BlockPos(targetX, targetY, targetZ),reference.blocks[i],3);
+            } else if (reference.blocks[i].getFluidState().isStill()) {
+                world.setBlockState(new BlockPos(targetX, targetY, targetZ), reference.blocks[i], 3);
             }
         }
         cleanFloatingBlocks(targetX, targetZ, transitionSurfaceY);
@@ -244,12 +233,12 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         for (int y = transitionSurfaceY + 10; y > transitionSurfaceY; y--) {
             BlockPos pos = new BlockPos(targetX, y, targetZ);
             BlockState state = world.getBlockState(pos);
-            if (!state.isAir() && isSolidBlock(world,state) && y > transitionSurfaceY + 2) {
+            if (!state.isAir() && isSolidBlock(world, state) && y > transitionSurfaceY + 2) {
                 boolean hasSupport = false;
                 for (int checkY = y - 1; checkY >= transitionSurfaceY; checkY--) {
                     BlockPos belowPos = new BlockPos(targetX, checkY, targetZ);
                     BlockState belowState = world.getBlockState(belowPos);
-                    if (isSolidBlock(world,belowState)) {
+                    if (isSolidBlock(world, belowState)) {
                         hasSupport = true;
                         break;
                     }
@@ -260,5 +249,4 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             }
         }
     }
-
 }

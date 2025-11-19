@@ -34,7 +34,6 @@ import java.util.function.Predicate;
 
 import static net.minecraft.server.command.FillBiomeCommand.UNLOADED_EXCEPTION;
 
-
 public abstract class BaseTransformationTask {
     protected final ServerWorld world;
     protected final BlockPos center;
@@ -54,11 +53,12 @@ public abstract class BaseTransformationTask {
     protected final int itemCleanupInterval;
     protected int lastCleanupRadius = -1;
 
+    protected int width = 20;
+    protected int len = 100;
+    protected int currentLen = 0;
 
-
-    protected  int width=20;
-    protected  int len=100;
-    protected  int currentLen=0;
+    // 修改：当前处理的宽度（从中心向两侧扩展）
+    protected int currentWidth = 0;
 
     protected List<BlockPos> currentRadiusPositions = new ArrayList<>();
 
@@ -88,13 +88,14 @@ public abstract class BaseTransformationTask {
         currentRadiusPositions.clear();
         currentStep = 0;
         lastCleanupRadius = -1;
+        currentWidth = 0;
+        currentLen = 0;
     }
 
     protected abstract void processPosition(BlockPos circlePos);
     protected abstract ReferenceTerrainInfo getReferenceTerrainInfo(int referenceX, int referenceZ);
     protected abstract void copyFromReference(int targetX, int targetZ, ReferenceTerrainInfo referenceInfo);
     protected abstract boolean shouldSkipProcessing(int referenceSurfaceYAtTarget, int originalSurfaceY);
-
 
     protected void registerToTick() {
         ServerTickEvents.END_SERVER_TICK.register((MinecraftServer server) -> {
@@ -129,8 +130,8 @@ public abstract class BaseTransformationTask {
 
     protected void handleChunkForcing2() {
         if (!isinit) {
-            int chunkLen = len >> 4;  // 将长度转换为chunk单位
-            int chunkWidth = width >> 4;  // 将宽度转换为chunk单位
+            int chunkLen = len >> 4;
+            int chunkWidth = width >> 4;
 
             for (int x = 0; x <= chunkLen; x++) {
                 for (int z = -chunkWidth; z <= chunkWidth; z++) {
@@ -148,7 +149,6 @@ public abstract class BaseTransformationTask {
             isinit = true;
         }
     }
-
 
     protected void cleanupChunkForcing() {
         for (ChunkPos chunkPos : forcedChunks) {
@@ -197,39 +197,48 @@ public abstract class BaseTransformationTask {
         }
     }
 
+    // 修改：从中心向两侧逐渐变宽的生成方式
     protected void processNextStep2() {
-        if (currentLen > len) {
+        // 检查是否完成所有宽度
+        if (currentWidth > width) {
             if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§6地形改造完成！"), false);
             stop();
             return;
         }
 
-        if (true) {
-            currentRadiusPositions = generateLinePositions(currentStep);
-            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§7开始改造半径: " + currentLen + "格 (共 " + currentRadiusPositions.size() + " 个位置)"), false);
-        }
+        // 生成当前宽度的所有位置（从中心向两侧）
+        currentRadiusPositions = generateExpandingWidthPositions(currentWidth);
 
-        if (false) {
-            cleanupItemEntities();
-            lastCleanupRadius = currentRadius;
-        }
-
-        if (!processCurrentStepPositionsLine()) {
+        if (currentRadiusPositions.isEmpty()) {
+            currentWidth++;
             return;
         }
 
-        if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§e完成步骤: 半径 " + currentLen + "格 (" + (currentStep + 1) + "/" + totalSteps + ")"), false);
-        currentStep++;
-
-        if (true) {
-            currentLen++;
-            currentStep = 0;
-            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§a完成半径: " + (currentLen - 1) + "格"), false);
+        if(WorldReloader.config.Debug && currentStep == 0) {
+            player.sendMessage(net.minecraft.text.Text.literal("§7开始改造宽度: " + currentWidth +
+                    " (共 " + currentRadiusPositions.size() + " 个位置)"), false);
         }
+
+        // 处理物品清理
+        if (shouldCleanupItems()) {
+            cleanupItemEntities();
+            lastCleanupRadius = currentWidth;
+        }
+
+        // 处理当前位置的所有点
+        processCurrentStepPositionsLine();
+
+        if(WorldReloader.config.Debug) {
+            player.sendMessage(net.minecraft.text.Text.literal("§e完成宽度: " + currentWidth), false);
+        }
+
+        // 直接移动到下一个宽度
+        currentWidth++;
+        currentStep = 0;
     }
 
     protected boolean shouldCleanupItems() {
-        return currentRadius % itemCleanupInterval == 0 && currentRadius != lastCleanupRadius;
+        return currentWidth % itemCleanupInterval == 0 && currentWidth != lastCleanupRadius;
     }
 
     protected boolean processCurrentStepPositions() {
@@ -253,7 +262,6 @@ public abstract class BaseTransformationTask {
     }
 
     protected boolean processCurrentStepPositionsLine() {
-
         for (BlockPos pos : currentRadiusPositions) {
             processPosition(pos);
         }
@@ -282,31 +290,33 @@ public abstract class BaseTransformationTask {
         return positions;
     }
 
-    protected List<BlockPos> generateLinePositions(int radius) {
+    // 修改：生成当前宽度的所有位置（从中心向两侧扩展）
+    protected List<BlockPos> generateExpandingWidthPositions(int currentWidth) {
         List<BlockPos> positions = new ArrayList<>();
 
-        if (currentLen == 0) {
-            for (int i=-width;i<=width;i++){
-                positions.add(new BlockPos(center.getX(), 0, center.getZ()+i));
+        // 如果是宽度0，生成中心线的所有长度位置
+        if (currentWidth == 0) {
+            for (int x = 0; x <= len; x++) {
+                int targetX = center.getX() + x;
+                positions.add(new BlockPos(targetX, 0, center.getZ()));
             }
-
             return positions;
         }
 
-        // 生成当前长度的边界位置（最远端的水平线）
-        int x = center.getX() + currentLen;
-        for (int dz = -width; dz <= width; dz++) {
-            int z = center.getZ() + dz;
-            positions.add(new BlockPos(x, 0, z));
+        // 对于其他宽度，生成两侧的所有长度位置
+        for (int x = 0; x <= len; x++) {
+            int targetX = center.getX() + x;
+            // 生成两侧位置
+            positions.add(new BlockPos(targetX, 0, center.getZ() + currentWidth));
+            positions.add(new BlockPos(targetX, 0, center.getZ() - currentWidth));
         }
 
         return positions;
     }
 
-
     protected void cleanupItemEntities() {
         int itemsCleared = 0;
-        int cleanupRadius = Math.min(currentRadius + 10, maxRadius + 20);
+        int cleanupRadius = Math.min(currentWidth + 10, width + 20);
 
         List<ItemEntity> itemsToRemove = new ArrayList<>(world.getEntitiesByClass(
                 ItemEntity.class,
@@ -319,17 +329,17 @@ public abstract class BaseTransformationTask {
         }
 
         if (itemsCleared > 0 && WorldReloader.config.Debug) {
-            player.sendMessage(net.minecraft.text.Text.literal("§b清理了 " + itemsCleared + " 个掉落物（半径 " + currentRadius + "）"), false);
+            player.sendMessage(net.minecraft.text.Text.literal("§b清理了 " + itemsCleared + " 个掉落物（宽度 " + currentWidth + "）"), false);
         }
     }
 
     protected net.minecraft.util.math.Box getCleanupBoundingBox(int radius) {
-        int minX = center.getX() - radius;
+        int minX = center.getX();
         int minY = this.minY;
-        int minZ = center.getZ() - radius;
-        int maxX = center.getX() + radius;
+        int minZ = center.getZ() - width;
+        int maxX = center.getX() + len;
         int maxY = 2000;
-        int maxZ = center.getZ() + radius;
+        int maxZ = center.getZ() + width;
         return new net.minecraft.util.math.Box(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
@@ -345,8 +355,6 @@ public abstract class BaseTransformationTask {
         }
         return false;
     }
-
-
 
     public int validateAndAdjustHeight(World world, int x, int z, int initialHeight, int minY) {
         int currentY = initialHeight;
@@ -415,34 +423,24 @@ public abstract class BaseTransformationTask {
         int chunkX = pos.getX() >> 4;
         int chunkZ = pos.getZ() >> 4;
 
-        // 获取目标区块
         Chunk chunk = serverWorld.getChunk(chunkX, chunkZ);
 
-        // 计算区块内需要修改生物群系的区域（这里是整个区块）
         BlockBox chunkBox = BlockBox.create(
                 new Vec3i(chunkX << 4, serverWorld.getBottomY(), chunkZ << 4),
                 new Vec3i((chunkX << 4) + 15, serverWorld.getTopY(), (chunkZ << 4) + 15)
         );
 
-        // 使用一个MutableInt来计数修改的方块数
         MutableInt modifiedCount = new MutableInt(0);
 
-        // 创建生物群系供应商，这里filter直接设置为 biome -> true，表示替换所有原有生物群系
         BiomeSupplier biomeSupplier = createBiomeSupplier(modifiedCount, chunk, chunkBox, biome, b -> true);
 
-        // 为区块设置新的生物群系
         chunk.populateBiomes(biomeSupplier, serverWorld.getChunkManager().getNoiseConfig().getMultiNoiseSampler());
-        chunk.setNeedsSaving(true); // 标记区块需要保存
+        chunk.setNeedsSaving(true);
 
-        // 发送更新包给客户端
         serverWorld.getChunkManager().threadedAnvilChunkStorage.sendChunkBiomePackets(List.of(chunk));
 
         WorldReloader.LOGGER.info("成功设置区块 [{}, {}] 的生物群系，修改了 {} 个方块", chunkX, chunkZ, modifiedCount.getValue());
     }
-
-    // 保持你原有的 createBiomeSupplier 方法不变
-
-
 
     private static BlockPos convertPos(BlockPos pos) {
         return new BlockPos(convertCoordinate(pos.getX()), convertCoordinate(pos.getY()), convertCoordinate(pos.getZ()));
@@ -451,6 +449,7 @@ public abstract class BaseTransformationTask {
     private static int convertCoordinate(int coordinate) {
         return BiomeCoords.toBlock(BiomeCoords.fromBlock(coordinate));
     }
+
     private static BiomeSupplier createBiomeSupplier(MutableInt counter, Chunk chunk, BlockBox box, RegistryEntry<Biome> biome, Predicate<RegistryEntry<Biome>> filter) {
         return (x, y, z, noise) -> {
             int i = BiomeCoords.toBlock(x);
@@ -466,7 +465,6 @@ public abstract class BaseTransformationTask {
         };
     }
 
-    // 内部类
     protected static class ReferenceTerrainInfo {
         public int surfaceY;
         public BlockState[] blocks;
@@ -474,14 +472,15 @@ public abstract class BaseTransformationTask {
         public BlockState[] aboveSurfaceBlocks;
         public int[] aboveSurfaceHeights;
     }
+
     protected static boolean isSolidBlock(World world,BlockState state) {
         return state.isSolidBlock(world, BlockPos.ORIGIN) &&
                 !isWaterOrPlant(state);
     }
+
     protected static boolean isWaterOrPlant(BlockState state) {
         Block block = state.getBlock();
 
-        // 判断液体
         if (state.getFluidState().isStill() || block == Blocks.BUBBLE_COLUMN || block == Blocks.CONDUIT) {
             return true;
         }
@@ -492,15 +491,11 @@ public abstract class BaseTransformationTask {
             return true;
         }
 
-        // 使用标签系统判断植物
         return state.isIn(BlockTags.REPLACEABLE) ||
                 state.isIn(BlockTags.LEAVES) ||
                 state.isIn(BlockTags.FLOWERS) ||
                 state.isIn(BlockTags.CROPS) ||
-                //state.isIn(BlockTags.AIR)||
                 state.isIn(BlockTags.LOGS)||
                 state.isIn(BlockTags.MUSHROOM_GROW_BLOCK);
     }
-
-
 }

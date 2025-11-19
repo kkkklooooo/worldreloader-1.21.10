@@ -59,6 +59,7 @@ public abstract class BaseTransformationTask {
 
     // 修改：当前处理的宽度（从中心向两侧扩展）
     protected int currentWidth = 0;
+    List<BlockPos> positions=new ArrayList<>();
 
     protected List<BlockPos> currentRadiusPositions = new ArrayList<>();
 
@@ -312,6 +313,28 @@ public abstract class BaseTransformationTask {
         }
 
         return positions;
+    }
+    protected List<BlockPos> generateExpandingWidthSave(int currentWidth) {
+        List<ModConfig.SavedPosition> savepositions =WorldReloader.config.savedPositions;
+        List<BlockPos> positions1=new ArrayList<>();
+
+        // 如果是宽度0，生成中心线的所有长度位置
+        if (currentWidth == 0) {
+            positions.clear();
+            for (int x = 0; x <= savepositions.size(); x++) {
+                positions.add(new BlockPos(savepositions.get(x).x, 0, savepositions.get(x).z));
+            }
+            return positions;
+        }
+
+        // 对于其他宽度，生成两侧的所有长度位置
+        for (int x = 0; x <= positions.size(); x++) {
+            // 生成两侧位置
+            positions1.add(new BlockPos(positions.get(x).getX(), 0, positions.get(x).getZ() + currentWidth));
+            positions1.add(new BlockPos(positions.get(x).getX(), 0, positions.get(x).getZ() - currentWidth));
+        }
+
+        return positions1;
     }
 
     protected void cleanupItemEntities() {

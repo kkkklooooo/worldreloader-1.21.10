@@ -54,6 +54,12 @@ public abstract class BaseTransformationTask {
     protected final int itemCleanupInterval;
     protected int lastCleanupRadius = -1;
 
+
+
+    protected  int width=20;
+    protected  int len=100;
+    protected  int currentLen=0;
+
     protected List<BlockPos> currentRadiusPositions = new ArrayList<>();
 
     public BaseTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter,
@@ -93,8 +99,8 @@ public abstract class BaseTransformationTask {
     protected void registerToTick() {
         ServerTickEvents.END_SERVER_TICK.register((MinecraftServer server) -> {
             if (this.isActive) {
-                processNextStep();
-                handleChunkForcing();
+                processNextStep2();
+                handleChunkForcing2();
             } else if (isinit) {
                 cleanupChunkForcing();
             }
@@ -120,6 +126,29 @@ public abstract class BaseTransformationTask {
             isinit = true;
         }
     }
+
+    protected void handleChunkForcing2() {
+        if (!isinit) {
+            int chunkLen = len >> 4;  // 将长度转换为chunk单位
+            int chunkWidth = width >> 4;  // 将宽度转换为chunk单位
+
+            for (int x = 0; x <= chunkLen; x++) {
+                for (int z = -chunkWidth; z <= chunkWidth; z++) {
+                    ChunkPos chunkPos = new ChunkPos((referenceCenter.getX() >> 4) + x, (referenceCenter.getZ() >> 4) + z);
+                    if (!forcedChunks.contains(chunkPos)) {
+                        world.setChunkForced(chunkPos.x, chunkPos.z, true);
+                        if(WorldReloader.config.isChangeBiome) {
+                            RegistryEntry<Biome> bb = getBiomeAtChunkCenter(world, chunkPos);
+                            setBiome(center.add(16*x, 0, 16*z), bb, world);
+                        }
+                        forcedChunks.add(chunkPos);
+                    }
+                }
+            }
+            isinit = true;
+        }
+    }
+
 
     protected void cleanupChunkForcing() {
         for (ChunkPos chunkPos : forcedChunks) {
@@ -168,6 +197,37 @@ public abstract class BaseTransformationTask {
         }
     }
 
+    protected void processNextStep2() {
+        if (currentLen > len) {
+            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§6地形改造完成！"), false);
+            stop();
+            return;
+        }
+
+        if (true) {
+            currentRadiusPositions = generateLinePositions(currentStep);
+            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§7开始改造半径: " + currentLen + "格 (共 " + currentRadiusPositions.size() + " 个位置)"), false);
+        }
+
+        if (false) {
+            cleanupItemEntities();
+            lastCleanupRadius = currentRadius;
+        }
+
+        if (!processCurrentStepPositionsLine()) {
+            return;
+        }
+
+        if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§e完成步骤: 半径 " + currentLen + "格 (" + (currentStep + 1) + "/" + totalSteps + ")"), false);
+        currentStep++;
+
+        if (true) {
+            currentLen++;
+            currentStep = 0;
+            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§a完成半径: " + (currentLen - 1) + "格"), false);
+        }
+    }
+
     protected boolean shouldCleanupItems() {
         return currentRadius % itemCleanupInterval == 0 && currentRadius != lastCleanupRadius;
     }
@@ -187,6 +247,14 @@ public abstract class BaseTransformationTask {
 
         List<BlockPos> currentStepPositions = currentRadiusPositions.subList(startIndex, endIndex);
         for (BlockPos pos : currentStepPositions) {
+            processPosition(pos);
+        }
+        return true;
+    }
+
+    protected boolean processCurrentStepPositionsLine() {
+
+        for (BlockPos pos : currentRadiusPositions) {
             processPosition(pos);
         }
         return true;
@@ -213,6 +281,28 @@ public abstract class BaseTransformationTask {
         }
         return positions;
     }
+
+    protected List<BlockPos> generateLinePositions(int radius) {
+        List<BlockPos> positions = new ArrayList<>();
+
+        if (currentLen == 0) {
+            for (int i=-width;i<=width;i++){
+                positions.add(new BlockPos(center.getX(), 0, center.getZ()+i));
+            }
+
+            return positions;
+        }
+
+        // 生成当前长度的边界位置（最远端的水平线）
+        int x = center.getX() + currentLen;
+        for (int dz = -width; dz <= width; dz++) {
+            int z = center.getZ() + dz;
+            positions.add(new BlockPos(x, 0, z));
+        }
+
+        return positions;
+    }
+
 
     protected void cleanupItemEntities() {
         int itemsCleared = 0;

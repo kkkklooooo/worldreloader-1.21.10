@@ -151,9 +151,11 @@ public class TerrainTransformationTask extends BaseTransformationTask {
 
     private void copyTerrainStructure(int targetX, int targetZ, ReferenceTerrainInfo reference, int originalSurfaceY) {
         if (reference.blocks != null && reference.heights.length != 0) {
-            if (currentRadius <= 8) {
+            BlockPos newcenter=new BlockPos(center.getX(),0,center.getY());
+
+            if (new BlockPos(targetX,0,targetZ).isWithinDistance(newcenter,3)) {
                 copyWithCenterPreservation(targetX, targetZ, reference);
-            } else if (currentRadius < maxRadius - paddingCount) {
+            } else if (Math.abs(targetZ-center.getZ())>width) {
                 copyWithoutPreservation(targetX, targetZ, reference);
             } else {
                 applyPaddingTransition(targetX, targetZ, reference, originalSurfaceY);
@@ -199,7 +201,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
 
 
     private void applyPaddingTransition(int targetX, int targetZ, ReferenceTerrainInfo reference, int originalSurfaceY) {
-        float progress = 1.0f - (float)(maxRadius - currentRadius) / paddingCount;
+        float progress = 1.0f - (float)(width - (targetZ-center.getZ())) / paddingCount;
         int referenceTargetY = reference.surfaceY + center.getY() - this.referenceCenter.getY();
         int transitionSurfaceY = (int)(referenceTargetY + (originalSurfaceY - referenceTargetY) * progress);
 

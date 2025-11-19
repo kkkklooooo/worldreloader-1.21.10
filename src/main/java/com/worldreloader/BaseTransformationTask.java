@@ -348,68 +348,68 @@ public abstract class BaseTransformationTask {
 
 
 
-        public int validateAndAdjustHeight(World world, int x, int z, int initialHeight, int minY) {
-            int currentY = initialHeight;
-            int solidGroundCount = 0;
+    public int validateAndAdjustHeight(World world, int x, int z, int initialHeight, int minY) {
+        int currentY = initialHeight;
+        int solidGroundCount = 0;
 
-            while (currentY > minY + 10) {
-                BlockPos pos = new BlockPos(x, currentY, z);
-                BlockState state = world.getBlockState(pos);
+        while (currentY > minY + 10) {
+            BlockPos pos = new BlockPos(x, currentY, z);
+            BlockState state = world.getBlockState(pos);
 
-                if (isSolidBlock(world,state)) {
-                    solidGroundCount++;
-                    if (solidGroundCount >= 3) {
-                        return currentY + 2;
-                    }
-                } else {
-                    solidGroundCount = 0;
+            if (isSolidBlock(world,state)) {
+                solidGroundCount++;
+                if (solidGroundCount >= 3) {
+                    return currentY + 2;
                 }
-                currentY--;
+            } else {
+                solidGroundCount = 0;
             }
-            return initialHeight;
+            currentY--;
+        }
+        return initialHeight;
+    }
+
+    public static ReferenceTerrainInfo analyzeTerrain(World world, int x, int z, int surfaceY, int minY, int copyDepth, int copyHeight) {
+        ReferenceTerrainInfo info = new ReferenceTerrainInfo();
+        info.surfaceY = surfaceY;
+
+        int startY = Math.max(minY, surfaceY - copyDepth);
+        int endY = surfaceY + copyHeight;
+
+        List<BlockState> blocks = new ArrayList<>();
+        List<Integer> heights = new ArrayList<>();
+
+        for (int y = startY; y <= endY; y++) {
+            BlockPos pos = new BlockPos(x, y, z);
+            BlockState state = world.getBlockState(pos);
+            if (!state.isAir() || y <= surfaceY) {
+                blocks.add(state);
+                heights.add(y);
+            }
         }
 
-        public static ReferenceTerrainInfo analyzeTerrain(World world, int x, int z, int surfaceY, int minY, int copyDepth, int copyHeight) {
-            ReferenceTerrainInfo info = new ReferenceTerrainInfo();
-            info.surfaceY = surfaceY;
+        info.blocks = blocks.toArray(new BlockState[0]);
+        info.heights = heights.stream().mapToInt(Integer::intValue).toArray();
 
-            int startY = Math.max(minY, surfaceY - copyDepth);
-            int endY = surfaceY + copyHeight;
+        List<BlockState> aboveBlocks = new ArrayList<>();
+        List<Integer> aboveHeights = new ArrayList<>();
 
-            List<BlockState> blocks = new ArrayList<>();
-            List<Integer> heights = new ArrayList<>();
-
-            for (int y = startY; y <= endY; y++) {
-                BlockPos pos = new BlockPos(x, y, z);
-                BlockState state = world.getBlockState(pos);
-                if (!state.isAir() || y <= surfaceY) {
-                    blocks.add(state);
-                    heights.add(y);
-                }
+        for (int y = surfaceY + 1; y <= surfaceY + 15; y++) {
+            BlockPos abovePos = new BlockPos(x, y, z);
+            BlockState aboveState = world.getBlockState(abovePos);
+            if (!aboveState.isAir()) {
+                aboveBlocks.add(aboveState);
+                aboveHeights.add(y);
             }
-
-            info.blocks = blocks.toArray(new BlockState[0]);
-            info.heights = heights.stream().mapToInt(Integer::intValue).toArray();
-
-            List<BlockState> aboveBlocks = new ArrayList<>();
-            List<Integer> aboveHeights = new ArrayList<>();
-
-            for (int y = surfaceY + 1; y <= surfaceY + 15; y++) {
-                BlockPos abovePos = new BlockPos(x, y, z);
-                BlockState aboveState = world.getBlockState(abovePos);
-                if (!aboveState.isAir()) {
-                    aboveBlocks.add(aboveState);
-                    aboveHeights.add(y);
-                }
-            }
-
-            if (!aboveBlocks.isEmpty()) {
-                info.aboveSurfaceBlocks = aboveBlocks.toArray(new BlockState[0]);
-                info.aboveSurfaceHeights = aboveHeights.stream().mapToInt(Integer::intValue).toArray();
-            }
-
-            return info;
         }
+
+        if (!aboveBlocks.isEmpty()) {
+            info.aboveSurfaceBlocks = aboveBlocks.toArray(new BlockState[0]);
+            info.aboveSurfaceHeights = aboveHeights.stream().mapToInt(Integer::intValue).toArray();
+        }
+
+        return info;
+    }
 
     public static void setBiome(BlockPos pos, RegistryEntry<Biome> biome, ServerWorld serverWorld) {
         int chunkX = pos.getX() >> 4;

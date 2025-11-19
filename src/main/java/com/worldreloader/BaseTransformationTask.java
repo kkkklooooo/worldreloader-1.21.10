@@ -53,8 +53,8 @@ public abstract class BaseTransformationTask {
     protected final int itemCleanupInterval;
     protected int lastCleanupRadius = -1;
 
-    protected int width = 20;
-    protected int len = 100;
+    protected int width = 10;
+    protected int len = 500;
     protected int currentLen = 0;
 
     // 修改：当前处理的宽度（从中心向两侧扩展）
@@ -264,6 +264,7 @@ public abstract class BaseTransformationTask {
 
     protected boolean processCurrentStepPositionsLine() {
         for (BlockPos pos : currentRadiusPositions) {
+            WorldReloader.LOGGER.info(pos.toShortString());
             processPosition(pos);
         }
         return true;
@@ -345,16 +346,20 @@ public abstract class BaseTransformationTask {
             positions.clear();
 
             if (!savePositions.isEmpty()) {
+                // 按x坐标对保存点进行排序
+                List<ModConfig.SavedPosition> sortedSaves = new ArrayList<>(savePositions);
+                sortedSaves.sort((a, b) -> Integer.compare(a.x, b.x));
+
                 // 生成从center到第一个保存点的路径
-                ModConfig.SavedPosition firstSave = savePositions.get(0);
+                ModConfig.SavedPosition firstSave = sortedSaves.get(0);
                 BlockPos firstSavePos = new BlockPos(firstSave.x, 0, firstSave.z);
                 List<BlockPos> pathToFirst = generateLinePositions(center, firstSavePos);
                 positions.addAll(pathToFirst);
 
                 // 生成保存点之间的路径
-                for (int i = 0; i < savePositions.size() - 1; i++) {
-                    ModConfig.SavedPosition currentSave = savePositions.get(i);
-                    ModConfig.SavedPosition nextSave = savePositions.get(i + 1);
+                for (int i = 0; i < sortedSaves.size() - 1; i++) {
+                    ModConfig.SavedPosition currentSave = sortedSaves.get(i);
+                    ModConfig.SavedPosition nextSave = sortedSaves.get(i + 1);
 
                     BlockPos currentPos = new BlockPos(currentSave.x, 0, currentSave.z);
                     BlockPos nextPos = new BlockPos(nextSave.x, 0, nextSave.z);

@@ -321,17 +321,16 @@ public abstract class BaseTransformationTask {
         // 如果是宽度0，生成中心线的所有长度位置
         if (currentWidth == 0) {
             positions.clear();
-            for (int x = 0; x <= savepositions.size(); x++) {
-                positions.add(new BlockPos(savepositions.get(x).x, 0, savepositions.get(x).z));
+            for (ModConfig.SavedPosition saveposition : savepositions) {
+                positions.add(new BlockPos(saveposition.x, 0, saveposition.z));
             }
             return positions;
         }
-
         // 对于其他宽度，生成两侧的所有长度位置
-        for (int x = 0; x <= positions.size(); x++) {
+        for (BlockPos position : positions) {
             // 生成两侧位置
-            positions1.add(new BlockPos(positions.get(x).getX(), 0, positions.get(x).getZ() + currentWidth));
-            positions1.add(new BlockPos(positions.get(x).getX(), 0, positions.get(x).getZ() - currentWidth));
+            positions1.add(new BlockPos(position.getX(), 0, position.getZ() + currentWidth));
+            positions1.add(new BlockPos(position.getX(), 0, position.getZ() - currentWidth));
         }
 
         return positions1;

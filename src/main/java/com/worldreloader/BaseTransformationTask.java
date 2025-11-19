@@ -53,7 +53,7 @@ public abstract class BaseTransformationTask {
     protected final int itemCleanupInterval;
     protected int lastCleanupRadius = -1;
 
-    protected int width = 10;
+    protected int width = 20;
     protected int len = 500;
     protected int currentLen = 0;
 
@@ -264,7 +264,8 @@ public abstract class BaseTransformationTask {
 
     protected boolean processCurrentStepPositionsLine() {
         for (BlockPos pos : currentRadiusPositions) {
-            WorldReloader.LOGGER.info(pos.toShortString());
+            world.setChunkForced(pos.getX() >> 4, pos.getZ() >> 4,true);
+            //WorldReloader.LOGGER.info(pos.toShortString());
             processPosition(pos);
         }
         return true;
@@ -353,7 +354,7 @@ public abstract class BaseTransformationTask {
                 // 生成从center到第一个保存点的路径
                 ModConfig.SavedPosition firstSave = sortedSaves.get(0);
                 BlockPos firstSavePos = new BlockPos(firstSave.x, 0, firstSave.z);
-                List<BlockPos> pathToFirst = generateLinePositions(center, firstSavePos);
+                List<BlockPos> pathToFirst = generateLinePositions(new BlockPos(center.getX(),0,center.getY()), firstSavePos);
                 positions.addAll(pathToFirst);
 
                 // 生成保存点之间的路径
@@ -385,6 +386,66 @@ public abstract class BaseTransformationTask {
 
         return positions1;
     }
+
+//    protected List<BlockPos> generateExpandingWidthSave(int currentWidth) {
+//        // 1. 获取保存点列表并创建一个副本以进行排序，避免修改原始配置列表
+//        List<ModConfig.SavedPosition> savePositionsSorted = new ArrayList<>(WorldReloader.config.savedPositions);
+//
+//        // 2. 按照 X 坐标从小到大排序
+//        savePositionsSorted.sort((p1, p2) -> Integer.compare(p1.x, p2.x));
+//
+//        List<BlockPos> expandingPositions = new ArrayList<>();
+//
+//        // 如果是宽度0，生成中心线路径（Center -> 第一个点 -> 第二个点...）
+//        if (currentWidth == 0) {
+//            this.positions.clear(); // 清空类成员变量 positions
+//
+//            // 起点从 center 开始
+//            BlockPos startPos = new BlockPos(center.getX(), 0, center.getZ());
+//
+//            // 遍历所有排序后的保存点，将它们连成线
+//            for (ModConfig.SavedPosition target : savePositionsSorted) {
+//                BlockPos endPos = new BlockPos(target.x, 0, target.z);
+//
+//                // 计算两点之间的距离
+//                int dx = endPos.getX() - startPos.getX();
+//                int dz = endPos.getZ() - startPos.getZ();
+//
+//                // 步长取两个轴距离的最大值，保证方块连续
+//                int steps = Math.max(Math.abs(dx), Math.abs(dz));
+//
+//                // 插值生成路径上的所有点
+//                for (int i = 0; i <= steps; i++) {
+//                    float t = (steps == 0) ? 0 : (float) i / steps;
+//                    int currentX = startPos.getX() + Math.round(dx * t);
+//                    int currentZ = startPos.getZ() + Math.round(dz * t);
+//
+//                    BlockPos newPos = new BlockPos(currentX, 0, currentZ);
+//
+//                    // 防止重复添加点（例如上一段的终点和这一段的起点）
+//                    if (this.positions.isEmpty() || !this.positions.get(this.positions.size() - 1).equals(newPos)) {
+//                        this.positions.add(newPos);
+//                    }
+//                }
+//
+//                // 将当前目标点设为下一段的起点
+//                startPos = endPos;
+//            }
+//            return this.positions;
+//        }
+//
+//        // 对于其他宽度，基于之前生成的中心路径(this.positions)向两侧扩展
+//        // 只有当 positions 有数据时才执行（防止 width=0 步骤未执行的情况）
+//        if (!this.positions.isEmpty()) {
+//            for (BlockPos basePos : this.positions) {
+//                // 生成两侧位置
+//                expandingPositions.add(new BlockPos(basePos.getX(), 0, basePos.getZ() + currentWidth));
+//                expandingPositions.add(new BlockPos(basePos.getX(), 0, basePos.getZ() - currentWidth));
+//            }
+//        }
+//
+//        return expandingPositions;
+//    }
 
     // Bresenham直线算法生成两点之间的所有整数坐标点
     protected List<BlockPos> generateLinePositions(BlockPos start, BlockPos end) {

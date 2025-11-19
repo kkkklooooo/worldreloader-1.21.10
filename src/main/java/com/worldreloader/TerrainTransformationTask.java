@@ -5,6 +5,7 @@ import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.Heightmap;
 
 import java.util.ArrayList;
@@ -31,7 +32,9 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         int targetX = circlePos.getX();
         int targetZ = circlePos.getZ();
         if (!world.isChunkLoaded(targetX >> 4, targetZ >> 4)) {
-            return;
+
+            world.setChunkForced(targetX >> 4, targetZ >> 4,true);
+            //return;
         }
 
         int offsetX = targetX - center.getX();
@@ -40,7 +43,9 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         int referenceZ = referenceCenter.getZ() + offsetZ;
 
         if (!world.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
-            return;
+            forcedChunks.add(new ChunkPos(referenceX >> 4, referenceZ >> 4));
+            world.setChunkForced(referenceX >> 4, referenceZ >> 4,true);
+            //return;
         }
 
         int originalSurfaceY = world.getChunk(targetX >> 4, targetZ >> 4)

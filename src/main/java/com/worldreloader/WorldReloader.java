@@ -41,6 +41,7 @@ import static com.worldreloader.BaseTransformationTask.isSolidBlock;
 public class WorldReloader implements ModInitializer {
 	public static final String MOD_ID = "worldreloader";
 
+	public static WorldReloader instance;
 	public static ModConfig config;
 	public static ConfigHolder ch = AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
 	// This logger is used to write text to the console and the log file.
@@ -52,9 +53,10 @@ public class WorldReloader implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		// Set the static instance
+		instance = this;
 
-
-
+		CommandHandler.registerCommands();
 
 		LOGGER.info("World Reloader Initialized!");
 
@@ -137,7 +139,7 @@ public class WorldReloader implements ModInitializer {
 //		client.setScreen();
 //	}
 
-	private void startTerrainTransformation(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
+	void startTerrainTransformation(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
 		LOGGER.info("开始地形改造过程 - 信标位置: {}", beaconPos);
 
 		Predicate<RegistryEntry<Biome>> targetBiome = detectTargetBiome(world, beaconPos, player);

@@ -59,7 +59,9 @@ class ModConfig implements ConfigData {
     int yMin = 40;
     @ConfigEntry.Category("Non-surface")
     int yMaxThanSurface = 30;
-    @ConfigEntry.Category("Position Management")
+    @ConfigEntry.Category("X方向生成")
+    public int width = 20;
+    @ConfigEntry.Category("X方向生成")
     @ConfigEntry.Gui.Tooltip(count = 2)
     public List<SavedPosition> savedPositions = new ArrayList<>();
 

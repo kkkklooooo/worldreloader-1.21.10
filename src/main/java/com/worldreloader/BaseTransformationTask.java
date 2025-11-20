@@ -53,7 +53,7 @@ public abstract class BaseTransformationTask {
     protected final int itemCleanupInterval;
     protected int lastCleanupRadius = -1;
 
-    protected int width = 20;
+    protected int width = WorldReloader.config.width;
     protected int len = 10;
     protected int currentLen = 0;
 
@@ -343,7 +343,7 @@ public abstract class BaseTransformationTask {
         List<ModConfig.SavedPosition> savePositions = WorldReloader.config.savedPositions;
         List<BlockPos> positions1 = new ArrayList<>();
 
-        // 如果是宽度0，生成从center到所有保存点的完整路径
+        // 如果是宽度0，生成所有保存点之间的连接路径
         if (currentWidth == 0) {
             positions.clear();
 
@@ -351,12 +351,6 @@ public abstract class BaseTransformationTask {
                 // 按x坐标对保存点进行排序
                 List<ModConfig.SavedPosition> sortedSaves = new ArrayList<>(savePositions);
                 sortedSaves.sort((a, b) -> Integer.compare(a.x, b.x));
-
-                // 生成从center到第一个保存点的路径
-                ModConfig.SavedPosition firstSave = sortedSaves.get(0);
-                BlockPos firstSavePos = new BlockPos(firstSave.x, 0, firstSave.z);
-                List<BlockPos> pathToFirst = generateLinePositions(new BlockPos(center.getX(),0,center.getZ()), firstSavePos);
-                positions.addAll(pathToFirst);
 
                 // 生成保存点之间的路径
                 for (int i = 0; i < sortedSaves.size() - 1; i++) {
@@ -367,10 +361,6 @@ public abstract class BaseTransformationTask {
                     BlockPos nextPos = new BlockPos(nextSave.x, 0, nextSave.z);
 
                     List<BlockPos> segmentPath = generateLinePositions(currentPos, nextPos);
-                    // 移除起点避免重复（因为上一段的终点就是这一段的起点）
-                    if (!segmentPath.isEmpty()) {
-                        segmentPath.remove(0);
-                    }
                     positions.addAll(segmentPath);
                 }
             }

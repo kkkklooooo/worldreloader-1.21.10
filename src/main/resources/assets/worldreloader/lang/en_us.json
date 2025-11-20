@@ -34,6 +34,9 @@
   "text.autoconfig.worldreloader.option.COPY_HEIGHT.@Tooltip": "Height limit for copying in destructive generation",
 
   "text.autoconfig.worldreloader.category.Non-surface": "Normal Mode Settings",
+  "text.autoconfig.worldreloader.category.X方向生成": "X Direction Generation",
+  "text.autoconfig.worldreloader.option.width": "Width",
+  "text.autoconfig.worldreloader.option.savedPositions": "Saved Positions",
   "text.autoconfig.worldreloader.option.paddingCount": "Edge Transition Radius",
   "text.autoconfig.worldreloader.option.paddingCount.@Tooltip": "Radius for terrain height transition at the generation edge",
   "text.autoconfig.worldreloader.option.totalSteps2": "Interval (Ticks)",

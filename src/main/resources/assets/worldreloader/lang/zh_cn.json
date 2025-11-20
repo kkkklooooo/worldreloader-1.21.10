@@ -34,6 +34,9 @@
   "text.autoconfig.worldreloader.option.COPY_HEIGHT.@Tooltip": "有损生成复制的高度限制",
 
   "text.autoconfig.worldreloader.category.Non-surface": "正常模式设置",
+  "text.autoconfig.worldreloader.category.X方向生成": "X方向生成",
+  "text.autoconfig.worldreloader.option.width": "宽度",
+  "text.autoconfig.worldreloader.option.savedPositions": "已保存的位置",
   "text.autoconfig.worldreloader.option.paddingCount": "边缘过渡半径",
   "text.autoconfig.worldreloader.option.paddingCount.@Tooltip": "生成边缘的地形高度过渡半径",
   "text.autoconfig.worldreloader.option.totalSteps2": "间隔时间（刻）",

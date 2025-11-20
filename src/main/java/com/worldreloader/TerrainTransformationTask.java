@@ -10,6 +10,7 @@ import net.minecraft.world.Heightmap;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TerrainTransformationTask extends BaseTransformationTask {
     private final int paddingCount;
@@ -200,7 +201,8 @@ public class TerrainTransformationTask extends BaseTransformationTask {
     }
 
     private void applyPaddingTransition(int targetX, int targetZ, ReferenceTerrainInfo reference, int originalSurfaceY) {
-        float progress =1- ((float) (width-Math.abs(targetZ - center.getZ())) / paddingCount);
+        int z=getLineZ(targetX);
+        float progress =1- ((float) (width-Math.abs(targetZ - z)) / paddingCount);
         int referenceTargetY = reference.surfaceY + center.getY() - this.referenceCenter.getY();
         int transitionSurfaceY = (int) (referenceTargetY + (originalSurfaceY - referenceTargetY) * progress);
 
@@ -223,6 +225,23 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             }
         }
         cleanFloatingBlocks(targetX, targetZ, transitionSurfaceY);
+    }
+
+    private int getLineZ(int currentX){
+        if(!this.positions.isEmpty()){
+            int res;
+            for (var i:positions){
+                if(i.getX()==currentX){
+                    res=i.getZ();
+                    return res;
+                }
+            }
+
+        }
+        {
+            WorldReloader.LOGGER.error("get fail");
+            return -1;
+        }
     }
 
     private int calculateTransitionHeight(int referenceY, int referenceSurfaceY, int targetY, int transitionSurfaceY, float progress) {

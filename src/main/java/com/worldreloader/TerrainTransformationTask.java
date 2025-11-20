@@ -158,7 +158,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
 
     private void copyTerrainStructure(int targetX, int targetZ, ReferenceTerrainInfo reference, int originalSurfaceY) {
         if (reference.blocks != null && reference.heights.length != 0) {
-            BlockPos newcenter = new BlockPos(center.getX(), 0, center.getY());
+            //BlockPos newcenter = new BlockPos(center.getX(), 0, center.getY());
             int z=getLineZ(targetX);
             if (false) {
                 copyWithCenterPreservation(targetX, targetZ, reference);

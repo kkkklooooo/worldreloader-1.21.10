@@ -18,14 +18,22 @@ class ModConfig implements ConfigData {
     @ConfigEntry.Category("Main")
     public int targetYmin=64;
     @ConfigEntry.Category("Main")
-    boolean UseSpecificPos = false;
+    boolean UseSpecificPos = true;
 
-    @ConfigEntry.Category("Main")
+    @ConfigEntry.Category("Special")
     int Posx;
-    @ConfigEntry.Category("Main")
+    @ConfigEntry.Category("Special")
     int Posy;
-    @ConfigEntry.Category("Main")
+    @ConfigEntry.Category("Special")
     int Posz;
+    @ConfigEntry.Category("Special")
+    int width=20;
+
+
+
+
+
+
     @ConfigEntry.Category("Main")
     boolean UseSurface = false;
     @ConfigEntry.Category("Main")
@@ -51,16 +59,19 @@ class ModConfig implements ConfigData {
     @ConfigEntry.Category("surface")
     int COPY_HEIGHT = 15;
 
-    @ConfigEntry.Category("Non-surface")
+    @ConfigEntry.Category("Special")
     int paddingCount = 12;
-    @ConfigEntry.Category("Non-surface")
+    @ConfigEntry.Category("Special")
     int totalSteps2 = 3;
+
+
+
+
+
     @ConfigEntry.Category("Non-surface")
     int yMin = 40;
     @ConfigEntry.Category("Non-surface")
     int yMaxThanSurface = 30;
-    @ConfigEntry.Category("X方向生成")
-    public int width = 20;
     @ConfigEntry.Category("X方向生成")
     @ConfigEntry.Gui.Tooltip(count = 2)
     public List<SavedPosition> savedPositions = new ArrayList<>();

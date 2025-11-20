@@ -5,6 +5,7 @@
   "text.autoconfig.worldreloader.title": "Configuration",
 
   "text.autoconfig.worldreloader.category.Main": "Main Settings",
+  "text.autoconfig.worldreloader.category.Special": "adsad",
   "text.autoconfig.worldreloader.option.targetYmin": "Target Y Min",
   "text.autoconfig.worldreloader.option.UseSpecificPos": "Use Specific Target Coordinates",
   "text.autoconfig.worldreloader.option.Posx": "Target Coordinate - X",

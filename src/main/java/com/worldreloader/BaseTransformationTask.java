@@ -54,7 +54,7 @@ public abstract class BaseTransformationTask {
     protected int lastCleanupRadius = -1;
 
     protected int width = 20;
-    protected int len = 500;
+    protected int len = 10;
     protected int currentLen = 0;
 
     // 修改：当前处理的宽度（从中心向两侧扩展）
@@ -79,6 +79,7 @@ public abstract class BaseTransformationTask {
 
     // 公共方法
     public void start() {
+
         this.isActive = true;
     }
 
@@ -354,7 +355,7 @@ public abstract class BaseTransformationTask {
                 // 生成从center到第一个保存点的路径
                 ModConfig.SavedPosition firstSave = sortedSaves.get(0);
                 BlockPos firstSavePos = new BlockPos(firstSave.x, 0, firstSave.z);
-                List<BlockPos> pathToFirst = generateLinePositions(new BlockPos(center.getX(),0,center.getY()), firstSavePos);
+                List<BlockPos> pathToFirst = generateLinePositions(new BlockPos(center.getX(),0,center.getZ()), firstSavePos);
                 positions.addAll(pathToFirst);
 
                 // 生成保存点之间的路径
@@ -447,47 +448,35 @@ public abstract class BaseTransformationTask {
 //        return expandingPositions;
 //    }
 
-    // Bresenham直线算法生成两点之间的所有整数坐标点
     protected List<BlockPos> generateLinePositions(BlockPos start, BlockPos end) {
-        List<BlockPos> linePositions = new ArrayList<>();
+        List<BlockPos> positions = new ArrayList<>();
 
-        int x1 = start.getX();
-        int z1 = start.getZ();
-        int x2 = end.getX();
-        int z2 = end.getZ();
+        int x0 = start.getX();
+        int y0 = start.getZ(); // 注意：我们把 z 当作 y
+        int x1 = end.getX();
+        int y1 = end.getZ();
 
-        int dx = Math.abs(x2 - x1);
-        int dz = Math.abs(z2 - z1);
-
-        int sx = (x1 < x2) ? 1 : -1;
-        int sz = (z1 < z2) ? 1 : -1;
-
-        int err = dx - dz;
-
-        int x = x1;
-        int z = z1;
+        int dx = Math.abs(x1 - x0);
+        int dy = Math.abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+        int x = x0, y = y0;
 
         while (true) {
-            linePositions.add(new BlockPos(x, 0, z));
-
-            if (x == x2 && z == z2) {
-                break;
-            }
-
-            int err2 = 2 * err;
-
-            if (err2 > -dz) {
-                err -= dz;
+            positions.add(new BlockPos(x, 0, y)); // x = x, z = y
+            if (x == x1 && y == y1) break;
+            int e2 = 2 * err;
+            if (e2 > -dy) {
+                err -= dy;
                 x += sx;
             }
-
-            if (err2 < dx) {
+            if (e2 < dx) {
                 err += dx;
-                z += sz;
+                y += sy;
             }
         }
-
-        return linePositions;
+        return positions;
     }
 
     protected void cleanupItemEntities() {

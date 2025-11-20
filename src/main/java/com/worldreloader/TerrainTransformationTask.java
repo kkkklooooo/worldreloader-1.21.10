@@ -162,7 +162,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             int z=getLineZ(targetX);
             if (false) {
                 copyWithCenterPreservation(targetX, targetZ, reference);
-            } else if (Math.abs(targetZ - z) < width-paddingCount) {
+            } else if (Math.abs(targetZ - z) <= width-paddingCount) {
                 copyWithoutPreservation(targetX, targetZ, reference);
             } else {
                 applyPaddingTransition(targetX, targetZ, reference, originalSurfaceY,z);

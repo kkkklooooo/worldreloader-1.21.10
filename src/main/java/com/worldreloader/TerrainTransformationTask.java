@@ -159,13 +159,13 @@ public class TerrainTransformationTask extends BaseTransformationTask {
     private void copyTerrainStructure(int targetX, int targetZ, ReferenceTerrainInfo reference, int originalSurfaceY) {
         if (reference.blocks != null && reference.heights.length != 0) {
             BlockPos newcenter = new BlockPos(center.getX(), 0, center.getY());
-
+            int z=getLineZ(targetX);
             if (false) {
                 copyWithCenterPreservation(targetX, targetZ, reference);
-            } else if (Math.abs(targetZ - center.getZ()) < width-paddingCount) {
+            } else if (Math.abs(targetZ - z) < width-paddingCount) {
                 copyWithoutPreservation(targetX, targetZ, reference);
             } else {
-                applyPaddingTransition(targetX, targetZ, reference, originalSurfaceY);
+                applyPaddingTransition(targetX, targetZ, reference, originalSurfaceY,z);
             }
         }
     }
@@ -200,9 +200,9 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         }
     }
 
-    private void applyPaddingTransition(int targetX, int targetZ, ReferenceTerrainInfo reference, int originalSurfaceY) {
-        int z=getLineZ(targetX);
-        float progress =1- ((float) (width-Math.abs(targetZ - z)) / paddingCount);
+    private void applyPaddingTransition(int targetX, int targetZ, ReferenceTerrainInfo reference, int originalSurfaceY,int z) {
+
+        float progress =Math.clamp(1- ((float) (width-Math.abs(targetZ - z)) / paddingCount),0,1);
         int referenceTargetY = reference.surfaceY + center.getY() - this.referenceCenter.getY();
         int transitionSurfaceY = (int) (referenceTargetY + (originalSurfaceY - referenceTargetY) * progress);
 

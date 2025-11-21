@@ -264,8 +264,11 @@ public abstract class BaseTransformationTask {
     }
 
     protected boolean processCurrentStepPositionsLine() {
+        RegistryEntry<Biome> bb = getBiomeAtChunkCenter(world, new ChunkPos(referenceCenter.getX()>>4,referenceCenter.getZ()>>4));
+
         for (BlockPos pos : currentRadiusPositions) {
             world.setChunkForced(pos.getX() >> 4, pos.getZ() >> 4,true);
+            setBiome(pos,bb,world);
             //WorldReloader.LOGGER.info(pos.toShortString());
             processPosition(pos);
         }
@@ -594,7 +597,7 @@ public abstract class BaseTransformationTask {
 
         serverWorld.getChunkManager().threadedAnvilChunkStorage.sendChunkBiomePackets(List.of(chunk));
 
-        WorldReloader.LOGGER.info("成功设置区块 [{}, {}] 的生物群系，修改了 {} 个方块", chunkX, chunkZ, modifiedCount.getValue());
+        WorldReloader.LOGGER.info("成功设置区块 [{}, {}] 的生物群系，修改了 {} 个方块,设置为 {} ", chunkX, chunkZ, modifiedCount.getValue(),biome.getKey().get().getValue().getPath());
     }
 
     private static BlockPos convertPos(BlockPos pos) {

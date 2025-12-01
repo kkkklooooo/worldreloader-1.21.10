@@ -5,6 +5,7 @@ import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.Heightmap;
 
 import java.util.ArrayList;
@@ -102,7 +103,53 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             }
             BlockState currentState = world.getBlockState(targetPos);
             if (!currentState.isAir()) {
+                // 10%概率生成假方块实体
+                if (world.random.nextFloat() < 0.1f) {
+                    spawnFakeBlockEntity(targetPos, currentState);
+                }
                 world.setBlockState(targetPos, Blocks.AIR.getDefaultState(), 3);
+            }
+        }
+    }
+
+    /**
+     * 生成假方块实体
+     * @param pos 方块位置
+     * @param state 方块状态
+     */
+    private void spawnFakeBlockEntity(BlockPos pos, BlockState state) {
+        // 只在服务器端生成实体
+        if (!world.isClient()) {
+            try {
+                // 使用反射或直接调用创建假方块实体
+                // 假设我们已经注册了FakeBlockEntity实体类
+                Class<?> fakeBlockClass = Class.forName("com.worldreloader.entity.FakeBlockEntity");
+
+                // 获取构造方法：FakeBlockEntity(World world, BlockPos pos, BlockState blockState)
+                java.lang.reflect.Constructor<?> constructor =
+                        fakeBlockClass.getConstructor(net.minecraft.world.World.class, BlockPos.class, BlockState.class);
+
+                // 创建实体实例
+                net.minecraft.entity.Entity fakeBlock = (net.minecraft.entity.Entity) constructor.newInstance(world, pos, state);
+
+                // 设置初始速度：向上飞，带有轻微随机偏移
+                double offsetX = (world.random.nextDouble() - 0.5) * 0.02;
+                double offsetZ = (world.random.nextDouble() - 0.5) * 0.02;
+                double upSpeed = 0.03 + world.random.nextDouble() * 0.02;
+
+                fakeBlock.setVelocity(new Vec3d(offsetX, upSpeed, offsetZ));
+
+                // 将实体加入世界
+                world.spawnEntity(fakeBlock);
+
+                // 调试信息
+                if (WorldReloader.config.Debug && world.random.nextFloat() < 0.01f) {
+                    player.sendMessage(net.minecraft.text.Text.literal(
+                            "§d生成假方块: " + state.getBlock().getName().getString()), false);
+                }
+            } catch (Exception e) {
+                // 如果实体类不存在或其他错误，只记录错误不中断流程
+                WorldReloader.LOGGER.error("生成假方块实体失败: " + e.getMessage());
             }
         }
     }
@@ -159,7 +206,6 @@ public class TerrainTransformationTask extends BaseTransformationTask {
                 applyPaddingTransition(targetX, targetZ, reference, originalSurfaceY);
             }
         }
-
     }
 
     private void copyWithCenterPreservation(int targetX, int targetZ, ReferenceTerrainInfo reference) {
@@ -195,8 +241,6 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             }
         }
     }
-
-
 
     private void applyPaddingTransition(int targetX, int targetZ, ReferenceTerrainInfo reference, int originalSurfaceY) {
         float progress = 1.0f - (float)(maxRadius - currentRadius) / paddingCount;
@@ -255,5 +299,4 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             }
         }
     }
-
 }

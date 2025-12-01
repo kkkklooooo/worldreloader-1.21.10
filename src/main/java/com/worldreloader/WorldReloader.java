@@ -3,6 +3,7 @@ package com.worldreloader;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.datafixers.util.Pair;
+import com.worldreloader.entity.ModEntities;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.gui.registry.GuiRegistry;
@@ -51,6 +52,7 @@ public class WorldReloader implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		LOGGER.info("World Reloader Initialized!");
+		ModEntities.initialize();
 
 		// 注册指令
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {

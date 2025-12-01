@@ -18,6 +18,9 @@
 		"main": [
 			"com.worldreloader.WorldReloader"
 		],
+		"client": [
+			"com.worldreloader.client.WorldReloaderClient"
+		],
 		"fabric-datagen": [
 			"com.worldreloader.WorldReloaderDataGenerator"
 		]

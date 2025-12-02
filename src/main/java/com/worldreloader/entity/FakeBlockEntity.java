@@ -12,11 +12,16 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class FakeBlockEntity extends Entity {
     // 数据跟踪器，用于同步方块状态到客户端
     private static final TrackedData<Integer> BLOCK_STATE_ID =
             DataTracker.registerData(FakeBlockEntity.class, TrackedDataHandlerRegistry.INTEGER);
+    private static final int MAX_TRAIL_LENGTH = 20;
 
+    private final List<Vec3d> trailPositions = new ArrayList<>();
     // 配置参数
     private int maxAge = 400; // 5秒生命周期 (20 tick/秒)
     private float rotation = 0.0f;
@@ -47,7 +52,30 @@ public class FakeBlockEntity extends Entity {
     protected void initDataTracker(DataTracker.Builder builder) {
         builder.add(BLOCK_STATE_ID, 0); // 默认空气方块ID
     }
+    public List<Vec3d> getTrailPositions() {
+        return trailPositions;
+    }
+    // 基于速度预测轨迹
+    public List<Vec3d> getPredictedTrail(float deltaTime, int steps) {
+        List<Vec3d> predicted = new ArrayList<>();
+        Vec3d currentPos = this.getPos();
+        Vec3d velocity = this.getVelocity();
 
+        for (int i = 0; i < steps; i++) {
+            float time = i * deltaTime;
+            Vec3d predictedPos = currentPos.add(velocity.multiply(time));
+            predicted.add(predictedPos);
+        }
+
+        return predicted;
+    }
+
+    private void updateTrail() {
+        trailPositions.add(this.getPos());
+        if (trailPositions.size() > MAX_TRAIL_LENGTH) {
+            trailPositions.remove(0);
+        }
+    }
     @Override
     public void tick() {
         super.tick();
@@ -64,13 +92,17 @@ public class FakeBlockEntity extends Entity {
         double swingZ = Math.cos(age * 0.1) * 0.01;
 
         // 设置速度
-        this.setVelocity(new Vec3d(swingX, currentSpeed, swingZ));
+        this.setVelocity(new Vec3d(0, currentSpeed, 0));
         this.move(MovementType.SELF, this.getVelocity());
 
         // 检查是否应该消失
         if (this.age > maxAge) {
             this.discard();
             return;
+        }
+        // Update trail and scale less frequently to improve performance
+        if (this.age % 2 == 0) {
+            updateTrail();
         }
 
         // 检查是否飞得太高

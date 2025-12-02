@@ -1,5 +1,6 @@
 package com.worldreloader;
 
+import com.worldreloader.entity.FakeBlockEntity;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
@@ -104,7 +105,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             BlockState currentState = world.getBlockState(targetPos);
             if (!currentState.isAir()) {
                 // 10%概率生成假方块实体
-                if (world.random.nextFloat() < 0.1f) {
+                if (world.random.nextFloat() < 0.2f) {
                     spawnFakeBlockEntity(targetPos, currentState);
                 }
                 world.setBlockState(targetPos, Blocks.AIR.getDefaultState(), 3);
@@ -121,26 +122,28 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         // 只在服务器端生成实体
         if (!world.isClient()) {
             try {
+                FakeBlockEntity FK=new FakeBlockEntity(world,pos,state);
                 // 使用反射或直接调用创建假方块实体
                 // 假设我们已经注册了FakeBlockEntity实体类
-                Class<?> fakeBlockClass = Class.forName("com.worldreloader.entity.FakeBlockEntity");
+//                Class<?> fakeBlockClass = Class.forName("com.worldreloader.entity.FakeBlockEntity");
+//
+//                // 获取构造方法：FakeBlockEntity(World world, BlockPos pos, BlockState blockState)
+//                java.lang.reflect.Constructor<?> constructor =
+//                        fakeBlockClass.getConstructor(net.minecraft.world.World.class, BlockPos.class, BlockState.class);
+//
+//                // 创建实体实例
+//                net.minecraft.entity.Entity fakeBlock = (net.minecraft.entity.Entity) constructor.newInstance(world, pos, state);
 
-                // 获取构造方法：FakeBlockEntity(World world, BlockPos pos, BlockState blockState)
-                java.lang.reflect.Constructor<?> constructor =
-                        fakeBlockClass.getConstructor(net.minecraft.world.World.class, BlockPos.class, BlockState.class);
-
-                // 创建实体实例
-                net.minecraft.entity.Entity fakeBlock = (net.minecraft.entity.Entity) constructor.newInstance(world, pos, state);
 
                 // 设置初始速度：向上飞，带有轻微随机偏移
                 double offsetX = (world.random.nextDouble() - 0.5) * 0.02;
                 double offsetZ = (world.random.nextDouble() - 0.5) * 0.02;
                 double upSpeed = 0.03 + world.random.nextDouble() * 0.02;
 
-                fakeBlock.setVelocity(new Vec3d(offsetX, upSpeed, offsetZ));
+                FK.setVelocity(new Vec3d(offsetX, upSpeed, offsetZ));
 
                 // 将实体加入世界
-                world.spawnEntity(fakeBlock);
+                world.spawnEntity(FK);
 
                 // 调试信息
                 if (WorldReloader.config.Debug && world.random.nextFloat() < 0.01f) {

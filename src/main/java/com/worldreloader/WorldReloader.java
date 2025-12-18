@@ -11,6 +11,9 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroups;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.entry.RegistryEntryList;
@@ -37,6 +40,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 import static com.worldreloader.BaseTransformationTask.isSolidBlock;
+import static net.minecraft.item.Items.register;
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
 
@@ -47,11 +51,23 @@ public class WorldReloader implements ModInitializer {
 	public static ConfigHolder ch = AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public String minPermission="op";
+	private static boolean isLock=false;
+
+	public static final Item CUSTOM_ITEM = new CrystalItem(new Item.Settings());
+
+	public static void SetLocker(boolean isLock1){
+		isLock=isLock1;
+	}
 
 	@Override
 	public void onInitialize() {
+//		final RegistryKey<Item> registryKey = RegistryKey.of(RegistryKeys.ITEM, Identifier.of(MOD_ID, "crystal"));
+//		Registry.register(Registries.ITEM,registryKey,CUSTOM_ITEM);
+		Registry.register(Registries.ITEM, Identifier.of(MOD_ID, "crystal"), CUSTOM_ITEM);
 		LOGGER.info("World Reloader Initialized!");
-
+//        ItemGroupEvents.modifyEntriesEvent(ItemGroups.FUNCTIONAL).register(content -> {
+//            content.add(CUSTOM_ITEM);
+//        });
 		// 注册指令
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 			// 设置权限指令
@@ -146,7 +162,7 @@ public class WorldReloader implements ModInitializer {
 			BlockPos pos = hitResult.getBlockPos();
 
 			if (world.getBlockState(pos).getBlock() == Blocks.BEACON &&
-					itemStack.getItem() == Items.NETHER_STAR) {
+					itemStack.getItem() == CUSTOM_ITEM) {
 				if (!checkPermission(player)) {
 					player.sendMessage(Text.literal("§c你没有权限使用地形改造功能！"), false);
 					return ActionResult.FAIL;

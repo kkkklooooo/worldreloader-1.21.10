@@ -1,8 +1,7 @@
-package com.worldreloader.transformationtasks;
+package com.worldreloader;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Either;
-import com.worldreloader.WorldReloader;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -43,13 +42,12 @@ public abstract class BaseTransformationTask {
     protected final int minY;
     protected final int itemCleanupInterval;
     protected int lastCleanupRadius = -1;
-    protected  boolean isChangeBiome=true;
 
     protected List<BlockPos> currentRadiusPositions = new ArrayList<>();
 
-    protected BaseTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter,
+    public BaseTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter,
                                   net.minecraft.entity.player.PlayerEntity player,
-                                  int maxRadius, int totalSteps, int itemCleanupInterval,boolean isChangeBiome) {
+                                  int maxRadius, int totalSteps, int itemCleanupInterval) {
         this.world = world;
         this.center = center;
         this.referenceCenter = referenceCenter;
@@ -59,21 +57,17 @@ public abstract class BaseTransformationTask {
         this.totalSteps = totalSteps;
         this.itemCleanupInterval = itemCleanupInterval;
         registerToTick();
-        this.isChangeBiome=isChangeBiome;
     }
 
     // 公共方法
     public void start() {
-
-        WorldReloader.SetLocker(true);
         this.isActive = true;
     }
 
     public void stop() {
-        //cleanupItemEntities();
+        cleanupItemEntities();
         if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§a最终物品清理完成！"), false);
         this.isActive = false;
-        WorldReloader.SetLocker(false);
         currentRadiusPositions.clear();
         currentStep = 0;
         lastCleanupRadius = -1;
@@ -104,7 +98,7 @@ public abstract class BaseTransformationTask {
                     ChunkPos chunkPos = new ChunkPos((referenceCenter.getX() >> 4) + x, (referenceCenter.getZ() >> 4) + z);
                     if (!forcedChunks.contains(chunkPos)) {
                         world.setChunkForced(chunkPos.x, chunkPos.z, true);
-                        if(isChangeBiome) {
+                        if(WorldReloader.config.isChangeBiome) {
                             RegistryEntry<Biome> bb = getBiomeAtChunkCenter(world, chunkPos);
                             setBiome(center.add(16*x, 0, 16*z), bb, world);
                         }
@@ -385,7 +379,7 @@ public abstract class BaseTransformationTask {
         public BlockState[] aboveSurfaceBlocks;
         public int[] aboveSurfaceHeights;
     }
-    public static boolean isSolidBlock(World world, BlockState state) {
+    protected static boolean isSolidBlock(World world,BlockState state) {
         return state.isSolidBlock(world, BlockPos.ORIGIN) &&
                 !isWaterOrPlant(state);
     }

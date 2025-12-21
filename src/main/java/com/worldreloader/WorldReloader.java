@@ -50,6 +50,7 @@ public class WorldReloader implements ModInitializer {
 	public static ModConfig config;
 	public static ConfigHolder ch = AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+	public static WorldReloader instance;
 	public String minPermission="op";
 	private static boolean isLock=false;
 
@@ -61,6 +62,7 @@ public class WorldReloader implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		instance=this;
 //		final RegistryKey<Item> registryKey = RegistryKey.of(RegistryKeys.ITEM, Identifier.of(MOD_ID, "crystal"));
 //		Registry.register(Registries.ITEM,registryKey,CUSTOM_ITEM);
 		Registry.register(Registries.ITEM, Identifier.of(MOD_ID, "crystal"), CUSTOM_ITEM);
@@ -330,7 +332,7 @@ public class WorldReloader implements ModInitializer {
 	}
 
 	// 修改原有的startTerrainTransformation方法，添加权限检查
-	private void startTerrainTransformation(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
+	public void startTerrainTransformation(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
 		// 权限检查
 		if (!checkPermission(player)) {
 			player.sendMessage(Text.literal("§c你没有权限使用地形改造功能！"), false);

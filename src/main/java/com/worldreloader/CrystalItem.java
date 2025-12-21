@@ -50,7 +50,7 @@ public class CrystalItem extends Item {
            if(pos==null) user.sendMessage(Text.literal("未找到信标方块"));
            BlockPos finalPos = pos;
            Objects.requireNonNull(world.getServer()).execute(() -> {
-               WorldReloader.instance.startTerrainTransformation((ServerWorld) world, finalPos, user);
+               WorldReloader.instance.startTerrainTransformation((ServerWorld) world, user.getBlockPos(), user);
            });
        }
         return super.use(world, user, hand);

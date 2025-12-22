@@ -17,7 +17,7 @@
       "item": "minecraft:dead_bush"
     },
     {
-      "item": "minecraft:chiseled_red_sandstone"
+      "item": "minecraft:chiseled_sandstone"
     },
     {
       "item": "minecraft:sponge"
@@ -31,6 +31,6 @@
   ],
   "result": {
     "id": "worldreloader:crystal",
-    "count": 4
+    "count": 1
   }
 }

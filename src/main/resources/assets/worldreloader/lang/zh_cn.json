@@ -55,6 +55,8 @@
   "text.autoconfig.worldreloader.option.BiomeMapping.enabled": "是否启用",
   "text.autoconfig.worldreloader.option.StructureMapping": "元素",
   "text.autoconfig.worldreloader.option.BiomeMapping": "元素",
+  "block.worldreloader.frozen_daisy": "极寒滨菊",
+  "item.worldreloader.frozen_daisy": "极寒滨菊",
 
   "item.worldreloader.crystal": "群系共鸣水晶"
 

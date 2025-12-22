@@ -3,6 +3,8 @@
   "key.worldloader.open_config": "Open World Reloader Menu",
 
   "text.autoconfig.worldreloader.title": "Configuration",
+  "block.worldreloader.frozen_daisy": "Frozen Daisy",
+  "item.worldreloader.frozen_daisy": "Frozen Daisy",
 
   "text.autoconfig.worldreloader.category.Main": "Main Settings",
   "text.autoconfig.worldreloader.option.UseSpecificPos": "Use Specific Target Coordinates",

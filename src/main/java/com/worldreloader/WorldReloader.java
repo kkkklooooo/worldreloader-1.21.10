@@ -3,6 +3,7 @@ package com.worldreloader;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.datafixers.util.Pair;
+import com.worldreloader.blocks.FrozenDaisyBlock;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.gui.registry.GuiRegistry;
@@ -12,8 +13,8 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroups;
+import net.minecraft.block.*;
+import net.minecraft.item.*;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.entry.RegistryEntryList;
@@ -23,11 +24,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.world.gen.structure.Structure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -55,6 +51,17 @@ public class WorldReloader implements ModInitializer {
 	private static boolean isLock=false;
 
 	public static final Item CUSTOM_ITEM = new CrystalItem(new Item.Settings());
+	public static final Block FROZEN_DAISY = new FrozenDaisyBlock(
+			AbstractBlock.Settings.copy(Blocks.POTTED_OXEYE_DAISY)
+					.luminance(state -> 5)  // 轻微发光效果
+					.nonOpaque()
+	);
+
+	// 使用普通的 BlockItem 而不是自定义的 FrozenDaisyItem
+	public static final Item FROZEN_DAISY_ITEM = new BlockItem(
+			FROZEN_DAISY,
+			new Item.Settings()
+	);
 
 	public static void SetLocker(boolean isLock1){
 		isLock=isLock1;
@@ -63,6 +70,8 @@ public class WorldReloader implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		instance=this;
+		Registry.register(Registries.BLOCK, Identifier.of(MOD_ID, "frozen_daisy"), FROZEN_DAISY);
+		Registry.register(Registries.ITEM, Identifier.of(MOD_ID, "frozen_daisy"), FROZEN_DAISY_ITEM);
 //		final RegistryKey<Item> registryKey = RegistryKey.of(RegistryKeys.ITEM, Identifier.of(MOD_ID, "crystal"));
 //		Registry.register(Registries.ITEM,registryKey,CUSTOM_ITEM);
 		Registry.register(Registries.ITEM, Identifier.of(MOD_ID, "crystal"), CUSTOM_ITEM);
@@ -324,7 +333,6 @@ public class WorldReloader implements ModInitializer {
 			} else {
 				new TerrainTransformationTask(world, centerPos, referencePos, player).start();
 			}
-			player.sendMessage(Text.literal("§a地形改造已启动！"), false);
 			LOGGER.info("地形改造任务已启动 - 中心位置: {}, 参考位置: {}", centerPos, referencePos);
 		} else {
 			sendErrorMessage(player, targetBiome, targetStructure);

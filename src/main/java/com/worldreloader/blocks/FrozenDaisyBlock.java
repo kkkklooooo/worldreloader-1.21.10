@@ -2,10 +2,12 @@ package com.worldreloader.blocks;
 
 
 import com.mojang.serialization.MapCodec;
+import com.worldreloader.WorldReloader;
 import net.minecraft.block.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.state.StateManager;
@@ -108,6 +110,13 @@ public class FrozenDaisyBlock extends PlantBlock {
 
 
         }
+    }
+
+    @Override
+    public BlockState onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
+        ItemStack itemStack = new ItemStack(WorldReloader.FROZEN_DAISY_ITEM);
+        dropStack(world, pos, itemStack);
+        return super.onBreak(world, pos, state, player);
     }
 
     @Override

@@ -30,8 +30,15 @@ public class FrozenDaisyBlock extends PlantBlock {
                 .noCollision()
                 .nonOpaque()
                 .offset(OffsetType.XZ)
+                .solid()
+
 
         );
+    }
+
+    @Override
+    protected boolean isTransparent(BlockState state, BlockView world, BlockPos pos) {
+        return true;
     }
 
     @Override

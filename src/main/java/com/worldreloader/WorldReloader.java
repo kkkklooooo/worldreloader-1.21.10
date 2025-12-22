@@ -9,11 +9,13 @@ import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.gui.registry.GuiRegistry;
 import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.block.*;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.item.*;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
@@ -79,6 +81,7 @@ public class WorldReloader implements ModInitializer {
 //        ItemGroupEvents.modifyEntriesEvent(ItemGroups.FUNCTIONAL).register(content -> {
 //            content.add(CUSTOM_ITEM);
 //        });
+		BlockRenderLayerMap.INSTANCE.putBlock(FROZEN_DAISY, RenderLayer.getTranslucent());
 		// 注册指令
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 			// 设置权限指令

@@ -1,11 +1,12 @@
-package com.worldreloader;
+package com.cp.worldreloader;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.Heightmap;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,24 +14,24 @@ import java.util.List;
 public class TerrainTransformationTask extends BaseTransformationTask {
     private final int paddingCount;
     private final int yMin;
-    private final  int yMax;
+    private final int yMax;
 
-    public TerrainTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter,
-                                     PlayerEntity player) {
+    public TerrainTransformationTask(ServerLevel world, BlockPos center, BlockPos referenceCenter,
+                                     ServerPlayer player) {
         super(world, center, referenceCenter, player,
                 WorldReloader.config.maxRadius,
                 WorldReloader.config.totalSteps2,
                 WorldReloader.config.itemCleanupInterval);
         this.paddingCount = WorldReloader.config.paddingCount;
-        this.yMin =WorldReloader.config.yMin;
-        this.yMax =WorldReloader.config.yMaxThanSurface;
+        this.yMax = WorldReloader.config.yMaxThanSurface;
+        this.yMin = WorldReloader.config.yMin;
     }
 
     @Override
     protected void processPosition(BlockPos circlePos) {
         int targetX = circlePos.getX();
         int targetZ = circlePos.getZ();
-        if (!world.isChunkLoaded(targetX >> 4, targetZ >> 4)) {
+        if (!world.hasChunk(targetX >> 4, targetZ >> 4)) {
             return;
         }
 
@@ -39,13 +40,12 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         int referenceX = referenceCenter.getX() + offsetX;
         int referenceZ = referenceCenter.getZ() + offsetZ;
 
-        if (!world.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
+        if (!world.hasChunk(referenceX >> 4, referenceZ >> 4)) {
             return;
         }
 
-        int originalSurfaceY = world.getChunk(targetX >> 4, targetZ >> 4)
-                .getHeightmap(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES)
-                .get(targetX & 15, targetZ & 15);
+        LevelChunk targetChunk = world.getChunk(targetX >> 4, targetZ >> 4);
+        int originalSurfaceY = targetChunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, targetX & 15, targetZ & 15);
 
         destroyAtPosition(targetX, targetZ);
         ReferenceTerrainInfo referenceInfo = getReferenceTerrainInfo(referenceX, referenceZ);
@@ -56,15 +56,14 @@ public class TerrainTransformationTask extends BaseTransformationTask {
 
     @Override
     protected ReferenceTerrainInfo getReferenceTerrainInfo(int referenceX, int referenceZ) {
-        if (!world.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
+        if (!world.hasChunk(referenceX >> 4, referenceZ >> 4)) {
             return null;
         }
 
-        int referenceSurfaceY = world.getChunk(referenceX >> 4, referenceZ >> 4)
-                .getHeightmap(Heightmap.Type.MOTION_BLOCKING)
-                .get(referenceX & 15, referenceZ & 15);
+        LevelChunk referenceChunk = world.getChunk(referenceX >> 4, referenceZ >> 4);
+        int referenceSurfaceY = referenceChunk.getHeight(Heightmap.Types.MOTION_BLOCKING, referenceX & 15, referenceZ & 15);
 
-        if (referenceSurfaceY < yMin -1 ) {
+        if (referenceSurfaceY < yMin - 1) {
             return null;
         }
 
@@ -87,11 +86,10 @@ public class TerrainTransformationTask extends BaseTransformationTask {
     }
 
     private void destroyAtPosition(int targetX, int targetZ) {
-        int surfaceY = world.getChunk(targetX >> 4, targetZ >> 4)
-                .getHeightmap(Heightmap.Type.WORLD_SURFACE)
-                .get(targetX & 15, targetZ & 15);
+        LevelChunk targetChunk = world.getChunk(targetX >> 4, targetZ >> 4);
+        int surfaceY = targetChunk.getHeight(Heightmap.Types.WORLD_SURFACE, targetX & 15, targetZ & 15);
 
-        if (surfaceY < yMin -1) {
+        if (surfaceY < yMin - 1) {
             return;
         }
 
@@ -102,7 +100,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             }
             BlockState currentState = world.getBlockState(targetPos);
             if (!currentState.isAir()) {
-                world.setBlockState(targetPos, Blocks.AIR.getDefaultState(), 3);
+                world.setBlock(targetPos, Blocks.AIR.defaultBlockState(), 3);
             }
         }
     }
@@ -112,7 +110,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         while (currentY > minY + 10) {
             BlockPos pos = new BlockPos(x, currentY, z);
             BlockState state = world.getBlockState(pos);
-            if (isSolidBlock(world,state)) {
+            if (isSolidBlock(world, state)) {
                 return currentY;
             }
             currentY--;
@@ -159,7 +157,6 @@ public class TerrainTransformationTask extends BaseTransformationTask {
                 applyPaddingTransition(targetX, targetZ, reference, originalSurfaceY);
             }
         }
-
     }
 
     private void copyWithCenterPreservation(int targetX, int targetZ, ReferenceTerrainInfo reference) {
@@ -175,7 +172,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             if (!referenceState.isAir()) {
                 BlockState currentState = world.getBlockState(targetPos);
                 if (!currentState.equals(referenceState)) {
-                    world.setBlockState(targetPos, referenceState, 3);
+                    world.setBlock(targetPos, referenceState, 3);
                 }
             }
         }
@@ -190,13 +187,11 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             if (!referenceState.isAir()) {
                 BlockState currentState = world.getBlockState(targetPos);
                 if (!currentState.equals(referenceState)) {
-                    world.setBlockState(targetPos, referenceState, 3);
+                    world.setBlock(targetPos, referenceState, 3);
                 }
             }
         }
     }
-
-
 
     private void applyPaddingTransition(int targetX, int targetZ, ReferenceTerrainInfo reference, int originalSurfaceY) {
         float progress = 1.0f - (float)(maxRadius - currentRadius) / paddingCount;
@@ -209,18 +204,17 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             int transitionY = calculateTransitionHeight(referenceY, reference.surfaceY, targetY, transitionSurfaceY, progress);
 
             BlockPos targetPos = new BlockPos(targetX, transitionY, targetZ);
-            if (isSolidBlock(world,reference.blocks[i])) {
-                BlockState referenceState = reference.blocks[i];
+            BlockState referenceState = reference.blocks[i];
+
+            if (isSolidBlock(world, referenceState)) {
                 if (!referenceState.isAir()) {
                     BlockState currentState = world.getBlockState(targetPos);
                     if (!currentState.equals(referenceState)) {
-                        world.setBlockState(targetPos, referenceState, 3);
+                        world.setBlock(targetPos, referenceState, 3);
                     }
                 }
-            }
-            else if(reference.blocks[i].getFluidState().isStill())
-            {
-                world.setBlockState(new BlockPos(targetX, targetY, targetZ),reference.blocks[i],3);
+            } else if (!referenceState.getFluidState().isEmpty()) {
+                world.setBlock(new BlockPos(targetX, targetY, targetZ), referenceState, 3);
             }
         }
         cleanFloatingBlocks(targetX, targetZ, transitionSurfaceY);
@@ -239,21 +233,20 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         for (int y = transitionSurfaceY + 10; y > transitionSurfaceY; y--) {
             BlockPos pos = new BlockPos(targetX, y, targetZ);
             BlockState state = world.getBlockState(pos);
-            if (!state.isAir() && isSolidBlock(world,state) && y > transitionSurfaceY + 2) {
+            if (!state.isAir() && isSolidBlock(world, state) && y > transitionSurfaceY + 2) {
                 boolean hasSupport = false;
                 for (int checkY = y - 1; checkY >= transitionSurfaceY; checkY--) {
                     BlockPos belowPos = new BlockPos(targetX, checkY, targetZ);
                     BlockState belowState = world.getBlockState(belowPos);
-                    if (isSolidBlock(world,belowState)) {
+                    if (isSolidBlock(world, belowState)) {
                         hasSupport = true;
                         break;
                     }
                 }
                 if (!hasSupport) {
-                    world.setBlockState(pos, Blocks.AIR.getDefaultState(), 3);
+                    world.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
                 }
             }
         }
     }
-
 }

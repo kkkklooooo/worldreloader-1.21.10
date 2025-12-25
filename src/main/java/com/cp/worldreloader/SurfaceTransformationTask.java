@@ -1,10 +1,12 @@
-package com.worldreloader;
+package com.cp.worldreloader;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.Heightmap;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.server.level.ServerPlayer;
 
 public class SurfaceTransformationTask extends BaseTransformationTask {
     private final int DESTROY_DEPTH;
@@ -12,8 +14,8 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
     private final int COPY_DEPTH;
     private final int COPY_HEIGHT;
 
-    public SurfaceTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter,
-                                     net.minecraft.entity.player.PlayerEntity player) {
+    public SurfaceTransformationTask(ServerLevel world, BlockPos center, BlockPos referenceCenter,
+                                     ServerPlayer player) {
         super(world, center, referenceCenter, player,
                 WorldReloader.config.maxRadius,
                 WorldReloader.config.totalSteps,
@@ -29,7 +31,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         int targetX = circlePos.getX();
         int targetZ = circlePos.getZ();
 
-        if (!world.isChunkLoaded(targetX >> 4, targetZ >> 4)) {
+        if (!world.hasChunk(targetX >> 4, targetZ >> 4)) {
             return;
         }
 
@@ -38,13 +40,12 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         int referenceX = referenceCenter.getX() + offsetX;
         int referenceZ = referenceCenter.getZ() + offsetZ;
 
-        if (!world.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
+        if (!world.hasChunk(referenceX >> 4, referenceZ >> 4)) {
             return;
         }
 
-        int originalSurfaceY = world.getChunk(targetX >> 4, targetZ >> 4)
-                .getHeightmap(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES)
-                .get(targetX & 15, targetZ & 15);
+        LevelChunk targetChunk = world.getChunk(targetX >> 4, targetZ >> 4);
+        int originalSurfaceY = targetChunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, targetX & 15, targetZ & 15);
 
         ReferenceTerrainInfo referenceInfo = getReferenceTerrainInfo(referenceX, referenceZ);
         if (referenceInfo == null) {
@@ -56,12 +57,11 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         if (shouldSkipProcessing(referenceSurfaceYAtTarget, originalSurfaceY)) {
             return;
         }
-        if(currentRadius<=8) {
+
+        if (currentRadius <= 8) {
             destroyAtPositionWithPreserve(targetX, targetZ, originalSurfaceY);
             copyTerrainStructureTopDownWithPreserve(targetX, targetZ, referenceInfo);
-        }
-        else
-        {
+        } else {
             destroyAtPosition(targetX, targetZ, originalSurfaceY);
             copyTerrainStructureTopDown(targetX, targetZ, referenceInfo);
         }
@@ -69,13 +69,12 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
 
     @Override
     protected ReferenceTerrainInfo getReferenceTerrainInfo(int referenceX, int referenceZ) {
-        if (!world.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
+        if (!world.hasChunk(referenceX >> 4, referenceZ >> 4)) {
             return null;
         }
 
-        int referenceSurfaceY = world.getChunk(referenceX >> 4, referenceZ >> 4)
-                .getHeightmap(Heightmap.Type.MOTION_BLOCKING)
-                .get(referenceX & 15, referenceZ & 15);
+        LevelChunk referenceChunk = world.getChunk(referenceX >> 4, referenceZ >> 4);
+        int referenceSurfaceY = referenceChunk.getHeight(Heightmap.Types.MOTION_BLOCKING, referenceX & 15, referenceZ & 15);
 
         if (referenceSurfaceY < 19) {
             return null;
@@ -110,10 +109,11 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
             }
             BlockState currentState = world.getBlockState(targetPos);
             if (!currentState.isAir()) {
-                world.setBlockState(targetPos, Blocks.AIR.getDefaultState(), 3);
+                world.setBlock(targetPos, Blocks.AIR.defaultBlockState(), 3);
             }
         }
     }
+
     private void destroyAtPosition(int targetX, int targetZ, int surfaceY) {
         if (surfaceY < 18) {
             return;
@@ -126,7 +126,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
             BlockPos targetPos = new BlockPos(targetX, y, targetZ);
             BlockState currentState = world.getBlockState(targetPos);
             if (!currentState.isAir()) {
-                world.setBlockState(targetPos, Blocks.AIR.getDefaultState(), 3);
+                world.setBlock(targetPos, Blocks.AIR.defaultBlockState(), 3);
             }
         }
     }
@@ -143,8 +143,8 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
                 }
 
                 BlockState currentState = world.getBlockState(targetPos);
-                if (currentState.isAir() || currentState.isReplaceable()) {
-                    world.setBlockState(targetPos, referenceState, 3);
+                if (currentState.isAir() || currentState.canBeReplaced()) {
+                    world.setBlock(targetPos, referenceState, 3);
                 }
             }
         }
@@ -162,12 +162,13 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
                 if (!referenceState.isAir()) {
                     BlockState currentState = world.getBlockState(targetPos);
                     if (!currentState.equals(referenceState)) {
-                        world.setBlockState(targetPos, referenceState, 3);
+                        world.setBlock(targetPos, referenceState, 3);
                     }
                 }
             }
         }
     }
+
     private void copyTerrainStructureTopDown(int targetX, int targetZ, ReferenceTerrainInfo reference) {
         if (reference.aboveSurfaceBlocks != null && reference.aboveSurfaceHeights != null) {
             for (int i = reference.aboveSurfaceBlocks.length - 1; i >= 0; i--) {
@@ -175,10 +176,9 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
                 BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
                 BlockState referenceState = reference.aboveSurfaceBlocks[i];
 
-
                 BlockState currentState = world.getBlockState(targetPos);
-                if (currentState.isAir() || currentState.isReplaceable()) {
-                    world.setBlockState(targetPos, referenceState, 3);
+                if (currentState.isAir() || currentState.canBeReplaced()) {
+                    world.setBlock(targetPos, referenceState, 3);
                 }
             }
         }
@@ -189,11 +189,10 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
                 BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
                 BlockState referenceState = reference.blocks[i];
 
-
                 if (!referenceState.isAir()) {
                     BlockState currentState = world.getBlockState(targetPos);
                     if (!currentState.equals(referenceState)) {
-                        world.setBlockState(targetPos, referenceState, 3);
+                        world.setBlock(targetPos, referenceState, 3);
                     }
                 }
             }

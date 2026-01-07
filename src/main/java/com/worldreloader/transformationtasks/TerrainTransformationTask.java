@@ -58,6 +58,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
     @Override
     protected ReferenceTerrainInfo getReferenceTerrainInfo(int referenceX, int referenceZ) {
         if (!targetDimensionWorld.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
+            targetDimensionWorld.setChunkForced(referenceX >> 4, referenceZ >> 4, true);
             return null;
         }
 

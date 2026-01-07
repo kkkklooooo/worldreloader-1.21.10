@@ -258,8 +258,16 @@ public class TerrainTransformationBuilder {
     {
         return radius>0&&targetPos!=null&&changePos!=null;
     }
-    private BlockPos getValidSurfacePosition(BlockPos pos) {
+    private BlockPos getValidSurfacePosition(BlockPos pos){
+        if(targetDimensionWorld!=null){
+            return getValidSurfacePosition(pos,targetDimensionWorld);
+        }
+        return getValidSurfacePosition(pos,world);
+    }
+    private BlockPos getValidSurfacePosition(BlockPos pos,ServerWorld world) {
         ChunkPos chunkPos = new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4);
+
+
 
         if (!world.isChunkLoaded(chunkPos.x, chunkPos.z)) {
             world.setChunkForced(chunkPos.x, chunkPos.z, true);
@@ -288,7 +296,13 @@ public class TerrainTransformationBuilder {
 
         return null;
     }
-    private int validateAndAdjustSurfaceHeight(int x, int z, int initialHeight) {
+    private int validateAndAdjustSurfaceHeight(int x, int z, int initialHeight){
+        if(targetDimensionWorld!= null){
+            return validateAndAdjustSurfaceHeight(x, z, initialHeight,targetDimensionWorld);
+        }
+        return validateAndAdjustSurfaceHeight(x, z, initialHeight,world);
+    }
+    private int validateAndAdjustSurfaceHeight(int x, int z, int initialHeight,ServerWorld world) {
         int currentY = initialHeight;
 
         while (currentY > world.getBottomY() + 10) {

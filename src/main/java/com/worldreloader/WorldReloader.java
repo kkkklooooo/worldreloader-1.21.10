@@ -216,7 +216,7 @@ public class WorldReloader implements ModInitializer {
 
 			// 检查是否所有需求都已满足
 			if (itemRequirements.isEmpty()) {
-				LOGGER.info("激活地形改造");
+  				LOGGER.info("激活地形改造");
 				Objects.requireNonNull(world.getServer()).execute(() -> {
 					startTerrainTransformation((ServerWorld) world, pos, player);
 				});
@@ -537,6 +537,10 @@ public class WorldReloader implements ModInitializer {
 			return;
 		}
 
+		RegistryKey<World> worldRegistryKey=RegistryKey.of(RegistryKeys.WORLD,Identifier.of(config.dimension));
+		MinecraftServer server=world.getServer();
+		ServerWorld targetWorld=server.getWorld(worldRegistryKey);
+
 		LOGGER.info("开始地形改造过程 - 信标位置: {}", beaconPos);
 
 		TerrainTransformationBuilder builder = new TerrainTransformationBuilder(world, player)
@@ -545,7 +549,8 @@ public class WorldReloader implements ModInitializer {
 				.setPadding(config.paddingCount)
 				.setSteps(config.totalSteps2)
 				.setItemCleanupInterval(config.itemCleanupInterval)
-				.changeBiome(true);
+				.changeBiome(true)
+				.setTargetDimension(targetWorld);
 
 		// 设置高度参数
 		if (config.UseSurface) {

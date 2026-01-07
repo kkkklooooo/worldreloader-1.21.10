@@ -106,6 +106,9 @@ public abstract class BaseTransformationTask {
             for (int x = -chunkRadius; x <= chunkRadius; x++) {
                 for (int z = -chunkRadius; z <= chunkRadius; z++) {
                     ChunkPos chunkPos = new ChunkPos((referenceCenter.getX() >> 4) + x, (referenceCenter.getZ() >> 4) + z);
+                    if(targetDimensionWorld!=null&&!forcedChunks.contains(chunkPos)){
+                        targetDimensionWorld.setChunkForced(chunkPos.x, chunkPos.z, true);
+                    }
                     if (!forcedChunks.contains(chunkPos)) {
                         world.setChunkForced(chunkPos.x, chunkPos.z, true);
                         if(isChangeBiome) {
@@ -121,6 +124,11 @@ public abstract class BaseTransformationTask {
     }
 
     protected void cleanupChunkForcing() {
+        if(targetDimensionWorld!=null){
+            for (ChunkPos chunkPos : forcedChunks) {
+                targetDimensionWorld.setChunkForced(chunkPos.x, chunkPos.z, false);
+            }
+        }
         for (ChunkPos chunkPos : forcedChunks) {
             world.setChunkForced(chunkPos.x, chunkPos.z, false);
         }

@@ -198,12 +198,12 @@ public class WorldReloader implements ModInitializer {
 					itemStack.decrement(requiredCount);
 					itemRequirements.remove(heldItem);
 				} else if (itemStack.getCount() == requiredCount) {
-					player.getInventory().removeStack(player.getInventory().indexOf(itemStack));
+					player.getInventory().removeStack(player.getInventory().getSlotWithStack(itemStack));
 					itemRequirements.remove(heldItem);
 				} else {
 					int remaining = requiredCount - itemStack.getCount();
 					itemRequirements.put(heldItem, remaining);
-					player.getInventory().removeStack(player.getInventory().indexOf(itemStack));
+					player.getInventory().removeStack(player.getInventory().getSlotWithStack(itemStack));
 				}
 			} else {
 				// 创造模式直接移除需求

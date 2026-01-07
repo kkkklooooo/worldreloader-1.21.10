@@ -213,6 +213,15 @@ public class TerrainTransformationBuilder {
         LOGGER.error("构建失败！");
         return null;
     }
+    public LineTransformationTask buildLine()
+    {
+        if(isValidated())
+        {
+            return new LineTransformationTask(this);
+        }
+        LOGGER.error("构建失败！");
+        return null;
+    }
     public SurfaceTransformationTask buildSurface()
     {
         if(isValidated())

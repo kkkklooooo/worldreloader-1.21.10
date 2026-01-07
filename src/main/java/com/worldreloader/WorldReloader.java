@@ -2,6 +2,7 @@ package com.worldreloader;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.worldreloader.transformationtasks.LineTransformationTask;
 import com.worldreloader.transformationtasks.SurfaceTransformationTask;
 import com.worldreloader.transformationtasks.TerrainTransformationBuilder;
 import com.worldreloader.transformationtasks.TerrainTransformationTask;
@@ -13,12 +14,14 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
+import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.Identifier;
+import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.minecraft.block.Block;
@@ -31,6 +34,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.Biome;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -149,6 +153,11 @@ public class WorldReloader implements ModInitializer {
 			ItemStack itemStack = player.getStackInHand(hand);
 			BlockPos pos = hitResult.getBlockPos();
 
+			if (itemStack.getItem() == Items.WOODEN_SHOVEL) {
+				addSavedPosition(world, pos, player);
+				return ActionResult.SUCCESS;
+			}
+
 			if (world.getBlockState(pos).getBlock() == Blocks.BEACON &&
 					itemStack.getItem() == Items.NETHER_STAR) {
 				if (!checkPermission(player)) {
@@ -175,6 +184,18 @@ public class WorldReloader implements ModInitializer {
 
 			return ActionResult.PASS;
 		});
+		AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
+			if (world.isClient()) return ActionResult.PASS;
+
+			ItemStack itemStack = player.getStackInHand(hand);
+
+			if (itemStack.getItem() == Items.WOODEN_SHOVEL) {
+				removeSavedPosition(world, pos, player);
+				return ActionResult.SUCCESS;
+			}
+
+			return ActionResult.PASS;
+		});
 		KeyBindings.register();
 
 		config = AutoConfig.getConfigHolder(ModConfig.class).getConfig();
@@ -185,6 +206,80 @@ public class WorldReloader implements ModInitializer {
 				}
 			}
 		});
+	}
+
+	/**
+	 * 添加坐标到保存列表
+	 */
+	private void addSavedPosition(World world, BlockPos pos, net.minecraft.entity.player.PlayerEntity player) {
+		ModConfig.SavedPosition newPos = new ModConfig.SavedPosition(pos.getX(), pos.getY(), pos.getZ());
+
+		// 检查是否已存在相同坐标
+		if (config.savedPositions.contains(newPos)) {
+			player.sendMessage(Text.literal("§7该坐标已存在: " + newPos), false);
+			return;
+		}
+
+		config.savedPositions.add(newPos);
+
+		// 保存配置
+		AutoConfig.getConfigHolder(ModConfig.class).save();
+
+		player.sendMessage(Text.literal("§a已添加坐标: " + newPos), false);
+		LOGGER.info("添加坐标: {}", newPos);
+
+		// 显示当前坐标总数
+		player.sendMessage(Text.literal("§7当前保存的坐标数: " + config.savedPositions.size()), false);
+	}
+
+	/**
+	 * 从保存列表中移除坐标
+	 */
+	private void removeSavedPosition(World world, BlockPos pos, net.minecraft.entity.player.PlayerEntity player) {
+		ModConfig.SavedPosition targetPos = new ModConfig.SavedPosition(pos.getX(), pos.getY(), pos.getZ());
+		boolean removed = config.savedPositions.remove(targetPos);
+
+		if (removed) {
+			AutoConfig.getConfigHolder(ModConfig.class).save();
+			player.sendMessage(Text.literal("§c已移除坐标: " + targetPos), false);
+			LOGGER.info("移除坐标: {}", targetPos);
+			player.sendMessage(Text.literal("§7剩余坐标数: " + config.savedPositions.size()), false);
+		} else {
+			player.sendMessage(Text.literal("§7未找到该位置的坐标"), false);
+		}
+	}
+
+	/**
+	 * 获取所有保存的坐标
+	 */
+	public static List<ModConfig.SavedPosition> getSavedPositions() {
+		return config.savedPositions;
+	}
+
+	/**
+	 * 清空所有保存的坐标
+	 */
+	public static void clearSavedPositions(net.minecraft.entity.player.PlayerEntity player) {
+		int count = config.savedPositions.size();
+		config.savedPositions.clear();
+		AutoConfig.getConfigHolder(ModConfig.class).save();
+		player.sendMessage(Text.literal("§c已清空所有保存的坐标 (" + count + " 个)"), false);
+	}
+
+	/**
+	 * 显示所有保存的坐标
+	 */
+	public static void listSavedPositions(net.minecraft.entity.player.PlayerEntity player) {
+		List<ModConfig.SavedPosition> positions = getSavedPositions();
+		if (positions.isEmpty()) {
+			player.sendMessage(Text.literal("§7没有保存的坐标"), false);
+		} else {
+			player.sendMessage(Text.literal("§6保存的坐标列表 (" + positions.size() + " 个):"), false);
+			for (int i = 0; i < positions.size(); i++) {
+				ModConfig.SavedPosition pos = positions.get(i);
+				player.sendMessage(Text.literal("§a" + (i + 1) + ". §f" + pos), false);
+			}
+		}
 	}
 
 	/**
@@ -397,7 +492,17 @@ public class WorldReloader implements ModInitializer {
 				} else {
 					player.sendMessage(Text.literal("§c无法启动地表地形改造任务！"), false);
 				}
-			} else {
+			}else if(config.UseLine){
+				LineTransformationTask task = builder.buildLine();
+				if (task != null) {
+					task.start();
+					player.sendMessage(Text.literal("§a完整地形改造已启动！"), false);
+					LOGGER.info("完整地形改造任务已启动 - 信标位置: {}", beaconPos);
+				} else {
+					player.sendMessage(Text.literal("§c无法启动完整地形改造任务！"), false);
+				}
+			}
+			else {
 				TerrainTransformationTask task = builder.buildStandard();
 				if (task != null) {
 					task.start();

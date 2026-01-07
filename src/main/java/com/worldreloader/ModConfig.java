@@ -5,10 +5,13 @@ import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import net.minecraft.block.Blocks;
 import net.minecraft.registry.Registries;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.BiomeKeys;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 @Config(name = "worldreloader")
 public class ModConfig implements ConfigData {
@@ -16,6 +19,7 @@ public class ModConfig implements ConfigData {
 
     @ConfigEntry.Category("Main")
     boolean UseSpecificPos = false;
+    boolean UseLine=true;
 
     @ConfigEntry.Category("Main")
     int Posx;
@@ -59,6 +63,52 @@ public class ModConfig implements ConfigData {
     // 控制改造速度的间隔变量
     int yMaxThanSurface = 30;
 
+
+    @ConfigEntry.Category("Line")
+    public int width=5;
+
+
+    public List<SavedPosition> savedPositions = new ArrayList<>();
+
+    // ... 现有的其他字段和方法 ...
+
+    public static class SavedPosition {
+        public int x;
+        public int y;
+        public int z;
+        public long timestamp;
+
+        public SavedPosition() {}
+
+        public SavedPosition(int x, int y, int z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        public BlockPos toBlockPos() {
+            return new BlockPos(x, y, z);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("(%d, %d, %d)", x, y, z);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            SavedPosition that = (SavedPosition) obj;
+            return x == that.x && y == that.y && z == that.z;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(x, y, z);
+        }
+    }
 
     // ============ 新增的物品-结构映射配置 ============
     @ConfigEntry.Category("Structure Mappings")

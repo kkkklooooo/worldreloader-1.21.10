@@ -16,6 +16,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
     public TerrainTransformationTask(TerrainTransformationBuilder builder) {
         //建议使用builder.buildStandard()方法，带有异常检测
         super(builder.world, builder.changePos, builder.targetPos, builder.player,
+                builder.targetDimensionWorld,
                 builder.radius,
                 builder.steps,
                 builder.itemCleanupInterval,
@@ -56,15 +57,16 @@ public class TerrainTransformationTask extends BaseTransformationTask {
 
     @Override
     protected ReferenceTerrainInfo getReferenceTerrainInfo(int referenceX, int referenceZ) {
-        if (!world.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
+        if (!targetDimensionWorld.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
             return null;
         }
 
-        int referenceSurfaceY = world.getChunk(referenceX >> 4, referenceZ >> 4)
+        // 使用目标维度世界获取表面高度
+        int referenceSurfaceY = targetDimensionWorld.getChunk(referenceX >> 4, referenceZ >> 4)
                 .getHeightmap(Heightmap.Type.MOTION_BLOCKING)
                 .get(referenceX & 15, referenceZ & 15);
 
-        if (referenceSurfaceY < yMin -1 ) {
+        if (referenceSurfaceY < yMin - 1) {
             return null;
         }
 
@@ -114,8 +116,9 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         int currentY = initialHeight;
         while (currentY > minY + 10) {
             BlockPos pos = new BlockPos(x, currentY, z);
-            BlockState state = world.getBlockState(pos);
-            if (isSolidBlock(world,state)) {
+            // 使用目标维度世界检查方块
+            BlockState state = targetDimensionWorld.getBlockState(pos);
+            if (isSolidBlock(targetDimensionWorld, state)) {
                 return currentY;
             }
             currentY--;
@@ -132,7 +135,8 @@ public class TerrainTransformationTask extends BaseTransformationTask {
 
         for (int y = yMin; y <= surfaceY + yMax; y++) {
             BlockPos pos = new BlockPos(x, y, z);
-            BlockState state = world.getBlockState(pos);
+            // 使用目标维度世界获取方块状态
+            BlockState state = targetDimensionWorld.getBlockState(pos);
             if (!state.isAir() || y <= surfaceY) {
                 blocks.add(state);
                 heights.add(y);
@@ -143,7 +147,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         info.heights = heights.stream().mapToInt(Integer::intValue).toArray();
 
         BlockPos abovePos = new BlockPos(x, surfaceY + 1, z);
-        BlockState aboveState = world.getBlockState(abovePos);
+        BlockState aboveState = targetDimensionWorld.getBlockState(abovePos);
         if (!aboveState.isAir()) {
             info.aboveSurfaceBlocks = new BlockState[]{aboveState};
             info.aboveSurfaceHeights = new int[]{surfaceY + 1};

@@ -41,6 +41,8 @@ public class ModConfig implements ConfigData {
 
     @ConfigEntry.Category("Main")
     String targetBlock = "minecraft:beacon";
+    @ConfigEntry.Category("Main")
+    String dimension = "minecraft:overworld";
 
     @ConfigEntry.Category("Non-surface")
     int paddingCount = 12;

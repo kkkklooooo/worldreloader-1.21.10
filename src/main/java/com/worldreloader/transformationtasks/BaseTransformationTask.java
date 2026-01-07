@@ -31,6 +31,7 @@ public abstract class BaseTransformationTask {
     protected final BlockPos referenceCenter;
     protected final net.minecraft.entity.player.PlayerEntity player;
     protected Set<ChunkPos> forcedChunks = new HashSet<>();
+    protected final ServerWorld targetDimensionWorld;
 
     protected int currentRadius = 0;
     protected final int maxRadius;
@@ -49,13 +50,14 @@ public abstract class BaseTransformationTask {
     protected List<BlockPos> currentRadiusPositions = new ArrayList<>();
 
     protected BaseTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter,
-                                  net.minecraft.entity.player.PlayerEntity player,
-                                  int maxRadius, int totalSteps, int itemCleanupInterval,boolean isChangeBiome,boolean preserveBeacon) {
+                                     net.minecraft.entity.player.PlayerEntity player, ServerWorld targetDimensionWorld,
+                                     int maxRadius, int totalSteps, int itemCleanupInterval, boolean isChangeBiome, boolean preserveBeacon) {
         this.world = world;
         this.center = center;
         this.referenceCenter = referenceCenter;
         this.player = player;
         this.minY = world.getBottomY();
+        this.targetDimensionWorld = targetDimensionWorld;
         this.maxRadius = maxRadius;
         this.totalSteps = totalSteps;
         this.itemCleanupInterval = itemCleanupInterval;
@@ -280,47 +282,54 @@ public abstract class BaseTransformationTask {
             return initialHeight;
         }
 
-        public static ReferenceTerrainInfo analyzeTerrain(World world, int x, int z, int surfaceY, int minY, int copyDepth, int copyHeight) {
-            ReferenceTerrainInfo info = new ReferenceTerrainInfo();
-            info.surfaceY = surfaceY;
+    // 在 analyzeTerrain 方法中，需要传入目标维度世界
+    public static ReferenceTerrainInfo analyzeTerrain(World world, int x, int z, int surfaceY, int minY, int copyDepth, int copyHeight) {
+        // 这个方法现在应该使用 targetDimensionWorld
+        // 注意：这个方法是静态的，需要在实例方法中调用时传入正确的世界
+        // 保持现有实现，但调用时需要传入目标维度世界
+        ReferenceTerrainInfo info = new ReferenceTerrainInfo();
+        info.surfaceY = surfaceY;
 
-            int startY = Math.max(minY, surfaceY - copyDepth);
-            int endY = surfaceY + copyHeight;
+        int startY = Math.max(minY, surfaceY - copyDepth);
+        int endY = surfaceY + copyHeight;
 
-            List<BlockState> blocks = new ArrayList<>();
-            List<Integer> heights = new ArrayList<>();
+        List<BlockState> blocks = new ArrayList<>();
+        List<Integer> heights = new ArrayList<>();
 
-            for (int y = startY; y <= endY; y++) {
-                BlockPos pos = new BlockPos(x, y, z);
-                BlockState state = world.getBlockState(pos);
-                if (!state.isAir() || y <= surfaceY) {
-                    blocks.add(state);
-                    heights.add(y);
-                }
+        for (int y = startY; y <= endY; y++) {
+            BlockPos pos = new BlockPos(x, y, z);
+            BlockState state = world.getBlockState(pos);
+            if (!state.isAir() || y <= surfaceY) {
+                blocks.add(state);
+                heights.add(y);
             }
-
-            info.blocks = blocks.toArray(new BlockState[0]);
-            info.heights = heights.stream().mapToInt(Integer::intValue).toArray();
-
-            List<BlockState> aboveBlocks = new ArrayList<>();
-            List<Integer> aboveHeights = new ArrayList<>();
-
-            for (int y = surfaceY + 1; y <= surfaceY + 15; y++) {
-                BlockPos abovePos = new BlockPos(x, y, z);
-                BlockState aboveState = world.getBlockState(abovePos);
-                if (!aboveState.isAir()) {
-                    aboveBlocks.add(aboveState);
-                    aboveHeights.add(y);
-                }
-            }
-
-            if (!aboveBlocks.isEmpty()) {
-                info.aboveSurfaceBlocks = aboveBlocks.toArray(new BlockState[0]);
-                info.aboveSurfaceHeights = aboveHeights.stream().mapToInt(Integer::intValue).toArray();
-            }
-
-            return info;
         }
+
+        info.blocks = blocks.toArray(new BlockState[0]);
+        info.heights = heights.stream().mapToInt(Integer::intValue).toArray();
+
+        List<BlockState> aboveBlocks = new ArrayList<>();
+        List<Integer> aboveHeights = new ArrayList<>();
+
+        for (int y = surfaceY + 1; y <= surfaceY + 15; y++) {
+            BlockPos abovePos = new BlockPos(x, y, z);
+            BlockState aboveState = world.getBlockState(abovePos);
+            if (!aboveState.isAir()) {
+                aboveBlocks.add(aboveState);
+                aboveHeights.add(y);
+            }
+        }
+
+        if (!aboveBlocks.isEmpty()) {
+            info.aboveSurfaceBlocks = aboveBlocks.toArray(new BlockState[0]);
+            info.aboveSurfaceHeights = aboveHeights.stream().mapToInt(Integer::intValue).toArray();
+        }
+
+        return info;
+    }
+    protected int getTargetWorldSurfaceY(int x, int z) {
+        return targetDimensionWorld.getTopY(Heightmap.Type.WORLD_SURFACE, x, z);
+    }
 
     public static void setBiome(BlockPos pos, RegistryEntry<Biome> biome, ServerWorld serverWorld) {
         // 获取坐标所属区块的起始坐标（区块坐标转换为世界坐标）

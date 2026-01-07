@@ -16,11 +16,13 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.mixin.registry.sync.RegistriesAccessor;
 import net.minecraft.block.BlockState;
 import net.minecraft.item.Item;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.TagKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
@@ -439,6 +441,8 @@ public class WorldReloader implements ModInitializer {
 		return 1;
 	}
 
+
+
 	/**
 	 * 在指定位置开始地形改造（指令版本）- 使用Builder模式
 	 */
@@ -449,7 +453,9 @@ public class WorldReloader implements ModInitializer {
 
 
 		LOGGER.info("指令启动地形改造 - 位置: {}, 模式: {}, 目标: {}", centerPos, mode, target);
-
+		RegistryKey<World> worldRegistryKey=RegistryKey.of(RegistryKeys.WORLD,Identifier.of(config.dimension));
+		MinecraftServer server=world.getServer();
+		ServerWorld targetWorld=server.getWorld(worldRegistryKey);
 		TerrainTransformationBuilder builder = new TerrainTransformationBuilder(world, player)
 				.setChangePos(centerPos)
 				.setRadius(config.maxRadius)
@@ -457,7 +463,8 @@ public class WorldReloader implements ModInitializer {
 				.setSteps(config.totalSteps2)
 				.setItemCleanupInterval(config.itemCleanupInterval)
 				.changeBiome(true)
-				.preserveBeacon(config.preserveBeacon);
+				.preserveBeacon(config.preserveBeacon)
+				.setTargetDimension(targetWorld);
 
 		// 设置高度参数
 		if (config.UseSurface) {

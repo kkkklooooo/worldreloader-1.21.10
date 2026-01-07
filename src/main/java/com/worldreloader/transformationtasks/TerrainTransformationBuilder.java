@@ -35,6 +35,7 @@ public class TerrainTransformationBuilder {
     int itemCleanupInterval=20;
     boolean preserveBeacon=true;
     PlayerEntity player;
+    ServerWorld targetDimensionWorld;
     public TerrainTransformationBuilder(ServerWorld world,PlayerEntity player)
     {
         this.world=world;
@@ -43,6 +44,10 @@ public class TerrainTransformationBuilder {
     public TerrainTransformationBuilder preserveBeacon(boolean b)
     {
         preserveBeacon=b;
+        return this;
+    }
+    public TerrainTransformationBuilder setTargetDimension(ServerWorld targetDimensionWorld) {
+        this.targetDimensionWorld = targetDimensionWorld;
         return this;
     }
 
@@ -212,6 +217,10 @@ public class TerrainTransformationBuilder {
     }
     public TerrainTransformationTask buildStandard()
     {
+        if(targetDimensionWorld==null)
+        {
+            targetDimensionWorld=world;
+        }
         if(isValidated())
         {
             return new TerrainTransformationTask(this);
@@ -221,6 +230,10 @@ public class TerrainTransformationBuilder {
     }
     public LineTransformationTask buildLine()
     {
+        if(targetDimensionWorld==null)
+        {
+            targetDimensionWorld=world;
+        }
         if(isValidated())
         {
             return new LineTransformationTask(this);
@@ -230,6 +243,10 @@ public class TerrainTransformationBuilder {
     }
     public SurfaceTransformationTask buildSurface()
     {
+        if(targetDimensionWorld==null)
+        {
+            targetDimensionWorld=world;
+        }
         if(isValidated())
         {
             return new SurfaceTransformationTask(this);

@@ -12,6 +12,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
     public SurfaceTransformationTask(TerrainTransformationBuilder builder) {
         //建议使用builder.buildSurface()方法，带有异常检测
         super(builder.world, builder.changePos, builder.targetPos, builder.player,
+                builder.targetDimensionWorld,
                 builder.radius,
                 builder.steps,
                 builder.itemCleanupInterval,
@@ -66,11 +67,12 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
 
     @Override
     protected ReferenceTerrainInfo getReferenceTerrainInfo(int referenceX, int referenceZ) {
-        if (!world.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
+        if (!targetDimensionWorld.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
             return null;
         }
 
-        int referenceSurfaceY = world.getChunk(referenceX >> 4, referenceZ >> 4)
+        // 使用目标维度世界获取表面高度
+        int referenceSurfaceY = targetDimensionWorld.getChunk(referenceX >> 4, referenceZ >> 4)
                 .getHeightmap(Heightmap.Type.MOTION_BLOCKING)
                 .get(referenceX & 15, referenceZ & 15);
 
@@ -78,8 +80,8 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
             return null;
         }
 
-        referenceSurfaceY = validateAndAdjustHeight(world, referenceX, referenceZ, referenceSurfaceY, minY);
-        return analyzeTerrain(world, referenceX, referenceZ, referenceSurfaceY, minY, DEPTH, HEIGHT);
+        referenceSurfaceY = validateAndAdjustHeight(targetDimensionWorld, referenceX, referenceZ, referenceSurfaceY, minY);
+        return analyzeTerrain(targetDimensionWorld, referenceX, referenceZ, referenceSurfaceY, minY, DEPTH, HEIGHT);
     }
 
     @Override

@@ -22,6 +22,18 @@
   "text.autoconfig.worldreloader.option.Debug": "Debug Mode",
   "text.autoconfig.worldreloader.option.Debug.@Tooltip": "Enable Debug Mode",
 
+  "text.autoconfig.worldreloader.option.targetBlock": "Target Block",
+  "text.autoconfig.worldreloader.option.targetBlock.@Tooltip": "The block that triggers terrain transformation",
+  "text.autoconfig.worldreloader.option.targetBlockDict": "Item Requirements",
+  "text.autoconfig.worldreloader.option.targetBlockDict.@Tooltip": "List of items required to activate terrain transformation",
+  "text.autoconfig.worldreloader.option.ItemRequirement": "Requirement",
+  "text.autoconfig.worldreloader.option.ItemRequirement.itemId": "Item ID",
+  "text.autoconfig.worldreloader.option.ItemRequirement.itemId.@Tooltip": "Minecraft item ID (e.g. minecraft:diamond)",
+  "text.autoconfig.worldreloader.option.ItemRequirement.count": "Count",
+  "text.autoconfig.worldreloader.option.ItemRequirement.count.@Tooltip": "Number of items required",
+  "text.autoconfig.worldreloader.option.ItemRequirement.enabled": "Enabled",
+  "text.autoconfig.worldreloader.option.ItemRequirement.enabled.@Tooltip": "Whether this requirement is enabled",
+
   "text.autoconfig.worldreloader.category.surface": "Destructive Generation Settings",
   "text.autoconfig.worldreloader.option.totalSteps": "Interval (Ticks)",
   "text.autoconfig.worldreloader.option.totalSteps.@Tooltip": "Controls how many ticks are spent per radius",

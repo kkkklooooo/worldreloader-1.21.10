@@ -16,6 +16,8 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.minecraft.block.BlockState;
+import net.minecraft.item.Item;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.TagKey;
@@ -64,6 +66,12 @@ public class WorldReloader implements ModInitializer {
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 			// 设置权限指令
 			dispatcher.register(literal("worldreloader")
+					.then(literal("refresh")
+							.executes(context -> {
+								updateFromConfig();
+								return 1;
+							})
+					)
 					.then(literal("setPermission")
 							.requires(source -> source.hasPermissionLevel(3)) // 需要管理员权限
 							.then(argument("permission", StringArgumentType.word())
@@ -147,42 +155,65 @@ public class WorldReloader implements ModInitializer {
 
 		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
 			if (world.isClient()) return ActionResult.PASS;
+			if(itemRequirements.isEmpty())
+			{
+				updateFromConfig();
+			}
 
-			// 检查权限
+			if (itemRequirements.isEmpty()) {
+				player.sendMessage(Text.literal("§c未配置有效的物品需求！请检查配置。"), false);
+				return ActionResult.FAIL;
+			}
 
 			ItemStack itemStack = player.getStackInHand(hand);
 			BlockPos pos = hitResult.getBlockPos();
 
-			if (itemStack.getItem() == Items.WOODEN_SHOVEL) {
-				addSavedPosition(world, pos, player);
-				return ActionResult.SUCCESS;
+			// 检查目标方块
+			BlockState clickedBlock = world.getBlockState(pos);
+			if (clickedBlock.getBlock() != targetBlock) {
+				return ActionResult.PASS;
 			}
 
-			if (world.getBlockState(pos).getBlock() == Blocks.BEACON &&
-					itemStack.getItem() == Items.NETHER_STAR) {
-				if (!checkPermission(player)) {
-					player.sendMessage(Text.literal("§c你没有权限使用地形改造功能！"), false);
-					return ActionResult.FAIL;
-				}
+			// 检查物品需求
+			Item heldItem = itemStack.getItem();
+			if (!itemRequirements.containsKey(heldItem)) {
+				return ActionResult.PASS;
+			}
 
-				if (!player.isCreative()) {
-					itemStack.decrement(1);
-				}
+			// 权限检查
+			if (!checkPermission(player)) {
+				player.sendMessage(Text.literal("§c你没有权限使用地形改造功能！"), false);
+				return ActionResult.FAIL;
+			}
 
+			// 消耗物品
+			int requiredCount = itemRequirements.get(heldItem);
+			if (!player.isCreative()) {
+				if (itemStack.getCount() > requiredCount) {
+					itemStack.decrement(requiredCount);
+					itemRequirements.remove(heldItem);
+				} else if (itemStack.getCount() == requiredCount) {
+					player.getInventory().removeStack(player.getInventory().indexOf(itemStack));
+					itemRequirements.remove(heldItem);
+				} else {
+					int remaining = requiredCount - itemStack.getCount();
+					itemRequirements.put(heldItem, remaining);
+					player.getInventory().removeStack(player.getInventory().indexOf(itemStack));
+				}
+			} else {
+				// 创造模式直接移除需求
+				itemRequirements.remove(heldItem);
+			}
+
+			// 检查是否所有需求都已满足
+			if (itemRequirements.isEmpty()) {
 				LOGGER.info("激活地形改造");
-				if(!isLock){
-					Objects.requireNonNull(world.getServer()).execute(() -> {
-						startTerrainTransformation((ServerWorld) world, pos, player);
-					});
-				}else {
-					player.sendMessage(Text.literal("另一个改造正在进行,请等待"),false);
-
-				}
-
-				return ActionResult.SUCCESS;
+				Objects.requireNonNull(world.getServer()).execute(() -> {
+					startTerrainTransformation((ServerWorld) world, pos, player);
+				});
 			}
 
-			return ActionResult.PASS;
+			return ActionResult.SUCCESS;
 		});
 		AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
 			if (world.isClient()) return ActionResult.PASS;
@@ -207,6 +238,48 @@ public class WorldReloader implements ModInitializer {
 			}
 		});
 	}
+	/**
+	 * 从配置更新物品需求和目标方块
+	 */
+	private void updateFromConfig() {
+		// 清空现有需求
+		itemRequirements.clear();
+
+		// 转换物品需求
+		for (ModConfig.ItemRequirement requirement : config.targetBlockDict) {
+			if (!requirement.enabled) continue;
+
+			try {
+				Identifier itemId = Identifier.of(requirement.itemId);
+				Item item = Registries.ITEM.get(itemId);
+
+				if (item != Items.AIR) {
+					itemRequirements.put(item, requirement.count);
+				} else {
+					LOGGER.warn("无效的物品ID: {}", requirement.itemId);
+				}
+			} catch (Exception e) {
+				LOGGER.error("解析物品ID失败: {}", requirement.itemId, e);
+			}
+		}
+
+		// 转换目标方块
+		try {
+			Identifier blockId = Identifier.of(config.targetBlock);
+			Block block = Registries.BLOCK.get(blockId);
+
+			if (block != null && block != Blocks.AIR) {
+				targetBlock = block;
+			} else {
+				LOGGER.warn("无效的方块ID: {}，使用默认值beacon", config.targetBlock);
+				targetBlock = Blocks.BEACON;
+			}
+		} catch (Exception e) {
+			LOGGER.error("解析方块ID失败: {}，使用默认值beacon", config.targetBlock, e);
+			targetBlock = Blocks.BEACON;
+		}
+	}
+
 
 	/**
 	 * 添加坐标到保存列表

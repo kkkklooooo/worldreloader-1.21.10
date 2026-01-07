@@ -41,7 +41,13 @@ public class ModConfig implements ConfigData {
     boolean isChangeBiome=true;
     @ConfigEntry.Category("Main")
     public boolean Debug = false;
-    //int lastCleanupRadius = -1;
+    @ConfigEntry.Category("Main")
+    public List<ItemRequirement> targetBlockDict = List.of(
+            new ItemRequirement("minecraft:nether_star", 1)
+    );
+
+    @ConfigEntry.Category("Main")
+    String targetBlock = "minecraft:beacon";
 
     @ConfigEntry.Category("surface")
     @ConfigEntry.Gui.Tooltip(count = 1)

@@ -33,11 +33,17 @@ public class TerrainTransformationBuilder {
     int yMax=30;
     int steps=3;
     int itemCleanupInterval=20;
+    boolean preserveBeacon=true;
     PlayerEntity player;
     public TerrainTransformationBuilder(ServerWorld world,PlayerEntity player)
     {
         this.world=world;
         this.player=player;
+    }
+    public TerrainTransformationBuilder preserveBeacon(boolean b)
+    {
+        preserveBeacon=b;
+        return this;
     }
 
     public TerrainTransformationBuilder changeBiome(boolean isChangeBiome)

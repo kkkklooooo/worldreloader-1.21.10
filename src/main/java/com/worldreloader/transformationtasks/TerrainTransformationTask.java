@@ -19,7 +19,8 @@ public class TerrainTransformationTask extends BaseTransformationTask {
                 builder.radius,
                 builder.steps,
                 builder.itemCleanupInterval,
-                builder.isChangeBiome);
+                builder.isChangeBiome,
+                builder.preserveBeacon);
         this.paddingCount = builder.padding;
         this.yMin = builder.yMin;
         this.yMax = builder.yMax;

@@ -17,10 +17,9 @@ import java.util.Objects;
 public class ModConfig implements ConfigData {
 
 
+
     @ConfigEntry.Category("Main")
     boolean UseSpecificPos = false;
-    boolean UseLine=true;
-
     @ConfigEntry.Category("Main")
     int Posx;
     @ConfigEntry.Category("Main")
@@ -28,19 +27,13 @@ public class ModConfig implements ConfigData {
     @ConfigEntry.Category("Main")
     int Posz;
     @ConfigEntry.Category("Main")
-    boolean UseSurface = false;
-    @ConfigEntry.Category("Main")
     int maxRadius = 76;
     @ConfigEntry.Category("Main")
     int itemCleanupInterval = 20;
     @ConfigEntry.Category("Main")
-    int searchRadius = 6400;
-    @ConfigEntry.Category("Main")
-    int randomRadius = 10000;
-    @ConfigEntry.Category("Main")
-    boolean isChangeBiome=true;
-    @ConfigEntry.Category("Main")
     public boolean Debug = false;
+    @ConfigEntry.Category("Main")
+    public boolean preserveBeacon = true;
     @ConfigEntry.Category("Main")
     public List<ItemRequirement> targetBlockDict = List.of(
             new ItemRequirement("minecraft:nether_star", 1)
@@ -49,6 +42,17 @@ public class ModConfig implements ConfigData {
     @ConfigEntry.Category("Main")
     String targetBlock = "minecraft:beacon";
 
+    @ConfigEntry.Category("Non-surface")
+    int paddingCount = 12;
+    @ConfigEntry.Category("Non-surface")
+    int totalSteps2 = 3;
+    @ConfigEntry.Category("Non-surface")
+    int yMin = 40;
+    @ConfigEntry.Category("Non-surface")
+    int yMaxThanSurface = 30;
+
+    @ConfigEntry.Category("surface")
+    boolean UseSurface = false;
     @ConfigEntry.Category("surface")
     @ConfigEntry.Gui.Tooltip(count = 1)
     int totalSteps = 10;
@@ -57,23 +61,15 @@ public class ModConfig implements ConfigData {
     @ConfigEntry.Category("surface")
     int DEPTH = 15;
 
-    @ConfigEntry.Category("Non-surface")
-    int paddingCount = 12;
-    @ConfigEntry.Category("Non-surface")
-    // 控制改造速度的间隔变量
-    int totalSteps2 = 3;
-    @ConfigEntry.Category("Non-surface")
-    // 控制改造速度的间隔变量
-    int yMin = 40;
-    @ConfigEntry.Category("Non-surface")
-    // 控制改造速度的间隔变量
-    int yMaxThanSurface = 30;
 
 
     @ConfigEntry.Category("Line")
+    boolean UseLine=false;
+    @ConfigEntry.Category("Line")
+    String tool = "minecraft:wooden_shovel";
+    @ConfigEntry.Category("Line")
     public int width=5;
-
-
+    @ConfigEntry.Category("Line")
     public List<SavedPosition> savedPositions = new ArrayList<>();
 
     public static class ItemRequirement {

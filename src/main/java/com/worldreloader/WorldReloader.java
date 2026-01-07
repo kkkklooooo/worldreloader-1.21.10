@@ -49,12 +49,12 @@ public class WorldReloader implements ModInitializer {
 	public static final String MOD_ID = "worldreloader";
 
 	public static ModConfig config;
-	public static ConfigHolder ch = AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
+	public static ConfigHolder<ModConfig> ch = AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public String minPermission="op";
 	private static boolean isLock=false;
 	// 改为 Map 存储，方便查找
-	private Map<Item, Integer> itemRequirements = new HashMap<>();
+	private final Map<Item, Integer> itemRequirements = new HashMap<>();
 	private Block targetBlock;
 
 	public static void SetLocker(boolean isLock1){
@@ -64,9 +64,6 @@ public class WorldReloader implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		LOGGER.info("World Reloader Initialized!");
-		ServerWorldEvents.LOAD.register((w,e)->{
-			SetLocker(false);
-		});
 		// 注册指令
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 			// 设置权限指令
@@ -160,6 +157,11 @@ public class WorldReloader implements ModInitializer {
 
 		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
 			if (world.isClient()) return ActionResult.PASS;
+			if(isLock)
+			{
+				player.sendMessage(Text.literal("§c有改造任务正在进行，请结束后再开启新改造任务"), false);
+				return ActionResult.FAIL;
+			}
 			if(itemRequirements.isEmpty())
 			{
 				updateFromConfig();
@@ -223,9 +225,11 @@ public class WorldReloader implements ModInitializer {
 		AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
 			if (world.isClient()) return ActionResult.PASS;
 
-			ItemStack itemStack = player.getStackInHand(hand);
+			Item handitem = player.getStackInHand(hand).getItem();
+			Identifier blockId = Identifier.of(config.tool);
+			Item item = Registries.ITEM.get(blockId);
 
-			if (itemStack.getItem() == Items.WOODEN_SHOVEL) {
+			if (handitem==item) {
 				removeSavedPosition(world, pos, player);
 				return ActionResult.SUCCESS;
 			}
@@ -273,7 +277,7 @@ public class WorldReloader implements ModInitializer {
 			Identifier blockId = Identifier.of(config.targetBlock);
 			Block block = Registries.BLOCK.get(blockId);
 
-			if (block != null && block != Blocks.AIR) {
+			if (block != Blocks.AIR) {
 				targetBlock = block;
 			} else {
 				LOGGER.warn("无效的方块ID: {}，使用默认值beacon", config.targetBlock);
@@ -452,7 +456,8 @@ public class WorldReloader implements ModInitializer {
 				.setPadding(config.paddingCount)
 				.setSteps(config.totalSteps2)
 				.setItemCleanupInterval(config.itemCleanupInterval)
-				.changeBiome(config.isChangeBiome);
+				.changeBiome(true)
+				.preserveBeacon(config.preserveBeacon);
 
 		// 设置高度参数
 		if (config.UseSurface) {
@@ -477,22 +482,23 @@ public class WorldReloader implements ModInitializer {
 						targetBiome = (entry) -> entry.matchesKey(k);
 					}
 					player.sendMessage(Text.literal("§6目标生物群系: " + target), false);
-					builder.setBiomePos(centerPos, targetBiome, config.searchRadius);
+					builder.setBiomePos(centerPos, targetBiome, 6400);
 				}
 				break;
 			case "structure":
 				if (target != null) {
 					player.sendMessage(Text.literal("§6目标结构: " + target), false);
-					builder.setStructurePos(centerPos, target, config.searchRadius);
+					builder.setStructurePos(centerPos, target, 6400);
 				}
 				break;
 			case "random":
 				player.sendMessage(Text.literal("§6随机模式"), false);
-				builder.setRandomPos(centerPos, config.randomRadius);
+				builder.setRandomPos(centerPos, 6400);
 				break;
 		}
 
 			if (config.UseSurface) {
+				builder.setSteps(config.totalSteps);
 				SurfaceTransformationTask task = builder.buildSurface();
 				if (task != null) {
 					task.start();
@@ -532,7 +538,7 @@ public class WorldReloader implements ModInitializer {
 				.setPadding(config.paddingCount)
 				.setSteps(config.totalSteps2)
 				.setItemCleanupInterval(config.itemCleanupInterval)
-				.changeBiome(config.isChangeBiome);
+				.changeBiome(true);
 
 		// 设置高度参数
 		if (config.UseSurface) {
@@ -552,11 +558,11 @@ public class WorldReloader implements ModInitializer {
 			String targetStructure = detectTargetStructure(world, beaconPos, player);
 
 			if (targetBiome != null) {
-				builder.setBiomePos(beaconPos, targetBiome, config.searchRadius);
+				builder.setBiomePos(beaconPos, targetBiome, 6400);
             } else if (targetStructure != null) {
-				builder.setStructurePos(beaconPos, targetStructure, config.searchRadius);
+				builder.setStructurePos(beaconPos, targetStructure, 6400);
             } else {
-				builder.setRandomPos(beaconPos, config.randomRadius);
+				builder.setRandomPos(beaconPos,6400);
                 player.sendMessage(Text.literal("§6使用随机位置"), false);
 			}
 		}

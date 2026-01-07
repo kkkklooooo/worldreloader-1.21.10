@@ -15,7 +15,8 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
                 builder.radius,
                 builder.steps,
                 builder.itemCleanupInterval,
-                builder.isChangeBiome);
+                builder.isChangeBiome,
+                builder.preserveBeacon);
         this.DEPTH = builder.yMin;
         this.HEIGHT = builder.yMax;
     }

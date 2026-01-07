@@ -36,7 +36,9 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.Biome;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -51,6 +53,8 @@ public class WorldReloader implements ModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public String minPermission="op";
 	private static boolean isLock=false;
+	// 改为 Map 存储，方便查找
+	private Map<Item, Integer> itemRequirements = new HashMap<>();
 
 	public static void SetLocker(boolean isLock1){
 		isLock=isLock1;

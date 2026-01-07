@@ -55,6 +55,7 @@ public class WorldReloader implements ModInitializer {
 	private static boolean isLock=false;
 	// 改为 Map 存储，方便查找
 	private Map<Item, Integer> itemRequirements = new HashMap<>();
+	private Block targetBlock;
 
 	public static void SetLocker(boolean isLock1){
 		isLock=isLock1;

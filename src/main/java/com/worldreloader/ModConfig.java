@@ -76,6 +76,18 @@ public class ModConfig implements ConfigData {
 
     public List<SavedPosition> savedPositions = new ArrayList<>();
 
+    public static class ItemRequirement {
+        public String itemId;  // 改为 String 类型
+        public int count;
+        public boolean enabled = true;
+
+        public ItemRequirement() {}
+
+        public ItemRequirement(String itemId, int count) {
+            this.itemId = itemId;
+            this.count = count;
+        }
+    }
     // ... 现有的其他字段和方法 ...
 
     public static class SavedPosition {

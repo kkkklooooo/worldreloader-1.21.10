@@ -22,6 +22,18 @@
   "text.autoconfig.worldreloader.option.Debug": "Debug模式",
   "text.autoconfig.worldreloader.option.Debug.@Tooltip": "是否开启Debug模式",
 
+  "text.autoconfig.worldreloader.option.targetBlock": "目标方块",
+  "text.autoconfig.worldreloader.option.targetBlock.@Tooltip": "触发地形改造的方块",
+  "text.autoconfig.worldreloader.option.targetBlockDict": "物品需求列表",
+  "text.autoconfig.worldreloader.option.targetBlockDict.@Tooltip": "激活地形改造所需的物品列表",
+  "text.autoconfig.worldreloader.option.ItemRequirement": "需求",
+  "text.autoconfig.worldreloader.option.ItemRequirement.itemId": "物品ID",
+  "text.autoconfig.worldreloader.option.ItemRequirement.itemId.@Tooltip": "Minecraft物品ID（例如：minecraft:diamond）",
+  "text.autoconfig.worldreloader.option.ItemRequirement.count": "数量",
+  "text.autoconfig.worldreloader.option.ItemRequirement.count.@Tooltip": "需要的物品数量",
+  "text.autoconfig.worldreloader.option.ItemRequirement.enabled": "是否启用",
+  "text.autoconfig.worldreloader.option.ItemRequirement.enabled.@Tooltip": "是否启用此需求",
+
   "text.autoconfig.worldreloader.category.surface": "有损生成模式设置",
   "text.autoconfig.worldreloader.option.totalSteps": "间隔时间（刻）",
   "text.autoconfig.worldreloader.option.totalSteps.@Tooltip": "控制一个半径花费多少刻完成",

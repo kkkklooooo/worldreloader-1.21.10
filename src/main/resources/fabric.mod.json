@@ -11,7 +11,7 @@
 		"homepage": "https://fabricmc.net/",
 		"sources": "https://github.com/kkkklooooo/worldreloader-1.21.10"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/worldreloader/icon.png",
 	"environment": "*",
 	"entrypoints": {

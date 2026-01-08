@@ -177,8 +177,8 @@ public class WorldReloader implements ModInitializer {
 
 			ItemStack itemStack = player.getStackInHand(hand);
 			BlockPos pos = hitResult.getBlockPos();
-
-			if (itemStack.getItem() == Items.WOODEN_SHOVEL) {
+			Identifier blockId = Identifier.of(config.tool);
+			if (itemStack.getItem() == Registries.ITEM.get(blockId)) {
 				addSavedPosition(world, pos, player);
 				return ActionResult.SUCCESS;
 			}

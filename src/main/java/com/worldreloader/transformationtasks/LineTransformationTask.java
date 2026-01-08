@@ -80,44 +80,88 @@ public class LineTransformationTask extends BaseTransformationTask {
         return positions;
     }
 
+    // 新增一个成员变量来记录主轴方向
+    private boolean isXAxisDominant = true;
+
+
     protected List<BlockPos> generateExpandingWidthSave(int currentWidth) {
         List<ModConfig.SavedPosition> savePositions = WorldReloader.config.savedPositions;
-        List<BlockPos> positions1 = new ArrayList<>();
+        List<BlockPos> resultPositions = new ArrayList<>();
 
-        // 如果是宽度0，生成所有保存点之间的连接路径
+        // 1. 如果是宽度 0，初始化中心线并判断主轴方向
         if (currentWidth == 0) {
             positions.clear();
+            if (savePositions.size() < 2) {
+                // 如果点太少，默认按 X 轴处理
+                for(ModConfig.SavedPosition p : savePositions) positions.add(new BlockPos(p.x, 0, p.z));
+                return positions;
+            }
 
-            if (!savePositions.isEmpty()) {
-                // 按x坐标对保存点进行排序
-                List<ModConfig.SavedPosition> sortedSaves = new ArrayList<>(savePositions);
+            // --- 自动检测延伸方向逻辑 ---
+            int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE;
+            int minZ = Integer.MAX_VALUE, maxZ = Integer.MIN_VALUE;
+
+            for (ModConfig.SavedPosition p : savePositions) {
+                if (p.x < minX) minX = p.x;
+                if (p.x > maxX) maxX = p.x;
+                if (p.z < minZ) minZ = p.z;
+                if (p.z > maxZ) maxZ = p.z;
+            }
+
+            int deltaX = maxX - minX;
+            int deltaZ = maxZ - minZ;
+
+            // 判断哪个方向延伸最大
+            isXAxisDominant = deltaX >= deltaZ;
+
+            // 根据主轴进行排序
+            List<ModConfig.SavedPosition> sortedSaves = new ArrayList<>(savePositions);
+            if (isXAxisDominant) {
                 sortedSaves.sort((a, b) -> Integer.compare(a.x, b.x));
+            } else {
+                sortedSaves.sort((a, b) -> Integer.compare(a.z, b.z));
+            }
 
-                // 生成保存点之间的路径
-                for (int i = 0; i < sortedSaves.size() - 1; i++) {
-                    ModConfig.SavedPosition currentSave = sortedSaves.get(i);
-                    ModConfig.SavedPosition nextSave = sortedSaves.get(i + 1);
+            // 生成保存点之间的路径 (Bresenham算法)
+            for (int i = 0; i < sortedSaves.size() - 1; i++) {
+                ModConfig.SavedPosition currentSave = sortedSaves.get(i);
+                ModConfig.SavedPosition nextSave = sortedSaves.get(i + 1);
 
-                    BlockPos currentPos = new BlockPos(currentSave.x, 0, currentSave.z);
-                    BlockPos nextPos = new BlockPos(nextSave.x, 0, nextSave.z);
+                BlockPos start = new BlockPos(currentSave.x, 0, currentSave.z);
+                BlockPos end = new BlockPos(nextSave.x, 0, nextSave.z);
 
-                    List<BlockPos> segmentPath = generateLinePositions(currentPos, nextPos);
-                    positions.addAll(segmentPath);
+                List<BlockPos> segmentPath = generateLinePositions(start, end);
+                // 避免重复点
+                for (BlockPos p : segmentPath) {
+                    if (positions.isEmpty() || !positions.get(positions.size() - 1).equals(p)) {
+                        positions.add(p);
+                    }
                 }
             }
 
-            //return positions;
+            if(WorldReloader.config.Debug) {
+                player.sendMessage(net.minecraft.text.Text.literal("§b检测到主延伸方向: " + (isXAxisDominant ? "X轴" : "Z轴")), false);
+            }
+
+            return positions;
         }
 
-        // 对于其他宽度，生成两侧的所有位置
+        // 2. 对于宽度 > 0，根据主轴方向向两侧扩展
         for (BlockPos pos : positions) {
-            // 生成两侧位置
-            positions1.add(new BlockPos(pos.getX(), 0, pos.getZ() + currentWidth));
-            positions1.add(new BlockPos(pos.getX(), 0, pos.getZ() - currentWidth));
+            if (isXAxisDominant) {
+                // 如果 X 是主轴，宽度向 Z 轴两侧延伸
+                resultPositions.add(new BlockPos(pos.getX(), 0, pos.getZ() + currentWidth));
+                resultPositions.add(new BlockPos(pos.getX(), 0, pos.getZ() - currentWidth));
+            } else {
+                // 如果 Z 是主轴，宽度向 X 轴两侧延伸
+                resultPositions.add(new BlockPos(pos.getX() + currentWidth, 0, pos.getZ()));
+                resultPositions.add(new BlockPos(pos.getX() - currentWidth, 0, pos.getZ()));
+            }
         }
 
-        return positions1;
+        return resultPositions;
     }
+
     protected List<BlockPos> generateLinePositions(BlockPos start, BlockPos end) {
         List<BlockPos> positions = new ArrayList<>();
 

@@ -92,7 +92,7 @@ public class ModConfig implements ConfigData {
         public int x;
         public int y;
         public int z;
-        public long timestamp;
+        private long timestamp;
 
         public SavedPosition() {}
 

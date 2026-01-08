@@ -106,7 +106,7 @@ public class LineTransformationTask extends BaseTransformationTask {
                 }
             }
 
-            return positions;
+            //return positions;
         }
 
         // 对于其他宽度，生成两侧的所有位置

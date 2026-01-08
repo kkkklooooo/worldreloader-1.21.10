@@ -159,6 +159,7 @@ public class WorldReloader implements ModInitializer {
 
 		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
 			if (world.isClient()) return ActionResult.PASS;
+
 			if(isLock)
 			{
 				player.sendMessage(Text.literal("§c有改造任务正在进行，请结束后再开启新改造任务"), false);
@@ -177,6 +178,10 @@ public class WorldReloader implements ModInitializer {
 			ItemStack itemStack = player.getStackInHand(hand);
 			BlockPos pos = hitResult.getBlockPos();
 
+			if (itemStack.getItem() == Items.WOODEN_SHOVEL) {
+				addSavedPosition(world, pos, player);
+				return ActionResult.SUCCESS;
+			}
 			// 检查目标方块
 			BlockState clickedBlock = world.getBlockState(pos);
 			if (clickedBlock.getBlock() != targetBlock) {
@@ -221,6 +226,7 @@ public class WorldReloader implements ModInitializer {
 					startTerrainTransformation((ServerWorld) world, pos, player);
 				});
 			}
+
 
 			return ActionResult.SUCCESS;
 		});

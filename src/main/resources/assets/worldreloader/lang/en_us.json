@@ -30,7 +30,7 @@
   "text.autoconfig.worldreloader.option.tool": "Draw Line Tool",
   "text.autoconfig.worldreloader.option.savedPositions": "Line Positions",
 
-  "text.autoconfig.worldreloader.option.targetBlock": "Target Block",
+  "text.autoconfig.worldreloader.option.targetBlock": "Trigger Block",
   "text.autoconfig.worldreloader.option.targetBlock.@Tooltip": "The block that triggers terrain transformation",
   "text.autoconfig.worldreloader.option.targetBlockDict": "Item Requirements",
   "text.autoconfig.worldreloader.option.targetBlockDict.@Tooltip": "List of items required to activate terrain transformation",

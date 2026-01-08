@@ -30,7 +30,7 @@
   "text.autoconfig.worldreloader.option.tool": "画线工具",
   "text.autoconfig.worldreloader.option.savedPositions": "线上面的坐标",
 
-  "text.autoconfig.worldreloader.option.targetBlock": "目标方块",
+  "text.autoconfig.worldreloader.option.targetBlock": "触发方块",
   "text.autoconfig.worldreloader.option.targetBlock.@Tooltip": "触发地形改造的方块",
   "text.autoconfig.worldreloader.option.targetBlockDict": "物品需求列表",
   "text.autoconfig.worldreloader.option.targetBlockDict.@Tooltip": "激活地形改造所需的物品列表",

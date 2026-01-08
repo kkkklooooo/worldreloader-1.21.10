@@ -5,7 +5,7 @@
 	"name": "WorldReloader",
 	"description": "拿下界之星右键信标改造地形，信标周围放上方块指定群系，按Y打开设置界面......这是一个兼具美观性和建筑实用性的地形生成mod",
 	"authors": [
-		"CheesePaste(bilibili:销账号已注),Victory_FX(bilibili:Victory_FX)"
+		"CheesePaste(bilibili:CheesePaste),Victory_FX(bilibili:Victory_FX)"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
@@ -22,9 +22,6 @@
 			"com.worldreloader.WorldReloaderDataGenerator"
 		]
 	},
-	"mixins": [
-		"worldreloader.mixins.json"
-	],
 	"depends": {
 		"fabricloader": ">=0.17.3",
 		"minecraft": "~1.21.10",

@@ -220,6 +220,7 @@ public class TerrainTransformationBuilder {
         if(targetDimensionWorld==null)
         {
             targetDimensionWorld=world;
+            player.sendMessage(Text.of("未知的维度，使用当前所在世界。"),false);
         }
         if(isValidated())
         {
@@ -233,6 +234,7 @@ public class TerrainTransformationBuilder {
         if(targetDimensionWorld==null)
         {
             targetDimensionWorld=world;
+            player.sendMessage(Text.of("未知的维度，使用当前所在世界。"),false);
         }
         if(isValidated())
         {
@@ -246,6 +248,7 @@ public class TerrainTransformationBuilder {
         if(targetDimensionWorld==null)
         {
             targetDimensionWorld=world;
+            player.sendMessage(Text.of("未知的维度，使用当前所在世界。"),false);
         }
         if(isValidated())
         {

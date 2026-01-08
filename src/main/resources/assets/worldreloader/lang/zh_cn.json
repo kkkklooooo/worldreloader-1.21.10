@@ -20,6 +20,7 @@
   "text.autoconfig.worldreloader.option.randomRadius": "随机地形模式距离",
   "text.autoconfig.worldreloader.option.searchRadius": "群系和结构的查找距离",
   "text.autoconfig.worldreloader.option.Debug": "Debug模式",
+  "text.autoconfig.worldreloader.option.dimension": "目标地形所在维度",
   "text.autoconfig.worldreloader.option.Debug.@Tooltip": "是否开启Debug模式",
   "text.autoconfig.worldreloader.option.preserveBeacon": "保护信标区域",
 
@@ -29,7 +30,7 @@
   "text.autoconfig.worldreloader.option.tool": "画线工具",
   "text.autoconfig.worldreloader.option.savedPositions": "线上面的坐标",
 
-  "text.autoconfig.worldreloader.option.targetBlock": "目标方块",
+  "text.autoconfig.worldreloader.option.targetBlock": "触发方块",
   "text.autoconfig.worldreloader.option.targetBlock.@Tooltip": "触发地形改造的方块",
   "text.autoconfig.worldreloader.option.targetBlockDict": "物品需求列表",
   "text.autoconfig.worldreloader.option.targetBlockDict.@Tooltip": "激活地形改造所需的物品列表",

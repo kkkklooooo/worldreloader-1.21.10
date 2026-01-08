@@ -20,6 +20,7 @@
   "text.autoconfig.worldreloader.option.randomRadius": "随机地形模式距离",
   "text.autoconfig.worldreloader.option.searchRadius": "群系和结构的查找距离",
   "text.autoconfig.worldreloader.option.Debug": "Debug模式",
+  "text.autoconfig.worldreloader.option.dimension": "目标地形所在维度",
   "text.autoconfig.worldreloader.option.Debug.@Tooltip": "是否开启Debug模式",
   "text.autoconfig.worldreloader.option.preserveBeacon": "保护信标区域",
 

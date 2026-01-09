@@ -98,7 +98,7 @@ public class TerrainTransformationBuilder {
                                Predicate<RegistryEntry<Biome>> targetBiome, int searchRadius)
     {
         try {
-            Pair<BlockPos, RegistryEntry<Biome>> p = world.locateBiome(targetBiome, center, searchRadius, 32, 64);
+            Pair<BlockPos, RegistryEntry<Biome>> p = targetDimensionWorld.locateBiome(targetBiome, center, searchRadius, 32, 64);
             if (p == null) {
                 player.sendMessage(Text.literal("§c无法找到目标生物群系，请尝试扩大搜索范围或检查生物群系名称"), false);
                 return this;
@@ -133,22 +133,22 @@ public class TerrainTransformationBuilder {
         //设置目标结构的坐标
         try {
 
-            var structureRegistry = world.getRegistryManager().get(RegistryKeys.STRUCTURE);
+            var structureRegistry = targetDimensionWorld.getRegistryManager().get(RegistryKeys.STRUCTURE);
             var structure = structureRegistry.get(Identifier.of("minecraft",structureId));
 
             BlockPos structurePos = null;
 
             if (structure != null) {
                 // 通过ID直接查找结构
-                Pair<BlockPos, RegistryEntry<Structure>> pair = world.getChunkManager()
+                Pair<BlockPos, RegistryEntry<Structure>> pair = targetDimensionWorld.getChunkManager()
                         .getChunkGenerator()
-                        .locateStructure(world, RegistryEntryList.of(RegistryEntry.of(structure)), center, searchRadius, false);
+                        .locateStructure(targetDimensionWorld, RegistryEntryList.of(RegistryEntry.of(structure)), center, searchRadius, false);
                 if (pair != null) {
                     structurePos = pair.getFirst();
                 }
             } else {
                 // 通过标签查找结构
-                structurePos = world.locateStructure(
+                structurePos = targetDimensionWorld.locateStructure(
                         net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.STRUCTURE,
                                 net.minecraft.util.Identifier.of("minecraft",structureId)),
                         center, searchRadius, false

@@ -92,7 +92,6 @@ public class ModConfig implements ConfigData {
         public int x;
         public int y;
         public int z;
-        private long timestamp;
 
         public SavedPosition() {}
 
@@ -100,7 +99,6 @@ public class ModConfig implements ConfigData {
             this.x = x;
             this.y = y;
             this.z = z;
-            this.timestamp = System.currentTimeMillis();
         }
 
         public BlockPos toBlockPos() {

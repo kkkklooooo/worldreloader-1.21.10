@@ -13,10 +13,8 @@ import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
-import net.fabricmc.fabric.mixin.registry.sync.RegistriesAccessor;
 import net.minecraft.block.BlockState;
 import net.minecraft.item.Item;
 import net.minecraft.registry.*;
@@ -186,7 +184,7 @@ public class WorldReloader implements ModInitializer {
 			}
 
 			// 权限检查
-			if (!checkPermission(player)) {
+			if (!CheckPermission(player)) {
 				player.sendMessage(Text.literal("§c你没有权限使用地形改造功能！"), false);
 				return ActionResult.FAIL;
 			}
@@ -366,7 +364,7 @@ public class WorldReloader implements ModInitializer {
 	/**
 	 * 检查玩家权限
 	 */
-	private boolean checkPermission(net.minecraft.entity.player.PlayerEntity player) {
+	private boolean CheckPermission(net.minecraft.entity.player.PlayerEntity player) {
 		String permission = minPermission;
 
 		if ("disabled".equals(permission)) {
@@ -529,7 +527,7 @@ public class WorldReloader implements ModInitializer {
 	 */
 	private void startTerrainTransformation(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
 		// 权限检查
-		if (!checkPermission(player)) {
+		if (!CheckPermission(player)) {
 			player.sendMessage(Text.literal("§c你没有权限使用地形改造功能！"), false);
 			return;
 		}

@@ -2,15 +2,11 @@ package com.worldreloader.transformationtasks;
 
 import com.worldreloader.ModConfig;
 import com.worldreloader.WorldReloader;
-import com.worldreloader.transformationtasks.BaseTransformationTask;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.biome.Biome;
 
@@ -133,7 +129,7 @@ public class LineTransformationTask extends BaseTransformationTask {
                 List<BlockPos> segmentPath = generateLinePositions(start, end);
                 // 避免重复点
                 for (BlockPos p : segmentPath) {
-                    if (positions.isEmpty() || !positions.get(positions.size() - 1).equals(p)) {
+                    if (positions.isEmpty() || !positions.getLast().equals(p)) {
                         positions.add(p);
                     }
                 }

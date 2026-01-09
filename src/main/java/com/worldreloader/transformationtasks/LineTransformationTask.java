@@ -66,7 +66,7 @@ public class LineTransformationTask extends BaseTransformationTask {
                 int targetX = center.getX() + x;
                 positions.add(new BlockPos(targetX, 0, center.getZ()));
             }
-            return positions;
+            //return positions;
         }
 
         // 对于其他宽度，生成两侧的所有长度位置
@@ -132,30 +132,30 @@ public class LineTransformationTask extends BaseTransformationTask {
 
                 List<BlockPos> segmentPath = generateLinePositions(start, end);
                 // 避免重复点
-                for (BlockPos p : segmentPath) {
-                    if (positions.isEmpty() || !positions.get(positions.size() - 1).equals(p)) {
-                        positions.add(p);
-                    }
-                }
+                //if (positions.isEmpty() || !positions.get(positions.size() - 1).equals(p)) {
+                 //positions.add(segmentPath.get(i));
+               // }
+                positions.addAll(segmentPath);
+
             }
 
             if(WorldReloader.config.Debug) {
                 player.sendMessage(net.minecraft.text.Text.literal("§b检测到主延伸方向: " + (isXAxisDominant ? "X轴" : "Z轴")), false);
             }
 
-            return positions;
+            //return positions;
         }
 
         // 2. 对于宽度 > 0，根据主轴方向向两侧扩展
         for (BlockPos pos : positions) {
             if (isXAxisDominant) {
                 // 如果 X 是主轴，宽度向 Z 轴两侧延伸
-                resultPositions.add(new BlockPos(pos.getX(), 0, pos.getZ() + currentWidth));
-                resultPositions.add(new BlockPos(pos.getX(), 0, pos.getZ() - currentWidth));
+                resultPositions.add(new BlockPos(pos.getX(), 0, pos.getZ()-1 + currentWidth));
+                resultPositions.add(new BlockPos(pos.getX(), 0, pos.getZ()+1 - currentWidth));
             } else {
                 // 如果 Z 是主轴，宽度向 X 轴两侧延伸
-                resultPositions.add(new BlockPos(pos.getX() + currentWidth, 0, pos.getZ()));
-                resultPositions.add(new BlockPos(pos.getX() - currentWidth, 0, pos.getZ()));
+                resultPositions.add(new BlockPos(pos.getX()-1 + currentWidth, 0, pos.getZ()));
+                resultPositions.add(new BlockPos(pos.getX()+1 - currentWidth, 0, pos.getZ()));
             }
         }
 
@@ -195,7 +195,7 @@ public class LineTransformationTask extends BaseTransformationTask {
     @Override
     protected void processNextStep() {
         // 检查是否完成所有宽度
-        if (currentWidth > width) {
+        if (currentWidth > width+1) {
             if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§6地形改造完成！"), false);
             stop();
             return;

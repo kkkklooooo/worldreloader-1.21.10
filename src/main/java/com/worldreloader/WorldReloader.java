@@ -166,7 +166,7 @@ public class WorldReloader implements ModInitializer {
 
 			ItemStack itemStack = player.getStackInHand(hand);
 			BlockPos pos = hitResult.getBlockPos();
-			Identifier blockId = Identifier.of(config.tool);
+			Identifier blockId = Identifier.of("minecraft",config.tool);
 			if (itemStack.getItem() == Registries.ITEM.get(blockId)) {
 				addSavedPosition(world, pos, player);
 				return ActionResult.SUCCESS;
@@ -223,7 +223,7 @@ public class WorldReloader implements ModInitializer {
 			if (world.isClient()) return ActionResult.PASS;
 
 			Item handitem = player.getStackInHand(hand).getItem();
-			Identifier blockId = Identifier.of(config.tool);
+			Identifier blockId = Identifier.of("minecraft",config.tool);
 			Item item = Registries.ITEM.get(blockId);
 
 			if (handitem==item) {
@@ -256,7 +256,7 @@ public class WorldReloader implements ModInitializer {
 			if (!requirement.enabled) continue;
 
 			try {
-				Identifier itemId = Identifier.of(requirement.itemId);
+				Identifier itemId = Identifier.of("minecraft",requirement.itemId);
 				Item item = Registries.ITEM.get(itemId);
 
 				if (item != Items.AIR) {
@@ -271,7 +271,7 @@ public class WorldReloader implements ModInitializer {
 
 		// 转换目标方块
 		try {
-			Identifier blockId = Identifier.of(config.targetBlock);
+			Identifier blockId = Identifier.of("minecraft",config.targetBlock);
 			Block block = Registries.BLOCK.get(blockId);
 
 			if (block != Blocks.AIR) {
@@ -448,7 +448,7 @@ public class WorldReloader implements ModInitializer {
 
 
 		LOGGER.info("指令启动地形改造 - 位置: {}, 模式: {}, 目标: {}", centerPos, mode, target);
-		RegistryKey<World> worldRegistryKey=RegistryKey.of(RegistryKeys.WORLD,Identifier.of(config.dimension));
+		RegistryKey<World> worldRegistryKey=RegistryKey.of(RegistryKeys.WORLD,Identifier.of("minecraft",config.dimension));
 		MinecraftServer server=world.getServer();
 		ServerWorld targetWorld=server.getWorld(worldRegistryKey);
 		TerrainTransformationBuilder builder = new TerrainTransformationBuilder(world, player)
@@ -476,11 +476,11 @@ public class WorldReloader implements ModInitializer {
 				if (target != null) {
 					Predicate<RegistryEntry<Biome>> targetBiome;
 					if (target.startsWith("#")) {
-						Identifier tagId = Identifier.of(target.substring(1));
+						Identifier tagId = Identifier.of("minecraft",target.substring(1));
 						TagKey<Biome> biomeTag = TagKey.of(RegistryKeys.BIOME, tagId);
 						targetBiome = (entry) -> entry.isIn(biomeTag);
 					} else {
-						RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.of(target));
+						RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.of("minecraft",target));
 						targetBiome = (entry) -> entry.matchesKey(k);
 					}
 					player.sendMessage(Text.literal("§6目标生物群系: " + target), false);
@@ -532,7 +532,7 @@ public class WorldReloader implements ModInitializer {
 			return;
 		}
 
-		RegistryKey<World> worldRegistryKey=RegistryKey.of(RegistryKeys.WORLD,Identifier.of(config.dimension));
+		RegistryKey<World> worldRegistryKey=RegistryKey.of(RegistryKeys.WORLD,Identifier.of("minecraft",config.dimension));
 		MinecraftServer server=world.getServer();
 		ServerWorld targetWorld=server.getWorld(worldRegistryKey);
 
@@ -611,19 +611,19 @@ public class WorldReloader implements ModInitializer {
 		Block sideBlock = world.getBlockState(sidePos).getBlock();
 
 		for (var i:config.biomeMappings) {
-			if (Registries.BLOCK.get(Identifier.of(i.itemId)) == sideBlock&&i.enabled) {
+			if (Registries.BLOCK.get(Identifier.of("minecraft",i.itemId)) == sideBlock&&i.enabled) {
 				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.BiomeId + "生物群系"), false);
 				Predicate<RegistryEntry<Biome>> p;
 
 				if (i.BiomeId.startsWith("#")) {
-					Identifier tagId = Identifier.of(i.BiomeId.substring(1)); // "biome_tag_villagers:villager_jungle"
+					Identifier tagId = Identifier.of("minecraft",i.BiomeId.substring(1)); // "biome_tag_villagers:villager_jungle"
 					TagKey<Biome> biomeTag = TagKey.of(RegistryKeys.BIOME, tagId);
 
 					p = (entry) -> {
 						return entry.isIn(biomeTag);
 					};
 				} else {
-					RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.of(i.BiomeId));
+					RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.of("minecraft",i.BiomeId));
 					p = (entry) -> {
 						return entry.matchesKey(k);
 					};
@@ -641,7 +641,7 @@ public class WorldReloader implements ModInitializer {
 		Block sideBlock = world.getBlockState(sidePos).getBlock();
 
 		for (var i : config.structureMappings) {
-			if (Registries.BLOCK.get(Identifier.of(i.itemId)) == sideBlock&&i.enabled) {
+			if (Registries.BLOCK.get(Identifier.of("minecraft",i.itemId)) == sideBlock&&i.enabled) {
 				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.structureId + "结构"), false);
 				return i.structureId;
 			}

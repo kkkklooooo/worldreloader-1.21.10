@@ -134,7 +134,7 @@ public class TerrainTransformationBuilder {
         try {
 
             var structureRegistry = world.getRegistryManager().get(RegistryKeys.STRUCTURE);
-            var structure = structureRegistry.get(Identifier.of(structureId));
+            var structure = structureRegistry.get(Identifier.of("minecraft",structureId));
 
             BlockPos structurePos = null;
 
@@ -150,7 +150,7 @@ public class TerrainTransformationBuilder {
                 // 通过标签查找结构
                 structurePos = world.locateStructure(
                         net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.STRUCTURE,
-                                net.minecraft.util.Identifier.of(structureId)),
+                                net.minecraft.util.Identifier.of("minecraft",structureId)),
                         center, searchRadius, false
                 );
             }

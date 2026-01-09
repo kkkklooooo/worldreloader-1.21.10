@@ -54,14 +54,10 @@ public class WorldReloader implements ModInitializer {
 	public static ConfigHolder<ModConfig> ch = AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public String minPermission="op";
-	private static boolean isLock=false;
 	// 改为 Map 存储，方便查找
 	private final Map<Item, Integer> itemRequirements = new HashMap<>();
 	private Block targetBlock;
 
-	public static void SetLocker(boolean isLock1){
-		isLock=isLock1;
-	}
 
 	@Override
 	public void onInitialize() {
@@ -160,11 +156,6 @@ public class WorldReloader implements ModInitializer {
 		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
 			if (world.isClient()) return ActionResult.PASS;
 
-			if(isLock)
-			{
-				player.sendMessage(Text.literal("§c有改造任务正在进行，请结束后再开启新改造任务"), false);
-				return ActionResult.FAIL;
-			}
 			if(itemRequirements.isEmpty())
 			{
 				updateFromConfig();

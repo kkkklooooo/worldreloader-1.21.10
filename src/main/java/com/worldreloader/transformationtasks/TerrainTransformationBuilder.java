@@ -40,6 +40,7 @@ public class TerrainTransformationBuilder {
     {
         this.world=world;
         this.player=player;
+        this.targetDimensionWorld=world;
     }
     public TerrainTransformationBuilder preserveBeacon(boolean b)
     {
@@ -47,10 +48,11 @@ public class TerrainTransformationBuilder {
         return this;
     }
     public TerrainTransformationBuilder setTargetDimension(ServerWorld targetDimensionWorld) {
-        this.targetDimensionWorld = targetDimensionWorld;
+        if(targetDimensionWorld!=null) {
+            this.targetDimensionWorld = targetDimensionWorld;
+        }
         return this;
     }
-
     public TerrainTransformationBuilder changeBiome(boolean isChangeBiome)
     {
         this.isChangeBiome=isChangeBiome;

@@ -36,13 +36,13 @@ public class ModConfig implements ConfigData {
     public boolean preserveBeacon = true;
     @ConfigEntry.Category("Main")
     public List<ItemRequirement> targetBlockDict = List.of(
-            new ItemRequirement("minecraft:nether_star", 1)
+            new ItemRequirement("nether_star", 1)
     );
 
     @ConfigEntry.Category("Main")
-    String targetBlock = "minecraft:beacon";
+    String targetBlock = "beacon";
     @ConfigEntry.Category("Main")
-    String dimension = "minecraft:overworld";
+    String dimension = "overworld";
 
     @ConfigEntry.Category("Non-surface")
     int paddingCount = 12;
@@ -68,7 +68,7 @@ public class ModConfig implements ConfigData {
     @ConfigEntry.Category("Line")
     boolean UseLine=false;
     @ConfigEntry.Category("Line")
-    String tool = "minecraft:wooden_shovel";
+    String tool = "wooden_shovel";
     @ConfigEntry.Category("Line")
     public int width=5;
     @ConfigEntry.Category("Line")
@@ -129,10 +129,10 @@ public class ModConfig implements ConfigData {
     //List<Float> f = new ArrayList<>();
     public List<StructureMapping> structureMappings = List.of(
             new StructureMapping(Registries.BLOCK.getId(Blocks.TARGET).getPath(), "village_snowy"),
-            new StructureMapping(Registries.BLOCK.getId(Blocks.COBBLESTONE).getPath(), "minecraft:pillager_outpost"),
-            new StructureMapping(Registries.BLOCK.getId(Blocks.MOSSY_COBBLESTONE).getPath(), "minecraft:jungle_pyramid"),
-            new StructureMapping(Registries.BLOCK.getId(Blocks.SMOOTH_SANDSTONE).getPath(), "minecraft:desert_pyramid"),
-            new StructureMapping(Registries.BLOCK.getId(Blocks.BOOKSHELF).getPath(), "minecraft:mansion")
+            new StructureMapping(Registries.BLOCK.getId(Blocks.COBBLESTONE).getPath(), "pillager_outpost"),
+            new StructureMapping(Registries.BLOCK.getId(Blocks.MOSSY_COBBLESTONE).getPath(), "jungle_pyramid"),
+            new StructureMapping(Registries.BLOCK.getId(Blocks.SMOOTH_SANDSTONE).getPath(), "desert_pyramid"),
+            new StructureMapping(Registries.BLOCK.getId(Blocks.BOOKSHELF).getPath(), "mansion")
     );
 
     @ConfigEntry.Category("Biome Mappings")

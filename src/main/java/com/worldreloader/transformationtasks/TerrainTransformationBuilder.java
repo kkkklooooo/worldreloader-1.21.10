@@ -132,7 +132,8 @@ public class TerrainTransformationBuilder {
     {
         //设置目标结构的坐标
         try {
-            var structureRegistry = world.getRegistryManager().getOrThrow(RegistryKeys.STRUCTURE);
+
+            var structureRegistry = world.getRegistryManager().get(RegistryKeys.STRUCTURE);
             var structure = structureRegistry.get(Identifier.of(structureId));
 
             BlockPos structurePos = null;

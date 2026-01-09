@@ -29,6 +29,10 @@
   "text.autoconfig.worldreloader.option.width": "Line Width",
   "text.autoconfig.worldreloader.option.tool": "Draw Line Tool",
   "text.autoconfig.worldreloader.option.savedPositions": "Line Positions",
+  "text.autoconfig.worldreloader.option.SavedPosition": "Position",
+  "text.autoconfig.worldreloader.option.SavedPosition.X": "X",
+  "text.autoconfig.worldreloader.option.SavedPosition.Y": "Y",
+  "text.autoconfig.worldreloader.option.SavedPosition.Z": "Z",
 
   "text.autoconfig.worldreloader.option.targetBlock": "Trigger Block",
   "text.autoconfig.worldreloader.option.targetBlock.@Tooltip": "The block that triggers terrain transformation",

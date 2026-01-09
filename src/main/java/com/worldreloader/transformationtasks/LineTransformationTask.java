@@ -66,7 +66,7 @@ public class LineTransformationTask extends BaseTransformationTask {
                 int targetX = center.getX() + x;
                 positions.add(new BlockPos(targetX, 0, center.getZ()));
             }
-            //return positions;
+            return positions;
         }
 
         // 对于其他宽度，生成两侧的所有长度位置
@@ -132,18 +132,18 @@ public class LineTransformationTask extends BaseTransformationTask {
 
                 List<BlockPos> segmentPath = generateLinePositions(start, end);
                 // 避免重复点
-                //if (positions.isEmpty() || !positions.get(positions.size() - 1).equals(p)) {
-                 //positions.add(segmentPath.get(i));
-               // }
-                positions.addAll(segmentPath);
-
+                for (BlockPos p : segmentPath) {
+                    if (positions.isEmpty() || !positions.getLast().equals(p)) {
+                        positions.add(p);
+                    }
+                }
             }
 
             if(WorldReloader.config.Debug) {
                 player.sendMessage(net.minecraft.text.Text.literal("§b检测到主延伸方向: " + (isXAxisDominant ? "X轴" : "Z轴")), false);
             }
 
-            //return positions;
+            return positions;
         }
 
         // 2. 对于宽度 > 0，根据主轴方向向两侧扩展

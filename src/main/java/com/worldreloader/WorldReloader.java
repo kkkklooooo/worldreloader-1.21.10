@@ -561,10 +561,12 @@ public class WorldReloader implements ModInitializer {
 			builder.setTargetPos(specificPos);
             player.sendMessage(Text.literal("§6使用特定位置: " + specificPos), false);
 		} else {
-			Predicate<RegistryEntry<Biome>> targetBiome = detectTargetBiome(world, beaconPos, player);
-			String targetStructure = detectTargetStructure(world, beaconPos, player);
+            Predicate<RegistryEntry<Biome>> targetBiome = null;
+                targetBiome = detectTargetBiome(world, beaconPos, player);
+            String targetStructure = null;
+                targetStructure = detectTargetStructure(world, beaconPos, player);
 
-			if (targetBiome != null) {
+            if (targetBiome != null) {
 				builder.setBiomePos(beaconPos, targetBiome, 6400);
             } else if (targetStructure != null) {
 				builder.setStructurePos(beaconPos, targetStructure, 6400);

@@ -304,7 +304,7 @@ public class WorldReloader implements ModInitializer {
 		// 保存配置
 		AutoConfig.getConfigHolder(ModConfig.class).save();
 
-		player.sendMessage(Text.literal("§a已添加坐标: " + newPos), false);
+		if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§a已添加坐标: " + newPos), false);
 		LOGGER.info("添加坐标: {}", newPos);
 
 		// 显示当前坐标总数
@@ -353,7 +353,7 @@ public class WorldReloader implements ModInitializer {
 		if (positions.isEmpty()) {
 			player.sendMessage(Text.literal("§7没有保存的坐标"), false);
 		} else {
-			player.sendMessage(Text.literal("§6保存的坐标列表 (" + positions.size() + " 个):"), false);
+			if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6保存的坐标列表 (" + positions.size() + " 个):"), false);
 			for (int i = 0; i < positions.size(); i++) {
 				ModConfig.SavedPosition pos = positions.get(i);
 				player.sendMessage(Text.literal("§a" + (i + 1) + ". §f" + pos), false);
@@ -505,7 +505,7 @@ public class WorldReloader implements ModInitializer {
 					if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§a地表地形改造已启动！"), false);
 					LOGGER.info("地表地形改造任务已启动 - 中心位置: {}", centerPos);
 				} else {
-					if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§c无法启动地表地形改造任务！"), false);
+					player.sendMessage(Text.literal("§c无法启动地表地形改造任务！"), false);
 				}
 			} else {
 				TerrainTransformationTask task = builder.buildStandard();
@@ -579,7 +579,7 @@ public class WorldReloader implements ModInitializer {
 					if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§a地表地形改造已启动！"), false);
 					LOGGER.info("地表地形改造任务已启动 - 信标位置: {}", beaconPos);
 				} else {
-					if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§c无法启动地表地形改造任务！"), false);
+					player.sendMessage(Text.literal("§c无法启动地表地形改造任务！"), false);
 				}
 			}else if(config.UseLine){
 				LineTransformationTask task = builder.buildLine();
@@ -588,14 +588,14 @@ public class WorldReloader implements ModInitializer {
 					if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§a完整地形改造已启动！"), false);
 					LOGGER.info("完整地形改造任务已启动 - 信标位置: {}", beaconPos);
 				} else {
-					if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§c无法启动完整地形改造任务！"), false);
+					player.sendMessage(Text.literal("§c无法启动完整地形改造任务！"), false);
 				}
 			}
 			else {
 				TerrainTransformationTask task = builder.buildStandard();
 				if (task != null) {
 					task.start();
-					player.sendMessage(Text.literal("§a完整地形改造已启动！"), false);
+					if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§a完整地形改造已启动！"), false);
 					LOGGER.info("完整地形改造任务已启动 - 信标位置: {}", beaconPos);
 				} else {
 					player.sendMessage(Text.literal("§c无法启动完整地形改造任务！"), false);

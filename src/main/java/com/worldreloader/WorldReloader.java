@@ -16,6 +16,8 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.block.BlockState;
+import net.minecraft.command.permission.Permission;
+import net.minecraft.command.permission.PermissionLevel;
 import net.minecraft.item.Item;
 import net.minecraft.registry.*;
 import net.minecraft.registry.entry.RegistryEntry;
@@ -71,7 +73,7 @@ public class WorldReloader implements ModInitializer {
 							})
 					)
 					.then(literal("setPermission")
-							.requires(source -> source.hasPermissionLevel(3)) // 需要管理员权限
+							.requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.ADMINS))) // 需要管理员权限
 							.then(argument("permission", StringArgumentType.word())
 									.suggests((context, builder) -> {
 										builder.suggest("player");
@@ -370,7 +372,7 @@ public class WorldReloader implements ModInitializer {
 		if ("disabled".equals(permission)) {
 			return false;
 		} else if ("op".equals(permission)) {
-			return player.hasPermissionLevel(2); // OP权限
+			return player.getPermissions().hasPermission(new Permission.Level(PermissionLevel.ADMINS)) ; // OP权限
 		} else { // "player"
 			return true; // 所有玩家都可以使用
 		}

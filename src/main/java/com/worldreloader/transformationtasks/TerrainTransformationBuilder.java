@@ -1,6 +1,7 @@
 package com.worldreloader.transformationtasks;
 
 import com.mojang.datafixers.util.Pair;
+import com.worldreloader.WorldReloader;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.RegistryKeys;
@@ -111,7 +112,7 @@ public class TerrainTransformationBuilder {
             BlockPos surfacePos = getValidSurfacePosition(biomePos);
             if (surfacePos != null) {
                 double distance = Math.sqrt(center.getSquaredDistance(surfacePos));
-                player.sendMessage(Text.literal("§a成功找到目标生物群系，距离: " + String.format("%.1f", distance) + " 格"), false);
+                if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§a成功找到目标生物群系，距离: " + String.format("%.1f", distance) + " 格"), false);
                 this.targetPos=surfacePos;
                 return this;
             }
@@ -120,7 +121,7 @@ public class TerrainTransformationBuilder {
             surfacePos=findAlternativeBiomePosition(biomePos, targetBiome);
             if (surfacePos != null) {
                 double distance = Math.sqrt(center.getSquaredDistance(surfacePos));
-                player.sendMessage(Text.literal("§a成功找到目标生物群系，距离: " + String.format("%.1f", distance) + " 格"), false);
+                if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§a成功找到目标生物群系，距离: " + String.format("%.1f", distance) + " 格"), false);
                 this.targetPos=surfacePos;
                 return this;
             }
@@ -161,7 +162,7 @@ public class TerrainTransformationBuilder {
                 BlockPos surfacePos = getValidSurfacePosition(structurePos);
                 if (surfacePos != null) {
                     double distance = Math.sqrt(center.getSquaredDistance(surfacePos));
-                    player.sendMessage(Text.literal("§a成功找到目标结构，距离: " + String.format("%.1f", distance) + " 格"), false);
+                    if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§a成功找到目标结构，距离: " + String.format("%.1f", distance) + " 格"), false);
                     this.targetPos=surfacePos;
                     return this;
                 }

@@ -8,7 +8,6 @@ import com.worldreloader.transformationtasks.TerrainTransformationBuilder;
 import com.worldreloader.transformationtasks.TerrainTransformationTask;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.block.BlockState;
@@ -202,16 +201,7 @@ public class WorldReloader implements ModInitializer {
 				return ActionResult.SUCCESS;
 			}
 
-			return ActionResult.PASS;
-		});
-		KeyBindings.register();
-
-		ClientTickEvents.END_CLIENT_TICK.register(client -> {
-			while (KeyBindings.openConfigKey.wasPressed()) {
-				if (client.player != null) {
-					client.setScreen(new ConfigScreen(client.currentScreen));
-				}
-			}
+		return ActionResult.PASS;
 		});
 	}
 	/**

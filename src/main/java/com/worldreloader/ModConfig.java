@@ -22,10 +22,25 @@ public class ModConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final File CONFIG_FILE = FabricLoader.getInstance().getConfigDir().resolve("worldreloader.json").toFile();
 
-    public boolean UseSpecificPos = false;
+    public enum OperationMode {
+        STANDARD, SURFACE, LINE
+    }
+
+    public enum PositionMode {
+        FIXED, BIOME, RANDOM
+    }
+
+    public OperationMode mode = OperationMode.STANDARD;
+    public PositionMode posMode = PositionMode.FIXED;
+
     public int Posx;
     public int Posy;
     public int Posz;
+    
+    public String targetBiomeId = "minecraft:plains";
+    public int searchRadius = 6400;
+    public int randomRadius = 1000;
+
     public int maxRadius = 76;
     public int itemCleanupInterval = 20;
     public boolean Debug = false;
@@ -42,12 +57,10 @@ public class ModConfig {
     public int yMin = 40;
     public int yMaxThanSurface = 30;
 
-    public boolean UseSurface = false;
     public int totalSteps = 10;
     public int HEIGHT = 15;
     public int DEPTH = 15;
 
-    public boolean UseLine = false;
     public String tool = "minecraft:wooden_shovel";
     public int width = 5;
     public List<SavedPosition> savedPositions = new ArrayList<>();

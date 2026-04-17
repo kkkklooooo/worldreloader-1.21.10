@@ -430,7 +430,7 @@ public class WorldReloader implements ModInitializer {
 				.setTargetDimension(targetWorld);
 
 		// 设置高度参数
-		if (config.UseSurface) {
+		if (config.mode == ModConfig.OperationMode.SURFACE) {
 			builder.setYMin(config.DEPTH)
 					.setYMax(config.HEIGHT);
 		} else {
@@ -467,7 +467,7 @@ public class WorldReloader implements ModInitializer {
 				break;
 		}
 
-			if (config.UseSurface) {
+			if (config.mode == ModConfig.OperationMode.SURFACE) {
 				builder.setSteps(config.totalSteps);
 				SurfaceTransformationTask task = builder.buildSurface();
 				if (task != null) {
@@ -477,7 +477,13 @@ public class WorldReloader implements ModInitializer {
 				} else {
 					player.sendMessage(Text.literal("§c无法启动地表地形改造任务！"), false);
 				}
-			} else {
+			} else if (config.mode == ModConfig.OperationMode.LINE) {
+                LineTransformationTask task = builder.buildLine();
+                if (task != null) {
+                    task.start();
+                    if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§a线地形改造已启动！"), false);
+                }
+            } else {
 				TerrainTransformationTask task = builder.buildStandard();
 				if (task != null) {
 					task.start();
@@ -516,7 +522,7 @@ public class WorldReloader implements ModInitializer {
 				.setTargetDimension(targetWorld);
 
 		// 设置高度参数
-		if (config.UseSurface) {
+		if (config.mode == ModConfig.OperationMode.SURFACE) {
 			builder.setYMin(config.DEPTH)
 					.setYMax(config.HEIGHT);
 		} else {
@@ -524,15 +530,22 @@ public class WorldReloader implements ModInitializer {
 					.setYMax(config.yMaxThanSurface);
 		}
 
-        if (config.UseSpecificPos) {
+        if (config.posMode == ModConfig.PositionMode.FIXED) {
 			BlockPos specificPos = new BlockPos(config.Posx, config.Posy, config.Posz);
 			builder.setTargetPos(specificPos);
 			if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6使用特定位置: " + specificPos), false);
-		} else {
-            Predicate<RegistryEntry<Biome>> targetBiome = null;
-                targetBiome = detectTargetBiome(world, beaconPos, player);
-            String targetStructure = null;
-                targetStructure = detectTargetStructure(world, beaconPos, player);
+		} else if (config.posMode == ModConfig.PositionMode.BIOME) {
+            RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.of(config.targetBiomeId));
+            Predicate<RegistryEntry<Biome>> targetBiome = (entry) -> entry.matchesKey(k);
+            builder.setBiomePos(beaconPos, targetBiome, config.searchRadius);
+            if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6搜索生物群系: " + config.targetBiomeId), false);
+        } else if (config.posMode == ModConfig.PositionMode.RANDOM) {
+            builder.setRandomPos(beaconPos, config.randomRadius);
+            if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6使用随机位置 (半径: " + config.randomRadius + ")"), false);
+        } else {
+            // Fallback to detection logic if needed, or just default to random
+            Predicate<RegistryEntry<Biome>> targetBiome = detectTargetBiome(world, beaconPos, player);
+            String targetStructure = detectTargetStructure(world, beaconPos, player);
 
             if (targetBiome != null) {
 				builder.setBiomePos(beaconPos, targetBiome, 6400);
@@ -540,11 +553,11 @@ public class WorldReloader implements ModInitializer {
 				builder.setStructurePos(beaconPos, targetStructure, 6400);
             } else {
 				builder.setRandomPos(beaconPos,6400);
-				if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6使用随机位置"), false);
 			}
 		}
 
-			if (config.UseSurface) {
+			if (config.mode == ModConfig.OperationMode.SURFACE) {
+                builder.setSteps(config.totalSteps);
 				SurfaceTransformationTask task = builder.buildSurface();
 				if (task != null) {
 					task.start();
@@ -553,14 +566,13 @@ public class WorldReloader implements ModInitializer {
 				} else {
 					player.sendMessage(Text.literal("§c无法启动地表地形改造任务！"), false);
 				}
-			}else if(config.UseLine){
+			}else if(config.mode == ModConfig.OperationMode.LINE){
 				LineTransformationTask task = builder.buildLine();
 				if (task != null) {
 					task.start();
-					if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§a完整地形改造已启动！"), false);
-					LOGGER.info("完整地形改造任务已启动 - 信标位置: {}", beaconPos);
+					if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§a线地形改造已启动！"), false);
 				} else {
-					player.sendMessage(Text.literal("§c无法启动完整地形改造任务！"), false);
+					player.sendMessage(Text.literal("§c无法启动线地形改造任务！"), false);
 				}
 			}
 			else {

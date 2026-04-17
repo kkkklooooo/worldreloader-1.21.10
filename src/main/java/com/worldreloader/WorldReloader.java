@@ -6,10 +6,6 @@ import com.worldreloader.transformationtasks.LineTransformationTask;
 import com.worldreloader.transformationtasks.SurfaceTransformationTask;
 import com.worldreloader.transformationtasks.TerrainTransformationBuilder;
 import com.worldreloader.transformationtasks.TerrainTransformationTask;
-import me.shedaniel.autoconfig.AutoConfig;
-import me.shedaniel.autoconfig.ConfigHolder;
-import me.shedaniel.autoconfig.gui.registry.GuiRegistry;
-import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -49,7 +45,6 @@ public class WorldReloader implements ModInitializer {
 	public static final String MOD_ID = "worldreloader";
 
 	public static ModConfig config;
-	public static ConfigHolder<ModConfig> ch = AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public String minPermission="op";
 	// 改为 Map 存储，方便查找
@@ -60,6 +55,8 @@ public class WorldReloader implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		LOGGER.info("World Reloader Initialized!");
+		config = ModConfig.load();
+
 		// 注册指令
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 			// 设置权限指令
@@ -123,33 +120,7 @@ public class WorldReloader implements ModInitializer {
 									)
 							)
 					)
-			);
-
-			// 简化版指令，玩家可以使用
-			dispatcher.register(literal("biometransform")
-					.then(literal("biome")
-							.then(argument("biomeName", StringArgumentType.greedyString())
-									.executes(context -> {
-										String biomeName = StringArgumentType.getString(context, "biomeName");
-										return transformPlayerPositionCommand(context.getSource(), "biome", biomeName);
-									})
-							)
-					)
-					.then(literal("structure")
-							.then(argument("structureName", StringArgumentType.greedyString())
-									.executes(context -> {
-										String structureName = StringArgumentType.getString(context, "structureName");
-										return transformPlayerPositionCommand(context.getSource(), "structure", structureName);
-									})
-							)
-					)
-					.then(literal("random")
-							.executes(context -> transformPlayerPositionCommand(context.getSource(), "random", null))
-					)
-			);
-		});
-
-		GuiRegistry registry = AutoConfig.getGuiRegistry(ModConfig.class);
+			);});
 
 		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
 			if (world.isClient()) return ActionResult.PASS;
@@ -235,11 +206,10 @@ public class WorldReloader implements ModInitializer {
 		});
 		KeyBindings.register();
 
-		config = AutoConfig.getConfigHolder(ModConfig.class).getConfig();
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			while (KeyBindings.openConfigKey.wasPressed()) {
 				if (client.player != null) {
-					client.setScreen(AutoConfig.getConfigScreen(ModConfig.class, client.currentScreen).get());
+					client.setScreen(new ConfigScreen(client.currentScreen));
 				}
 			}
 		});
@@ -302,7 +272,7 @@ public class WorldReloader implements ModInitializer {
 		config.savedPositions.add(newPos);
 
 		// 保存配置
-		AutoConfig.getConfigHolder(ModConfig.class).save();
+		config.save();
 
 		player.sendMessage(Text.literal("§a已添加坐标: " + newPos), false);
 		LOGGER.info("添加坐标: {}", newPos);
@@ -319,7 +289,7 @@ public class WorldReloader implements ModInitializer {
 		boolean removed = config.savedPositions.remove(targetPos);
 
 		if (removed) {
-			AutoConfig.getConfigHolder(ModConfig.class).save();
+			config.save();
 			player.sendMessage(Text.literal("§c已移除坐标: " + targetPos), false);
 			LOGGER.info("移除坐标: {}", targetPos);
 			if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§7剩余坐标数: " + config.savedPositions.size()), false);
@@ -341,7 +311,7 @@ public class WorldReloader implements ModInitializer {
 	public static void clearSavedPositions(net.minecraft.entity.player.PlayerEntity player) {
 		int count = config.savedPositions.size();
 		config.savedPositions.clear();
-		AutoConfig.getConfigHolder(ModConfig.class).save();
+		config.save();
 		player.sendMessage(Text.literal("§c已清空所有保存的坐标 (" + count + " 个)"), false);
 	}
 
@@ -386,7 +356,7 @@ public class WorldReloader implements ModInitializer {
 		}
 
 		minPermission = permission;
-		ch.save();
+		config.save();
 
 		source.sendMessage(Text.literal("§a地形改造权限已设置为: " + permission));
 		LOGGER.info("地形改造权限已设置为: {}", permission);

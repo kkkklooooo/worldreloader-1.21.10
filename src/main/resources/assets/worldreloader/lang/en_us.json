@@ -1,6 +1,7 @@
 {
   "mod.worldreloader": "World Reloader",
   "key.worldloader.open_config": "Open World Reloader Menu",
+  "worldreloader.config.title": "World Reloader Configuration",
 
   "text.autoconfig.worldreloader.title": "Configuration",
 

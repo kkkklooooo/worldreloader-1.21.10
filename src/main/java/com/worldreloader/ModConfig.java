@@ -1,81 +1,59 @@
 package com.worldreloader;
 
-import me.shedaniel.autoconfig.ConfigData;
-import me.shedaniel.autoconfig.annotation.Config;
-import me.shedaniel.autoconfig.annotation.ConfigEntry;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Blocks;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.BiomeKeys;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
-@Config(name = "worldreloader")
-public class ModConfig implements ConfigData {
+public class ModConfig {
 
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final File CONFIG_FILE = FabricLoader.getInstance().getConfigDir().resolve("worldreloader.json").toFile();
 
-
-    @ConfigEntry.Category("Main")
-    boolean UseSpecificPos = false;
-    @ConfigEntry.Category("Main")
-    int Posx;
-    @ConfigEntry.Category("Main")
-    int Posy;
-    @ConfigEntry.Category("Main")
-    int Posz;
-    @ConfigEntry.Category("Main")
-    int maxRadius = 76;
-    @ConfigEntry.Category("Main")
-    int itemCleanupInterval = 20;
-    @ConfigEntry.Category("Main")
+    public boolean UseSpecificPos = false;
+    public int Posx;
+    public int Posy;
+    public int Posz;
+    public int maxRadius = 76;
+    public int itemCleanupInterval = 20;
     public boolean Debug = false;
-    @ConfigEntry.Category("Main")
     public boolean preserveBeacon = true;
-    @ConfigEntry.Category("Main")
-    public List<ItemRequirement> targetBlockDict = List.of(
+    public List<ItemRequirement> targetBlockDict = new ArrayList<>(List.of(
             new ItemRequirement("minecraft:nether_star", 1)
-    );
+    ));
 
-    @ConfigEntry.Category("Main")
-    String targetBlock = "minecraft:beacon";
-    @ConfigEntry.Category("Main")
-    String dimension = "minecraft:overworld";
+    public String targetBlock = "minecraft:beacon";
+    public String dimension = "minecraft:overworld";
 
-    @ConfigEntry.Category("Non-surface")
-    int paddingCount = 12;
-    @ConfigEntry.Category("Non-surface")
-    int totalSteps2 = 3;
-    @ConfigEntry.Category("Non-surface")
-    int yMin = 40;
-    @ConfigEntry.Category("Non-surface")
-    int yMaxThanSurface = 30;
+    public int paddingCount = 12;
+    public int totalSteps2 = 3;
+    public int yMin = 40;
+    public int yMaxThanSurface = 30;
 
-    @ConfigEntry.Category("surface")
-    boolean UseSurface = false;
-    @ConfigEntry.Category("surface")
-    @ConfigEntry.Gui.Tooltip(count = 1)
-    int totalSteps = 10;
-    @ConfigEntry.Category("surface")
-    int HEIGHT = 15;
-    @ConfigEntry.Category("surface")
-    int DEPTH = 15;
+    public boolean UseSurface = false;
+    public int totalSteps = 10;
+    public int HEIGHT = 15;
+    public int DEPTH = 15;
 
-
-
-    @ConfigEntry.Category("Line")
-    boolean UseLine=false;
-    @ConfigEntry.Category("Line")
-    String tool = "minecraft:wooden_shovel";
-    @ConfigEntry.Category("Line")
-    public int width=5;
-    @ConfigEntry.Category("Line")
+    public boolean UseLine = false;
+    public String tool = "minecraft:wooden_shovel";
+    public int width = 5;
     public List<SavedPosition> savedPositions = new ArrayList<>();
 
     public static class ItemRequirement {
-        public String itemId;  // 改为 String 类型
+        public String itemId = "";
         public int count;
         public boolean enabled = true;
 
@@ -86,7 +64,6 @@ public class ModConfig implements ConfigData {
             this.count = count;
         }
     }
-    // ... 现有的其他字段和方法 ...
 
     public static class SavedPosition {
         public int x;
@@ -124,20 +101,15 @@ public class ModConfig implements ConfigData {
         }
     }
 
-    // ============ 新增的物品-结构映射配置 ============
-    @ConfigEntry.Category("Structure Mappings")
-    //List<Float> f = new ArrayList<>();
-    public List<StructureMapping> structureMappings = List.of(
+    public List<StructureMapping> structureMappings = new ArrayList<>(List.of(
             new StructureMapping(Registries.BLOCK.getId(Blocks.TARGET).getPath(), "village_snowy"),
             new StructureMapping(Registries.BLOCK.getId(Blocks.COBBLESTONE).getPath(), "minecraft:pillager_outpost"),
             new StructureMapping(Registries.BLOCK.getId(Blocks.MOSSY_COBBLESTONE).getPath(), "minecraft:jungle_pyramid"),
             new StructureMapping(Registries.BLOCK.getId(Blocks.SMOOTH_SANDSTONE).getPath(), "minecraft:desert_pyramid"),
             new StructureMapping(Registries.BLOCK.getId(Blocks.BOOKSHELF).getPath(), "minecraft:mansion")
-    );
+    ));
 
-    @ConfigEntry.Category("Biome Mappings")
-    public List<BiomeMapping> biomeMappings = List.of(
-
+    public List<BiomeMapping> biomeMappings = new ArrayList<>(List.of(
             new BiomeMapping(Registries.BLOCK.getId(Blocks.GRASS_BLOCK).getPath(), BiomeKeys.PLAINS.getValue().getPath()),
             new BiomeMapping(Registries.BLOCK.getId(Blocks.JUNGLE_LOG).getPath(), BiomeKeys.JUNGLE.getValue().getPath()),
             new BiomeMapping(Registries.BLOCK.getId(Blocks.SAND).getPath(), BiomeKeys.DESERT.getValue().getPath()),
@@ -158,57 +130,61 @@ public class ModConfig implements ConfigData {
             new BiomeMapping(Registries.BLOCK.getId(Blocks.SPRUCE_LOG).getPath(), BiomeKeys.TAIGA.getValue().getPath()),
             new BiomeMapping(Registries.BLOCK.getId(Blocks.ACACIA_LOG).getPath(), BiomeKeys.SAVANNA.getValue().getPath()),
             new BiomeMapping(Registries.BLOCK.getId(Blocks.CHERRY_LOG).getPath(), BiomeKeys.CHERRY_GROVE.getValue().getPath())
-    );
-
-
+    ));
 
     public static class StructureMapping {
-        public String itemId="";
-        public String structureId="";
+        public String itemId = "";
+        public String structureId = "";
         public boolean enabled = true;
 
         public StructureMapping(String itemId, String structureId) {
             this.itemId = itemId;
             this.structureId = structureId;
         }
-        public StructureMapping() {
-        }
 
+        public StructureMapping() {}
     }
 
     public static class BiomeMapping {
-        public String itemId;
-        public String BiomeId;
+        public String itemId = "";
+        public String BiomeId = "";
         public boolean enabled = true;
-
 
         public BiomeMapping(String itemId, String BiomeId) {
             this.itemId = itemId;
             this.BiomeId = BiomeId;
-
-        }
-        public BiomeMapping() {
         }
 
+        public BiomeMapping() {}
     }
 
-    public HashMap<String,String> ToHash(){
-        HashMap<String,String> map = new HashMap<>();
-        for (StructureMapping i :this.structureMappings){
-            map.put(i.itemId,i.structureId);
+    public HashMap<String, String> ToHash() {
+        HashMap<String, String> map = new HashMap<>();
+        for (StructureMapping i : this.structureMappings) {
+            map.put(i.itemId, i.structureId);
         }
         return map;
     }
 
+    public static ModConfig load() {
+        if (CONFIG_FILE.exists()) {
+            try (FileReader reader = new FileReader(CONFIG_FILE)) {
+                ModConfig config = GSON.fromJson(reader, ModConfig.class);
+                return config != null ? config : new ModConfig();
+            } catch (IOException e) {
+                WorldReloader.LOGGER.error("Failed to load config", e);
+            }
+        }
+        ModConfig config = new ModConfig();
+        config.save();
+        return config;
+    }
 
-//    @ConfigEntry.Gui.CollapsibleObject
-//    InnerStuff stuff = new InnerStuff();
-//
-//    @ConfigEntry.Gui.Excluded
-//    InnerStuff invisibleStuff = new InnerStuff();
-//
-//    static class InnerStuff {
-//        int a = 0;
-//        int b = 1;
-//    }
+    public void save() {
+        try (FileWriter writer = new FileWriter(CONFIG_FILE)) {
+            GSON.toJson(this, writer);
+        } catch (IOException e) {
+            WorldReloader.LOGGER.error("Failed to save config", e);
+        }
+    }
 }

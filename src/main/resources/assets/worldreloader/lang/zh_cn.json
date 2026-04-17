@@ -1,6 +1,7 @@
 {
   "mod.worldreloader": "World Reloader",
   "key.worldloader.open_config": "打开World Reloader菜单",
+  "worldreloader.config.title": "World Reloader 配置",
 
   "text.autoconfig.worldreloader.title": "配置",
 

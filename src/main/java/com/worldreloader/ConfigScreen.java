@@ -19,6 +19,15 @@ public class ConfigScreen extends Screen {
     private ConfigList list;
     private boolean advancedExpanded = false;
 
+    // Unicode Color Constants to avoid encoding issues
+    private static final String COLOR_AQUA = "\u00A7b";
+    private static final String COLOR_YELLOW = "\u00A7e";
+    private static final String COLOR_GREEN = "\u00A7a";
+    private static final String COLOR_RED = "\u00A7c";
+    private static final String COLOR_GOLD = "\u00A76";
+    private static final String COLOR_BOLD = "\u00A7l";
+    private static final String ICON_GEAR = "\u2699 ";
+
     public ConfigScreen(Screen parent) {
         super(Text.translatable("worldreloader.config.title"));
         this.parent = parent;
@@ -29,18 +38,17 @@ public class ConfigScreen extends Screen {
     protected void init() {
         int centerX = this.width / 2;
         
-        // --- 1. 固定顶栏：模式切换 ---
-        int tabWidth = 80;
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("Standard"), b -> { config.mode = ModConfig.OperationMode.STANDARD; clearAndInit(); }).dimensions(centerX - 125, 30, tabWidth, 20).build()).active = (config.mode != ModConfig.OperationMode.STANDARD);
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("Surface"), b -> { config.mode = ModConfig.OperationMode.SURFACE; clearAndInit(); }).dimensions(centerX - 40, 30, tabWidth, 20).build()).active = (config.mode != ModConfig.OperationMode.SURFACE);
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("Line"), b -> { config.mode = ModConfig.OperationMode.LINE; clearAndInit(); }).dimensions(centerX + 45, 30, tabWidth, 20).build()).active = (config.mode != ModConfig.OperationMode.LINE);
+        // --- 1. Top Bar: Mode Selector ---
+        int tabWidth = 85;
+        addModeButton("Standard", ModConfig.OperationMode.STANDARD, centerX - 135, 30, tabWidth);
+        addModeButton("Surface", ModConfig.OperationMode.SURFACE, centerX - 42, 30, tabWidth);
+        addModeButton("Line", ModConfig.OperationMode.LINE, centerX + 50, 30, tabWidth);
 
-        // --- 2. 滚动列表：配置项 ---
-        // 参数：client, width, height, y, itemHeight
+        // --- 2. Middle: Scrolling List ---
         this.list = new ConfigList();
-        this.addSelectableChild(this.list); // 必须添加以接收事件
+        this.addSelectableChild(this.list);
 
-        // --- 3. 固定底栏：操作按钮 ---
+        // --- 3. Bottom: Footer ---
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), button -> {
             config.save();
             this.client.setScreen(this.parent);
@@ -51,14 +59,22 @@ public class ConfigScreen extends Screen {
         }).dimensions(centerX + 5, this.height - 28, 150, 20).build());
     }
 
+    private void addModeButton(String name, ModConfig.OperationMode mode, int x, int y, int w) {
+        boolean active = config.mode == mode;
+        String title = (active ? COLOR_GOLD + COLOR_BOLD : "") + name;
+        this.addDrawableChild(ButtonWidget.builder(Text.literal(title), b -> {
+            config.mode = mode;
+            clearAndInit();
+        }).dimensions(x, y, w, 20).build()).active = !active;
+    }
+
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
-        this.list.render(context, mouseX, mouseY, delta); // 必须手动调用渲染
+        this.list.render(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 10, 0xFFFFFF);
     }
 
-    // 关键：委托鼠标滚轮事件给列表，否则无法滑动
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
         if (this.list.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)) return true;
@@ -73,58 +89,69 @@ public class ConfigScreen extends Screen {
 
         private void buildList() {
             this.clearEntries();
-            addSection("Universal Parameters");
-            addSteppedInt("Max Radius", config.maxRadius, 1, 512, val -> config.maxRadius = val);
-            addInt("Cleanup Interval", config.itemCleanupInterval, val -> config.itemCleanupInterval = val);
-            addToggle("Preserve Beacon", config.preserveBeacon, val -> config.preserveBeacon = val);
-            addToggle("Debug Mode", config.Debug, val -> config.Debug = val);
+            
+            // --- SECTION: BASIC ---
+            addSection("Basic Parameters");
+            addSteppedInt("Max Operation Radius", config.maxRadius, 1, 512, val -> config.maxRadius = val);
+            addInt("Item Cleanup Interval", config.itemCleanupInterval, val -> config.itemCleanupInterval = val);
+            addToggle("Preserve Beacon Block", config.preserveBeacon, val -> config.preserveBeacon = val);
+            addToggle("Debug Logging", config.Debug, val -> config.Debug = val);
 
-            addSection("Target Block Config");
+            // --- SECTION: TARGET ---
+            addSection("Target Configuration");
             addString("Target Block ID", config.targetBlock, val -> config.targetBlock = val);
-            addMapping("Edit Requirements", "targetBlockDict");
-            addString("Dimension", config.dimension, val -> config.dimension = val);
+            addMapping("Manage Item Requirements", "targetBlockDict");
+            addString("Target Dimension", config.dimension, val -> config.dimension = val);
 
-            addSection("Position Config");
+            // --- SECTION: POSITION ---
+            addSection("Position Selection");
             addEntry(new PosModeEntry());
             if (config.posMode == ModConfig.PositionMode.FIXED) {
-                addInt("X", config.Posx, val -> config.Posx = val);
-                addInt("Y", config.Posy, val -> config.Posy = val);
-                addInt("Z", config.Posz, val -> config.Posz = val);
+                addInt("Fixed X Coordinate", config.Posx, val -> config.Posx = val);
+                addInt("Fixed Y Coordinate", config.Posy, val -> config.Posy = val);
+                addInt("Fixed Z Coordinate", config.Posz, val -> config.Posz = val);
             } else if (config.posMode == ModConfig.PositionMode.BIOME) {
-                addString("Biome ID", config.targetBiomeId, val -> config.targetBiomeId = val);
-                addInt("Search Radius", config.searchRadius, val -> config.searchRadius = val);
+                addString("Target Biome ID", config.targetBiomeId, val -> config.targetBiomeId = val);
+                addInt("Biome Search Range", config.searchRadius, val -> config.searchRadius = val);
             } else if (config.posMode == ModConfig.PositionMode.RANDOM) {
-                addInt("Random Radius", config.randomRadius, val -> config.randomRadius = val);
+                addInt("Random Offset Radius", config.randomRadius, val -> config.randomRadius = val);
             }
 
-            addSection(config.mode.name() + " Parameters");
+            // --- SECTION: MODE SPECIFIC ---
+            addSection(config.mode.name() + " Mode Settings");
             if (config.mode == ModConfig.OperationMode.SURFACE) {
-                addInt("Total Steps", config.totalSteps, val -> config.totalSteps = val);
-                addInt("Height", config.HEIGHT, val -> config.HEIGHT = val);
-                addInt("Depth", config.DEPTH, val -> config.DEPTH = val);
+                addInt("Surface Total Steps", config.totalSteps, val -> config.totalSteps = val);
+                addInt("Fill Height (Above)", config.HEIGHT, val -> config.HEIGHT = val);
+                addInt("Fill Depth (Below)", config.DEPTH, val -> config.DEPTH = val);
             } else if (config.mode == ModConfig.OperationMode.LINE) {
-                addString("Tool ID", config.tool, val -> config.tool = val);
-                addInt("Width", config.width, val -> config.width = val);
-                addMapping("Saved Positions", "savedPositions");
+                addString("Line Tool Item ID", config.tool, val -> config.tool = val);
+                addInt("Line Brush Width", config.width, val -> config.width = val);
+                addMapping("Manage Saved Positions", "savedPositions");
             }
 
-            addEntry(new SingleWidgetEntry(ButtonWidget.builder(Text.literal(advancedExpanded ? "铆 Hide Advanced" : "铆 Show Advanced"), b -> { advancedExpanded = !advancedExpanded; clearAndInit(); }).dimensions(0, 0, 310, 20).build()));
+            // --- ADVANCED ---
+            String advText = ICON_GEAR + (advancedExpanded ? "Hide Advanced Settings" : "Show Advanced Settings");
+            addEntry(new SingleWidgetEntry(ButtonWidget.builder(Text.literal(advText), b -> { 
+                advancedExpanded = !advancedExpanded; clearAndInit(); 
+            }).dimensions(0, 0, 310, 20).build(), true));
+
             if (advancedExpanded) {
-                addInt("Padding", config.paddingCount, val -> config.paddingCount = val);
-                addInt("Y Min", config.yMin, val -> config.yMin = val);
-                addMapping("Biome Mappings", "biomeMappings");
-                addMapping("Structure Mappings", "structureMappings");
+                addInt("Boundary Padding", config.paddingCount, val -> config.paddingCount = val);
+                addInt("Minimum Y Level", config.yMin, val -> config.yMin = val);
+                addMapping("Edit Biome Mappings", "biomeMappings");
+                addMapping("Edit Structure Mappings", "structureMappings");
             }
         }
 
         private void addSection(String title) {
-            ButtonWidget b = ButtonWidget.builder(Text.literal("搂6" + title), btn -> {}).dimensions(0, 0, 310, 20).build();
-            b.active = false; // 禁用点击，仅作标题
-            addEntry(new SingleWidgetEntry(b));
+            String styledTitle = COLOR_AQUA + "--- " + title + " ---";
+            ButtonWidget b = ButtonWidget.builder(Text.literal(styledTitle), btn -> {}).dimensions(0, 0, 310, 20).build();
+            b.active = false;
+            addEntry(new SingleWidgetEntry(b, false));
         }
         
         private void addInt(String label, int val, Consumer<Integer> setter) {
-            ButtonWidget l = ButtonWidget.builder(Text.literal(label), b -> {}).dimensions(0, 0, 150, 20).build();
+            ButtonWidget l = ButtonWidget.builder(Text.literal(COLOR_YELLOW + label), b -> {}).dimensions(0, 0, 150, 20).build();
             l.active = false;
             TextFieldWidget v = new TextFieldWidget(textRenderer, 0, 0, 150, 20, Text.empty());
             v.setText(String.valueOf(val));
@@ -133,7 +160,7 @@ public class ConfigScreen extends Screen {
         }
 
         private void addSteppedInt(String label, int val, int min, int max, Consumer<Integer> setter) {
-            ButtonWidget l = ButtonWidget.builder(Text.literal(label), b -> {}).dimensions(0, 0, 150, 20).build();
+            ButtonWidget l = ButtonWidget.builder(Text.literal(COLOR_YELLOW + label), b -> {}).dimensions(0, 0, 150, 20).build();
             l.active = false;
             ButtonWidget minus = ButtonWidget.builder(Text.literal("-"), b -> { setter.accept(Math.max(min, val - 1)); clearAndInit(); }).dimensions(0, 0, 20, 20).build();
             ButtonWidget plus = ButtonWidget.builder(Text.literal("+"), b -> { setter.accept(Math.min(max, val + 1)); clearAndInit(); }).dimensions(0, 0, 20, 20).build();
@@ -143,7 +170,7 @@ public class ConfigScreen extends Screen {
         }
 
         private void addString(String label, String val, Consumer<String> setter) {
-            ButtonWidget l = ButtonWidget.builder(Text.literal(label), b -> {}).dimensions(0, 0, 150, 20).build();
+            ButtonWidget l = ButtonWidget.builder(Text.literal(COLOR_YELLOW + label), b -> {}).dimensions(0, 0, 150, 20).build();
             l.active = false;
             TextFieldWidget v = new TextFieldWidget(textRenderer, 0, 0, 150, 20, Text.empty());
             v.setText(val);
@@ -152,13 +179,14 @@ public class ConfigScreen extends Screen {
         }
 
         private void addToggle(String label, boolean val, Consumer<Boolean> setter) {
-            ButtonWidget b = ButtonWidget.builder(Text.literal(label + ": " + (val ? "搂aON" : "搂cOFF")), btn -> { setter.accept(!val); clearAndInit(); }).dimensions(0, 0, 310, 20).build();
-            addEntry(new SingleWidgetEntry(b));
+            String toggleText = COLOR_YELLOW + label + ": " + (val ? COLOR_GREEN + COLOR_BOLD + "ON" : COLOR_RED + COLOR_BOLD + "OFF");
+            ButtonWidget b = ButtonWidget.builder(Text.literal(toggleText), btn -> { setter.accept(!val); clearAndInit(); }).dimensions(0, 0, 310, 20).build();
+            addEntry(new SingleWidgetEntry(b, true));
         }
 
         private void addMapping(String label, String type) {
             ButtonWidget b = ButtonWidget.builder(Text.literal(label + "..."), btn -> openMappingScreen(type)).dimensions(0, 0, 310, 20).build();
-            addEntry(new SingleWidgetEntry(b));
+            addEntry(new SingleWidgetEntry(b, true));
         }
 
         @Override public int getRowWidth() { return 310; }
@@ -172,11 +200,9 @@ public class ConfigScreen extends Screen {
 
     private class SingleWidgetEntry extends ConfigEntry {
         private final ClickableWidget widget;
-        public SingleWidgetEntry(ClickableWidget widget) { this.widget = widget; }
+        public SingleWidgetEntry(ClickableWidget widget, boolean active) { this.widget = widget; this.widget.active = active; }
         @Override public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float delta) {
-            widget.setX(ConfigScreen.this.width / 2 - 155);
-            widget.setY(this.getY());
-            widget.render(context, mouseX, mouseY, delta);
+            widget.setX(ConfigScreen.this.width / 2 - 155); widget.setY(this.getY()); widget.render(context, mouseX, mouseY, delta);
         }
         @Override public List<? extends Element> children() { return List.of(widget); }
         @Override public List<? extends Selectable> selectableChildren() { return List.of(widget); }
@@ -186,8 +212,7 @@ public class ConfigScreen extends Screen {
         private final ClickableWidget label, value;
         public DualWidgetEntry(ClickableWidget label, ClickableWidget value) { this.label = label; this.value = value; }
         @Override public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float delta) {
-            int x = ConfigScreen.this.width / 2 - 155;
-            int y = this.getY();
+            int x = ConfigScreen.this.width / 2 - 155; int y = this.getY();
             label.setX(x); label.setY(y); label.render(context, mouseX, mouseY, delta);
             value.setX(x + 160); value.setY(y); value.render(context, mouseX, mouseY, delta);
         }
@@ -201,8 +226,7 @@ public class ConfigScreen extends Screen {
             this.label = label; this.minus = minus; this.display = display; this.plus = plus;
         }
         @Override public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float delta) {
-            int x = ConfigScreen.this.width / 2 - 155;
-            int y = this.getY();
+            int x = ConfigScreen.this.width / 2 - 155; int y = this.getY();
             label.setX(x); label.setY(y); label.render(context, mouseX, mouseY, delta);
             minus.setX(x + 160); minus.setY(y); minus.render(context, mouseX, mouseY, delta);
             display.setX(x + 185); display.setY(y); display.render(context, mouseX, mouseY, delta);
@@ -215,13 +239,16 @@ public class ConfigScreen extends Screen {
     private class PosModeEntry extends ConfigEntry {
         private final ButtonWidget bFixed, bBiome, bRandom;
         public PosModeEntry() {
-            bFixed = ButtonWidget.builder(Text.literal("Fixed"), b -> { config.posMode = ModConfig.PositionMode.FIXED; clearAndInit(); }).dimensions(0, 0, 100, 20).build();
-            bBiome = ButtonWidget.builder(Text.literal("Biome"), b -> { config.posMode = ModConfig.PositionMode.BIOME; clearAndInit(); }).dimensions(0, 0, 100, 20).build();
-            bRandom = ButtonWidget.builder(Text.literal("Random"), b -> { config.posMode = ModConfig.PositionMode.RANDOM; clearAndInit(); }).dimensions(0, 0, 100, 20).build();
+            bFixed = createBtn("Fixed", ModConfig.PositionMode.FIXED);
+            bBiome = createBtn("Biome", ModConfig.PositionMode.BIOME);
+            bRandom = createBtn("Random", ModConfig.PositionMode.RANDOM);
+        }
+        private ButtonWidget createBtn(String name, ModConfig.PositionMode m) {
+            boolean active = config.posMode == m;
+            return ButtonWidget.builder(Text.literal((active ? COLOR_GOLD : "") + name), b -> { config.posMode = m; clearAndInit(); }).dimensions(0, 0, 100, 20).build();
         }
         @Override public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float delta) {
-            int x = ConfigScreen.this.width / 2 - 155;
-            int y = this.getY();
+            int x = ConfigScreen.this.width / 2 - 155; int y = this.getY();
             bFixed.active = (config.posMode != ModConfig.PositionMode.FIXED);
             bBiome.active = (config.posMode != ModConfig.PositionMode.BIOME);
             bRandom.active = (config.posMode != ModConfig.PositionMode.RANDOM);

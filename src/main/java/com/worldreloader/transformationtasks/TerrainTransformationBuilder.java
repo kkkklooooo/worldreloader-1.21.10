@@ -18,7 +18,7 @@ import net.minecraft.world.gen.structure.Structure;
 
 import java.util.function.Predicate;
 
-import static com.mojang.text2speech.Narrator.LOGGER;
+
 import static com.worldreloader.transformationtasks.BaseTransformationTask.isSolidBlock;
 
 public class TerrainTransformationBuilder {
@@ -77,7 +77,7 @@ public class TerrainTransformationBuilder {
     }
     public TerrainTransformationBuilder setRandomPos(BlockPos center,int randomRadius)
     {
-        LOGGER.info("开始随机查找参考位置 - 中心: {}, 随机半径: {}", center, randomRadius);
+        WorldReloader.LOGGER.info("开始随机查找参考位置 - 中心: {}, 随机半径: {}", center, randomRadius);
 
         for (int i = 0; i < 20; i++) {
             double angle = world.random.nextDouble() * 2 * Math.PI;
@@ -89,13 +89,13 @@ public class TerrainTransformationBuilder {
 
             BlockPos surfacePos = getValidSurfacePosition(testPos);
             if (surfacePos != null) {
-                LOGGER.info("成功找到随机位置: {}", surfacePos);
+                WorldReloader.LOGGER.info("成功找到随机位置: {}", surfacePos);
                 this.targetPos=surfacePos;
                 return this;
             }
         }
 
-        LOGGER.info("随机查找失败");
+        WorldReloader.LOGGER.info("随机查找失败");
         return this;
     }
     public TerrainTransformationBuilder setBiomePos(BlockPos center,
@@ -126,7 +126,7 @@ public class TerrainTransformationBuilder {
                 return this;
             }
         } catch (Exception e) {
-            LOGGER.error("查找生物群系时发生错误", e);
+            WorldReloader.LOGGER.error("查找生物群系时发生错误", e);
             player.sendMessage(Text.literal("§c查找生物群系时发生错误: " + e.getMessage()), false);
         }
         return this;
@@ -170,7 +170,7 @@ public class TerrainTransformationBuilder {
                 player.sendMessage(Text.literal("§c无法找到目标结构，请尝试使用locate命令测试或检查拼写错误"), false);
             }
         } catch (Exception e) {
-            LOGGER.error("查找结构时发生错误", e);
+            WorldReloader.LOGGER.error("查找结构时发生错误", e);
             player.sendMessage(Text.literal("§c查找结构时发生错误: " + e.getMessage()), false);
         }
         return this;
@@ -230,7 +230,7 @@ public class TerrainTransformationBuilder {
         {
             return new TerrainTransformationTask(this);
         }
-        LOGGER.error("构建失败！");
+        WorldReloader.LOGGER.error("构建失败！");
         return null;
     }
     public LineTransformationTask buildLine()
@@ -244,7 +244,7 @@ public class TerrainTransformationBuilder {
         {
             return new LineTransformationTask(this);
         }
-        LOGGER.error("构建失败！");
+        WorldReloader.LOGGER.error("构建失败！");
         return null;
     }
     public SurfaceTransformationTask buildSurface()
@@ -258,7 +258,7 @@ public class TerrainTransformationBuilder {
         {
             return new SurfaceTransformationTask(this);
         }
-        LOGGER.error("构建失败！");
+        WorldReloader.LOGGER.error("构建失败！");
         return null;
     }
     private boolean isValidated()
@@ -276,17 +276,14 @@ public class TerrainTransformationBuilder {
 
 
 
+        boolean forcedHere = false;
         if (!world.isChunkLoaded(chunkPos.x, chunkPos.z)) {
             world.setChunkForced(chunkPos.x, chunkPos.z, true);
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return null;
-            }
+            forcedHere = true;
         }
 
         try {
+            world.getChunk(chunkPos.x, chunkPos.z);
             int surfaceY = world.getTopY(Heightmap.Type.MOTION_BLOCKING, pos.getX(), pos.getZ());
             surfaceY = validateAndAdjustSurfaceHeight(pos.getX(), pos.getZ(), surfaceY);
 
@@ -298,7 +295,9 @@ public class TerrainTransformationBuilder {
             }
 
         } finally {
-            world.setChunkForced(chunkPos.x, chunkPos.z, false);
+            if (forcedHere) {
+                world.setChunkForced(chunkPos.x, chunkPos.z, false);
+            }
         }
 
         return null;
@@ -332,7 +331,7 @@ public class TerrainTransformationBuilder {
             int offsetZ = world.random.nextInt(400) - 200;
             BlockPos testPos = center.add(offsetX, 0, offsetZ);
 
-            if (targetBiome.test(world.getBiome(testPos))) {
+            if (targetBiome.test(targetDimensionWorld.getBiome(testPos))) {
                 BlockPos surfacePos = getValidSurfacePosition(testPos);
                 if (surfacePos != null) return surfacePos;
             }

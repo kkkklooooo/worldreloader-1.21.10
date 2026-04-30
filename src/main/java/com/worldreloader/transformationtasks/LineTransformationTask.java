@@ -38,11 +38,12 @@ public class LineTransformationTask extends BaseTransformationTask {
     @Override
     protected boolean processCurrentStepPositions() {
         // 使用目标维度的生物群系
+        ensureChunkLoaded(targetDimensionWorld, referenceCenter.getX() >> 4, referenceCenter.getZ() >> 4);
         RegistryEntry<Biome> bb = getBiomeAtChunkCenter(targetDimensionWorld,
                 new ChunkPos(referenceCenter.getX()>>4, referenceCenter.getZ()>>4));
 
         for (BlockPos pos : currentRadiusPositions) {
-            world.setChunkForced(pos.getX() >> 4, pos.getZ() >> 4, true);
+            ensureChunkLoaded(world, pos.getX() >> 4, pos.getZ() >> 4);
             if (isChangeBiome) {
                 setBiome(pos, bb, world);
             }
@@ -232,16 +233,12 @@ public class LineTransformationTask extends BaseTransformationTask {
     protected void processPosition(BlockPos circlePos) {
         int targetX = circlePos.getX();
         int targetZ = circlePos.getZ();
-        if (!world.isChunkLoaded(targetX >> 4, targetZ >> 4)) {
-            return;
-        }
-
         int offsetX = targetX - center.getX();
         int offsetZ = targetZ - center.getZ();
         int referenceX = referenceCenter.getX() + offsetX;
         int referenceZ = referenceCenter.getZ() + offsetZ;
 
-        if (!world.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
+        if (!ensureColumnChunksLoaded(targetX, targetZ, referenceX, referenceZ)) {
             return;
         }
 
@@ -249,9 +246,9 @@ public class LineTransformationTask extends BaseTransformationTask {
                 .getHeightmap(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES)
                 .get(targetX & 15, targetZ & 15);
 
-        destroyAtPosition(targetX, targetZ);
         ReferenceTerrainInfo referenceInfo = getReferenceTerrainInfo(referenceX, referenceZ);
         if (referenceInfo != null) {
+            destroyAtPosition(targetX, targetZ);
             copyFromReference(targetX, targetZ, referenceInfo, originalSurfaceY);
         }
     }
@@ -259,7 +256,9 @@ public class LineTransformationTask extends BaseTransformationTask {
     @Override
     protected ReferenceTerrainInfo getReferenceTerrainInfo(int referenceX, int referenceZ) {
         if (!targetDimensionWorld.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
-            return null;
+            if (!ensureChunkLoaded(targetDimensionWorld, referenceX >> 4, referenceZ >> 4)) {
+                return null;
+            }
         }
 
         // 使用目标维度世界获取表面高度

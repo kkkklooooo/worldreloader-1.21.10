@@ -30,7 +30,8 @@ public abstract class BaseTransformationTask {
     protected final BlockPos center;
     protected final BlockPos referenceCenter;
     protected final net.minecraft.entity.player.PlayerEntity player;
-    protected Set<ChunkPos> forcedChunks = new HashSet<>();
+    protected Set<ChunkPos> forcedTargetChunks = new HashSet<>();
+    protected Set<ChunkPos> forcedReferenceChunks = new HashSet<>();
     protected final ServerWorld targetDimensionWorld;
 
     protected int currentRadius = 0;
@@ -90,8 +91,8 @@ public abstract class BaseTransformationTask {
     protected void registerToTick() {
         ServerTickEvents.END_SERVER_TICK.register((MinecraftServer server) -> {
             if (this.isActive) {
-                processNextStep();
                 handleChunkForcing();
+                processNextStep();
             } else if (isinit) {
                 cleanupChunkForcing();
             }
@@ -103,17 +104,22 @@ public abstract class BaseTransformationTask {
             int chunkRadius = (maxRadius + 15) >> 4;
             for (int x = -chunkRadius; x <= chunkRadius; x++) {
                 for (int z = -chunkRadius; z <= chunkRadius; z++) {
-                    ChunkPos chunkPos = new ChunkPos((referenceCenter.getX() >> 4) + x, (referenceCenter.getZ() >> 4) + z);
-                    if(targetDimensionWorld!=null&&!forcedChunks.contains(chunkPos)){
-                        targetDimensionWorld.setChunkForced(chunkPos.x, chunkPos.z, true);
+                    ChunkPos targetChunkPos = new ChunkPos((center.getX() >> 4) + x, (center.getZ() >> 4) + z);
+                    ChunkPos referenceChunkPos = new ChunkPos((referenceCenter.getX() >> 4) + x, (referenceCenter.getZ() >> 4) + z);
+
+                    if (!forcedTargetChunks.contains(targetChunkPos)) {
+                        forceChunk(world, targetChunkPos);
+                        forcedTargetChunks.add(targetChunkPos);
                     }
-                    if (!forcedChunks.contains(chunkPos)) {
-                        world.setChunkForced(chunkPos.x, chunkPos.z, true);
-                        if(isChangeBiome) {
-                            RegistryEntry<Biome> bb = getBiomeAtChunkCenter(world, chunkPos);
-                            setBiome(center.add(16*x, 0, 16*z), bb, world);
-                        }
-                        forcedChunks.add(chunkPos);
+
+                    if (targetDimensionWorld != null && !forcedReferenceChunks.contains(referenceChunkPos)) {
+                        forceChunk(targetDimensionWorld, referenceChunkPos);
+                        forcedReferenceChunks.add(referenceChunkPos);
+                    }
+
+                    if (isChangeBiome && targetDimensionWorld != null) {
+                        RegistryEntry<Biome> bb = getBiomeAtChunkCenter(targetDimensionWorld, referenceChunkPos);
+                        setBiome(center.add(16 * x, 0, 16 * z), bb, world);
                     }
                 }
             }
@@ -121,16 +127,37 @@ public abstract class BaseTransformationTask {
         }
     }
 
+    protected boolean ensureChunkLoaded(ServerWorld serverWorld, int chunkX, int chunkZ) {
+        if (serverWorld == null) {
+            return false;
+        }
+
+        serverWorld.getChunk(chunkX, chunkZ);
+        return serverWorld.isChunkLoaded(chunkX, chunkZ);
+    }
+
+    private void forceChunk(ServerWorld serverWorld, ChunkPos chunkPos) {
+        serverWorld.setChunkForced(chunkPos.x, chunkPos.z, true);
+        // Synchronously load the chunk before heightmap/block reads.
+        serverWorld.getChunk(chunkPos.x, chunkPos.z);
+    }
+
+    protected boolean ensureColumnChunksLoaded(int targetX, int targetZ, int referenceX, int referenceZ) {
+        return ensureChunkLoaded(world, targetX >> 4, targetZ >> 4)
+                && ensureChunkLoaded(targetDimensionWorld, referenceX >> 4, referenceZ >> 4);
+    }
+
     protected void cleanupChunkForcing() {
         if(targetDimensionWorld!=null){
-            for (ChunkPos chunkPos : forcedChunks) {
+            for (ChunkPos chunkPos : forcedReferenceChunks) {
                 targetDimensionWorld.setChunkForced(chunkPos.x, chunkPos.z, false);
             }
         }
-        for (ChunkPos chunkPos : forcedChunks) {
+        for (ChunkPos chunkPos : forcedTargetChunks) {
             world.setChunkForced(chunkPos.x, chunkPos.z, false);
         }
-        forcedChunks.clear();
+        forcedReferenceChunks.clear();
+        forcedTargetChunks.clear();
         isinit = false;
     }
 

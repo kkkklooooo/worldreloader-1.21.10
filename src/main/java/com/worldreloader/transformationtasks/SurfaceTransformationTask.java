@@ -27,16 +27,12 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         int targetX = circlePos.getX();
         int targetZ = circlePos.getZ();
 
-        if (!world.isChunkLoaded(targetX >> 4, targetZ >> 4)) {
-            return;
-        }
-
         int offsetX = targetX - center.getX();
         int offsetZ = targetZ - center.getZ();
         int referenceX = referenceCenter.getX() + offsetX;
         int referenceZ = referenceCenter.getZ() + offsetZ;
 
-        if (!world.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
+        if (!ensureColumnChunksLoaded(targetX, targetZ, referenceX, referenceZ)) {
             return;
         }
 
@@ -68,7 +64,9 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
     @Override
     protected ReferenceTerrainInfo getReferenceTerrainInfo(int referenceX, int referenceZ) {
         if (!targetDimensionWorld.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
-            return null;
+            if (!ensureChunkLoaded(targetDimensionWorld, referenceX >> 4, referenceZ >> 4)) {
+                return null;
+            }
         }
 
         // 使用目标维度世界获取表面高度

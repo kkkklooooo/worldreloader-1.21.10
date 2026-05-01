@@ -27,11 +27,11 @@ public class ModConfig {
     }
 
     public enum PositionMode {
-        FIXED, BIOME, RANDOM
+        DETECT, FIXED, BIOME, RANDOM
     }
 
     public OperationMode mode = OperationMode.STANDARD;
-    public PositionMode posMode = PositionMode.FIXED;
+    public PositionMode posMode = PositionMode.DETECT;
 
     public int Posx;
     public int Posy;

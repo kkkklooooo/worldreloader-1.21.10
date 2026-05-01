@@ -520,7 +520,20 @@ public class WorldReloader implements ModInitializer {
 					.setYMax(config.yMaxThanSurface);
 		}
 
-        if (config.posMode == ModConfig.PositionMode.FIXED) {
+        if (config.posMode == ModConfig.PositionMode.DETECT) {
+            Predicate<RegistryEntry<Biome>> targetBiome = detectTargetBiome(world, beaconPos, player);
+            String targetStructure = detectTargetStructure(world, beaconPos, player);
+
+            if (targetBiome != null) {
+				builder.setBiomePos(beaconPos, targetBiome, config.searchRadius);
+            } else if (targetStructure != null) {
+				builder.setStructurePos(beaconPos, targetStructure, config.searchRadius);
+            } else {
+				builder.setRandomPos(beaconPos, config.randomRadius);
+                WorldReloader.LOGGER.info("东侧方块未命中任何映射，使用随机位置，信标位置: {}", beaconPos);
+                if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6东侧方块未命中映射，使用随机位置"), false);
+			}
+        } else if (config.posMode == ModConfig.PositionMode.FIXED) {
 			BlockPos specificPos = new BlockPos(config.Posx, config.Posy, config.Posz);
 			builder.setTargetPos(specificPos);
 			if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6使用特定位置: " + specificPos), false);
@@ -532,18 +545,6 @@ public class WorldReloader implements ModInitializer {
         } else if (config.posMode == ModConfig.PositionMode.RANDOM) {
             builder.setRandomPos(beaconPos, config.randomRadius);
             if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6使用随机位置 (半径: " + config.randomRadius + ")"), false);
-        } else {
-            // Fallback to detection logic if needed, or just default to random
-            Predicate<RegistryEntry<Biome>> targetBiome = detectTargetBiome(world, beaconPos, player);
-            String targetStructure = detectTargetStructure(world, beaconPos, player);
-
-            if (targetBiome != null) {
-				builder.setBiomePos(beaconPos, targetBiome, 6400);
-            } else if (targetStructure != null) {
-				builder.setStructurePos(beaconPos, targetStructure, 6400);
-            } else {
-				builder.setRandomPos(beaconPos,6400);
-			}
 		}
 
 			if (config.mode == ModConfig.OperationMode.SURFACE) {
@@ -584,6 +585,7 @@ public class WorldReloader implements ModInitializer {
 
 		for (var i:config.biomeMappings) {
 			if (Registries.BLOCK.get(Identifier.of(i.itemId)) == sideBlock&&i.enabled) {
+                WorldReloader.LOGGER.info("检测到东侧方块: {}，将寻找 {} 生物群系", sideBlock.getName().getString(), i.BiomeId);
 				if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.BiomeId + "生物群系"), false);
 				Predicate<RegistryEntry<Biome>> p;
 
@@ -614,6 +616,7 @@ public class WorldReloader implements ModInitializer {
 
 		for (var i : config.structureMappings) {
 			if (Registries.BLOCK.get(Identifier.of(i.itemId)) == sideBlock&&i.enabled) {
+                WorldReloader.LOGGER.info("检测到东侧方块: {}，将寻找 {} 结构", sideBlock.getName().getString(), i.structureId);
 				if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.structureId + "结构"), false);
 				return i.structureId;
 			}

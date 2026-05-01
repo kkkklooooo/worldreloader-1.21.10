@@ -31,7 +31,7 @@ public class ModConfig {
     }
 
     public OperationMode mode = OperationMode.STANDARD;
-    public PositionMode posMode = PositionMode.DETECT;
+    public PositionMode posMode = PositionMode.RANDOM;
 
     public int Posx;
     public int Posy;
@@ -55,7 +55,7 @@ public class ModConfig {
     public int paddingCount = 12;
     public int totalSteps2 = 3;
     public int yMin = 40;
-    public int yMaxThanSurface = 30;
+    public int yMaxThanSurface = 80;
 
     public int totalSteps = 10;
     public int HEIGHT = 15;

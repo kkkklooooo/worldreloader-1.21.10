@@ -1,6 +1,5 @@
 package com.worldreloader;
 
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.Selectable;
@@ -52,7 +51,7 @@ public class ConfigScreen extends Screen {
         // --- 3. Bottom: Footer ---
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), button -> {
             config.save();
-            syncConfigToServer();
+            WorldReloaderClient.syncConfigToServer();
             this.client.setScreen(this.parent);
         }).dimensions(centerX - 155, this.height - 28, 150, 20).build());
 
@@ -272,18 +271,6 @@ public class ConfigScreen extends Screen {
         }
         @Override public List<? extends Element> children() { return List.of(bFixed, bBiome, bRandom); }
         @Override public List<? extends Selectable> selectableChildren() { return List.of(bFixed, bBiome, bRandom); }
-    }
-
-    private void syncConfigToServer() {
-        try {
-            if (ClientPlayNetworking.canSend(ConfigSyncPayload.ID)) {
-                ClientPlayNetworking.send(new ConfigSyncPayload(config.toJson()));
-            } else if (this.client != null && this.client.player != null) {
-                this.client.player.sendMessage(Text.literal("§e当前服务器不支持 World Reloader 配置同步，已仅保存客户端配置"), false);
-            }
-        } catch (Exception e) {
-            WorldReloader.LOGGER.warn("无法同步 World Reloader 配置到服务器", e);
-        }
     }
 
     private void openMappingScreen(String type) {

@@ -59,19 +59,16 @@ public class WorldReloader implements ModInitializer {
 		config = ModConfig.load();
 		PayloadTypeRegistry.playC2S().register(ConfigSyncPayload.ID, ConfigSyncPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ConfigSyncPayload.ID, (payload, context) -> {
-			if (!context.player().hasPermissionLevel(3)) {
+			if (!CheckPermission(context.player())) {
 				LOGGER.warn("玩家 {} 尝试同步 World Reloader 配置但权限不足", context.player().getName().getString());
-				context.player().sendMessage(Text.literal("§c你没有权限修改服务器 World Reloader 配置"), false);
 				return;
 			}
 
 			try {
 				config = ModConfig.fromJson(payload.json());
-				config.save();
 				updateFromConfig();
-				LOGGER.info("已从玩家 {} 同步服务器配置，maxRadius={}, posMode={}, randomRadius={}",
+				LOGGER.info("已从玩家 {} 同步本次改造配置，maxRadius={}, posMode={}, randomRadius={}",
 						context.player().getName().getString(), config.maxRadius, config.posMode, config.randomRadius);
-				context.player().sendMessage(Text.literal("§aWorld Reloader 服务器配置已同步"), false);
 			} catch (Exception e) {
 				LOGGER.error("同步 World Reloader 配置失败", e);
 				context.player().sendMessage(Text.literal("§cWorld Reloader 配置同步失败，请查看服务器日志"), false);

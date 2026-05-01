@@ -193,6 +193,15 @@ public class ModConfig {
         return config;
     }
 
+    public static ModConfig fromJson(String json) {
+        ModConfig config = GSON.fromJson(json, ModConfig.class);
+        return config != null ? config : new ModConfig();
+    }
+
+    public String toJson() {
+        return GSON.toJson(this);
+    }
+
     public void save() {
         try (FileWriter writer = new FileWriter(CONFIG_FILE)) {
             GSON.toJson(this, writer);

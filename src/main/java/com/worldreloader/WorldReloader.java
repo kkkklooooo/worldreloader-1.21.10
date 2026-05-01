@@ -10,6 +10,8 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
 import net.minecraft.item.Item;
 import net.minecraft.registry.*;
@@ -55,6 +57,26 @@ public class WorldReloader implements ModInitializer {
 	public void onInitialize() {
 		LOGGER.info("World Reloader Initialized!");
 		config = ModConfig.load();
+		PayloadTypeRegistry.playC2S().register(ConfigSyncPayload.ID, ConfigSyncPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ConfigSyncPayload.ID, (payload, context) -> {
+			if (!context.player().hasPermissionLevel(3)) {
+				LOGGER.warn("玩家 {} 尝试同步 World Reloader 配置但权限不足", context.player().getName().getString());
+				context.player().sendMessage(Text.literal("§c你没有权限修改服务器 World Reloader 配置"), false);
+				return;
+			}
+
+			try {
+				config = ModConfig.fromJson(payload.json());
+				config.save();
+				updateFromConfig();
+				LOGGER.info("已从玩家 {} 同步服务器配置，maxRadius={}, posMode={}, randomRadius={}",
+						context.player().getName().getString(), config.maxRadius, config.posMode, config.randomRadius);
+				context.player().sendMessage(Text.literal("§aWorld Reloader 服务器配置已同步"), false);
+			} catch (Exception e) {
+				LOGGER.error("同步 World Reloader 配置失败", e);
+				context.player().sendMessage(Text.literal("§cWorld Reloader 配置同步失败，请查看服务器日志"), false);
+			}
+		});
 
 		// 注册指令
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
@@ -62,7 +84,9 @@ public class WorldReloader implements ModInitializer {
 			dispatcher.register(literal("worldreloader")
 					.then(literal("refresh")
 							.executes(context -> {
+								config = ModConfig.load();
 								updateFromConfig();
+								context.getSource().sendMessage(Text.literal("§aWorld Reloader 配置已重新加载"));
 								return 1;
 							})
 					)
@@ -520,19 +544,13 @@ public class WorldReloader implements ModInitializer {
 					.setYMax(config.yMaxThanSurface);
 		}
 
-        if (config.posMode == ModConfig.PositionMode.DETECT) {
-            Predicate<RegistryEntry<Biome>> targetBiome = detectTargetBiome(world, beaconPos, player);
-            String targetStructure = detectTargetStructure(world, beaconPos, player);
+		Predicate<RegistryEntry<Biome>> mappedBiome = detectTargetBiome(world, beaconPos, player);
+		String mappedStructure = mappedBiome == null ? detectTargetStructure(world, beaconPos, player) : null;
 
-            if (targetBiome != null) {
-				builder.setBiomePos(beaconPos, targetBiome, config.searchRadius);
-            } else if (targetStructure != null) {
-				builder.setStructurePos(beaconPos, targetStructure, config.searchRadius);
-            } else {
-				builder.setRandomPos(beaconPos, config.randomRadius);
-                WorldReloader.LOGGER.info("东侧方块未命中任何映射，使用随机位置，信标位置: {}", beaconPos);
-                if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6东侧方块未命中映射，使用随机位置"), false);
-			}
+        if (mappedBiome != null) {
+			builder.setBiomePos(beaconPos, mappedBiome, config.searchRadius);
+        } else if (mappedStructure != null) {
+			builder.setStructurePos(beaconPos, mappedStructure, config.searchRadius);
         } else if (config.posMode == ModConfig.PositionMode.FIXED) {
 			BlockPos specificPos = new BlockPos(config.Posx, config.Posy, config.Posz);
 			builder.setTargetPos(specificPos);
@@ -545,6 +563,10 @@ public class WorldReloader implements ModInitializer {
         } else if (config.posMode == ModConfig.PositionMode.RANDOM) {
             builder.setRandomPos(beaconPos, config.randomRadius);
             if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6使用随机位置 (半径: " + config.randomRadius + ")"), false);
+		} else {
+			builder.setRandomPos(beaconPos, config.randomRadius);
+			WorldReloader.LOGGER.info("东侧方块未命中任何映射，使用随机位置，信标位置: {}", beaconPos);
+			if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6东侧方块未命中映射，使用随机位置"), false);
 		}
 
 			if (config.mode == ModConfig.OperationMode.SURFACE) {

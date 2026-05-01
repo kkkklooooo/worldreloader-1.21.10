@@ -105,5 +105,6 @@
   "worldreloader.config.title.saved_positions": "已保存位置",
   "worldreloader.config.title.biome_mappings": "群系映射",
   "worldreloader.config.title.structure_mappings": "结构映射",
-  "worldreloader.config.position.detect": "映射"
+  "worldreloader.config.position.detect": "映射",
+  "worldreloader.config.option.max_y_above_surface": "最高复制高度（相对地表）"
 }

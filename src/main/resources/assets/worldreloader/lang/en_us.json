@@ -109,5 +109,6 @@
   "worldreloader.config.title.saved_positions": "Saved Positions",
   "worldreloader.config.title.biome_mappings": "Biome Mappings",
   "worldreloader.config.title.structure_mappings": "Structure Mappings",
-  "worldreloader.config.position.detect": "Mapping"
+  "worldreloader.config.position.detect": "Mapping",
+  "worldreloader.config.option.max_y_above_surface": "Maximum Copy Height (Above Surface)"
 }

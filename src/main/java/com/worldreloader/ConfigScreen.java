@@ -138,6 +138,7 @@ public class ConfigScreen extends Screen {
             if (advancedExpanded) {
                 addInt("worldreloader.config.option.boundary_padding", config.paddingCount, val -> config.paddingCount = val);
                 addInt("worldreloader.config.option.min_y", config.yMin, val -> config.yMin = val);
+                addInt("worldreloader.config.option.max_y_above_surface", config.yMaxThanSurface, val -> config.yMaxThanSurface = val);
                 addMapping("worldreloader.config.option.edit_biome_mappings", "biomeMappings");
                 addMapping("worldreloader.config.option.edit_structure_mappings", "structureMappings");
             }

@@ -13,7 +13,7 @@ public class KeyBindings {
                 "key.worldloader.open_config", // 翻译键
                 InputUtil.Type.KEYSYM, // 按键类型
                 GLFW.GLFW_KEY_Y,
-                KeyBinding.Category.GAMEPLAY
+                KeyBinding.GAMEPLAY_CATEGORY
 
         ));
     }

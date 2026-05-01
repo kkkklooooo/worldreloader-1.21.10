@@ -136,7 +136,7 @@ public class WorldReloader implements ModInitializer {
 
 			ItemStack itemStack = player.getStackInHand(hand);
 			BlockPos pos = hitResult.getBlockPos();
-			Identifier blockId = Identifier.of(config.tool);
+			Identifier blockId = new Identifier(config.tool);
 			if (itemStack.getItem() == Registries.ITEM.get(blockId)) {
 				addSavedPosition(world, pos, player);
 				return ActionResult.SUCCESS;
@@ -193,7 +193,7 @@ public class WorldReloader implements ModInitializer {
 			if (world.isClient()) return ActionResult.PASS;
 
 			Item handitem = player.getStackInHand(hand).getItem();
-			Identifier blockId = Identifier.of(config.tool);
+			Identifier blockId = new Identifier(config.tool);
 			Item item = Registries.ITEM.get(blockId);
 
 			if (handitem==item) {
@@ -216,7 +216,7 @@ public class WorldReloader implements ModInitializer {
 			if (!requirement.enabled) continue;
 
 			try {
-				Identifier itemId = Identifier.of(requirement.itemId);
+				Identifier itemId = new Identifier(requirement.itemId);
 				Item item = Registries.ITEM.get(itemId);
 
 				if (item != Items.AIR) {
@@ -231,7 +231,7 @@ public class WorldReloader implements ModInitializer {
 
 		// 转换目标方块
 		try {
-			Identifier blockId = Identifier.of(config.targetBlock);
+			Identifier blockId = new Identifier(config.targetBlock);
 			Block block = Registries.BLOCK.get(blockId);
 
 			if (block != Blocks.AIR) {
@@ -357,9 +357,7 @@ public class WorldReloader implements ModInitializer {
 	 * 在指定坐标执行地形改造指令
 	 */
 	private int transformAtCommand(ServerCommandSource source, int x, int y, int z, String mode, String target) {
-		if (!(source.getWorld() instanceof ServerWorld world)) {
-			return 0;
-		}
+		ServerWorld world = source.getWorld();
 
 		BlockPos pos = new BlockPos(x, y, z);
 		source.sendMessage(Text.literal("§6开始在地点 " + x + ", " + y + ", " + z + " 执行地形改造..."));
@@ -383,9 +381,7 @@ public class WorldReloader implements ModInitializer {
 		BlockPos pos = source.getPlayer().getBlockPos();
 		source.sendMessage(Text.literal("§6开始在玩家位置执行地形改造..."));
 
-		if (!(source.getWorld() instanceof ServerWorld world)) {
-			return 0;
-		}
+		ServerWorld world = source.getWorld();
 
 		world.getServer().execute(() -> {
 			startTerrainTransformationAt(world, pos, source.getPlayer(), mode, target);
@@ -406,7 +402,7 @@ public class WorldReloader implements ModInitializer {
 
 
 		LOGGER.info("指令启动地形改造 - 位置: {}, 模式: {}, 目标: {}", centerPos, mode, target);
-		RegistryKey<World> worldRegistryKey=RegistryKey.of(RegistryKeys.WORLD,Identifier.of(config.dimension));
+		RegistryKey<World> worldRegistryKey=RegistryKey.of(RegistryKeys.WORLD,new Identifier(config.dimension));
 		MinecraftServer server=world.getServer();
 		ServerWorld targetWorld=server.getWorld(worldRegistryKey);
 		TerrainTransformationBuilder builder = new TerrainTransformationBuilder(world, player)
@@ -434,11 +430,11 @@ public class WorldReloader implements ModInitializer {
 				if (target != null) {
 					Predicate<RegistryEntry<Biome>> targetBiome;
 					if (target.startsWith("#")) {
-						Identifier tagId = Identifier.of(target.substring(1));
+						Identifier tagId = new Identifier(target.substring(1));
 						TagKey<Biome> biomeTag = TagKey.of(RegistryKeys.BIOME, tagId);
 						targetBiome = (entry) -> entry.isIn(biomeTag);
 					} else {
-						RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.of(target));
+						RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, new Identifier(target));
 						targetBiome = (entry) -> entry.matchesKey(k);
 					}
 					if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6目标生物群系: " + target), false);
@@ -496,7 +492,7 @@ public class WorldReloader implements ModInitializer {
 			return;
 		}
 
-		RegistryKey<World> worldRegistryKey=RegistryKey.of(RegistryKeys.WORLD,Identifier.of(config.dimension));
+		RegistryKey<World> worldRegistryKey=RegistryKey.of(RegistryKeys.WORLD,new Identifier(config.dimension));
 		MinecraftServer server=world.getServer();
 		ServerWorld targetWorld=server.getWorld(worldRegistryKey);
 
@@ -525,7 +521,7 @@ public class WorldReloader implements ModInitializer {
 			builder.setTargetPos(specificPos);
 			if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6使用特定位置: " + specificPos), false);
 		} else if (config.posMode == ModConfig.PositionMode.BIOME) {
-            RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.of(config.targetBiomeId));
+            RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, new Identifier(config.targetBiomeId));
             Predicate<RegistryEntry<Biome>> targetBiome = (entry) -> entry.matchesKey(k);
             builder.setBiomePos(beaconPos, targetBiome, config.searchRadius);
             if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6搜索生物群系: " + config.targetBiomeId), false);
@@ -583,19 +579,19 @@ public class WorldReloader implements ModInitializer {
 		Block sideBlock = world.getBlockState(sidePos).getBlock();
 
 		for (var i:config.biomeMappings) {
-			if (Registries.BLOCK.get(Identifier.of(i.itemId)) == sideBlock&&i.enabled) {
+			if (Registries.BLOCK.get(new Identifier(i.itemId)) == sideBlock&&i.enabled) {
 				if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.BiomeId + "生物群系"), false);
 				Predicate<RegistryEntry<Biome>> p;
 
 				if (i.BiomeId.startsWith("#")) {
-					Identifier tagId = Identifier.of(i.BiomeId.substring(1)); // "biome_tag_villagers:villager_jungle"
+					Identifier tagId = new Identifier(i.BiomeId.substring(1)); // "biome_tag_villagers:villager_jungle"
 					TagKey<Biome> biomeTag = TagKey.of(RegistryKeys.BIOME, tagId);
 
 					p = (entry) -> {
 						return entry.isIn(biomeTag);
 					};
 				} else {
-					RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.of(i.BiomeId));
+					RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, new Identifier(i.BiomeId));
 					p = (entry) -> {
 						return entry.matchesKey(k);
 					};
@@ -613,7 +609,7 @@ public class WorldReloader implements ModInitializer {
 		Block sideBlock = world.getBlockState(sidePos).getBlock();
 
 		for (var i : config.structureMappings) {
-			if (Registries.BLOCK.get(Identifier.of(i.itemId)) == sideBlock&&i.enabled) {
+			if (Registries.BLOCK.get(new Identifier(i.itemId)) == sideBlock&&i.enabled) {
 				if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.structureId + "结构"), false);
 				return i.structureId;
 			}

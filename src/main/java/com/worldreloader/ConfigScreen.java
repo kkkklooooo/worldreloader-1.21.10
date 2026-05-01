@@ -76,14 +76,14 @@ public class ConfigScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (this.list.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)) return true;
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+        if (this.list.mouseScrolled(mouseX, mouseY, amount)) return true;
+        return super.mouseScrolled(mouseX, mouseY, amount);
     }
 
     private class ConfigList extends ElementListWidget<ConfigEntry> {
         public ConfigList() {
-            super(ConfigScreen.this.client, ConfigScreen.this.width, ConfigScreen.this.height - 95, 55, 24);
+            super(ConfigScreen.this.client, ConfigScreen.this.width, ConfigScreen.this.height, 55, ConfigScreen.this.height - 40, 24);
             buildList();
         }
 
@@ -190,7 +190,7 @@ public class ConfigScreen extends Screen {
         }
 
         @Override public int getRowWidth() { return 310; }
-        @Override protected int getScrollbarX() { return this.width / 2 + 160; }
+        @Override protected int getScrollbarPositionX() { return this.width / 2 + 160; }
     }
 
     private abstract class ConfigEntry extends ElementListWidget.Entry<ConfigEntry> {
@@ -201,8 +201,8 @@ public class ConfigScreen extends Screen {
     private class SingleWidgetEntry extends ConfigEntry {
         private final ClickableWidget widget;
         public SingleWidgetEntry(ClickableWidget widget, boolean active) { this.widget = widget; this.widget.active = active; }
-        @Override public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float delta) {
-            widget.setX(ConfigScreen.this.width / 2 - 155); widget.setY(this.getY()); widget.render(context, mouseX, mouseY, delta);
+        @Override public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float delta) {
+            widget.setX(ConfigScreen.this.width / 2 - 155); widget.setY(y); widget.render(context, mouseX, mouseY, delta);
         }
         @Override public List<? extends Element> children() { return List.of(widget); }
         @Override public List<? extends Selectable> selectableChildren() { return List.of(widget); }
@@ -211,8 +211,8 @@ public class ConfigScreen extends Screen {
     private class DualWidgetEntry extends ConfigEntry {
         private final ClickableWidget label, value;
         public DualWidgetEntry(ClickableWidget label, ClickableWidget value) { this.label = label; this.value = value; }
-        @Override public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float delta) {
-            int x = ConfigScreen.this.width / 2 - 155; int y = this.getY();
+        @Override public void render(DrawContext context, int index, int y, int rowX, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float delta) {
+            int x = ConfigScreen.this.width / 2 - 155;
             label.setX(x); label.setY(y); label.render(context, mouseX, mouseY, delta);
             value.setX(x + 160); value.setY(y); value.render(context, mouseX, mouseY, delta);
         }
@@ -225,8 +225,8 @@ public class ConfigScreen extends Screen {
         public SteppedEntry(ClickableWidget label, ClickableWidget minus, ClickableWidget display, ClickableWidget plus) {
             this.label = label; this.minus = minus; this.display = display; this.plus = plus;
         }
-        @Override public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float delta) {
-            int x = ConfigScreen.this.width / 2 - 155; int y = this.getY();
+        @Override public void render(DrawContext context, int index, int y, int rowX, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float delta) {
+            int x = ConfigScreen.this.width / 2 - 155;
             label.setX(x); label.setY(y); label.render(context, mouseX, mouseY, delta);
             minus.setX(x + 160); minus.setY(y); minus.render(context, mouseX, mouseY, delta);
             display.setX(x + 185); display.setY(y); display.render(context, mouseX, mouseY, delta);
@@ -247,8 +247,8 @@ public class ConfigScreen extends Screen {
             boolean active = config.posMode == m;
             return ButtonWidget.builder(Text.literal((active ? COLOR_GOLD : "") + name), b -> { config.posMode = m; clearAndInit(); }).dimensions(0, 0, 100, 20).build();
         }
-        @Override public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float delta) {
-            int x = ConfigScreen.this.width / 2 - 155; int y = this.getY();
+        @Override public void render(DrawContext context, int index, int y, int rowX, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float delta) {
+            int x = ConfigScreen.this.width / 2 - 155;
             bFixed.active = (config.posMode != ModConfig.PositionMode.FIXED);
             bBiome.active = (config.posMode != ModConfig.PositionMode.BIOME);
             bRandom.active = (config.posMode != ModConfig.PositionMode.RANDOM);

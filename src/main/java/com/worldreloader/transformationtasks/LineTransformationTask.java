@@ -130,7 +130,7 @@ public class LineTransformationTask extends BaseTransformationTask {
                 List<BlockPos> segmentPath = generateLinePositions(start, end);
                 // 避免重复点
                 for (BlockPos p : segmentPath) {
-                    if (positions.isEmpty() || !positions.getLast().equals(p)) {
+                    if (positions.isEmpty() || !positions.get(positions.size() - 1).equals(p)) {
                         positions.add(p);
                     }
                 }

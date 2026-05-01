@@ -136,8 +136,8 @@ public class TerrainTransformationBuilder {
     {
         //设置目标结构的坐标
         try {
-            var structureRegistry = targetDimensionWorld.getRegistryManager().getOrThrow(RegistryKeys.STRUCTURE);
-            var structure = structureRegistry.get(Identifier.of(structureId));
+            var structureRegistry = targetDimensionWorld.getRegistryManager().get(RegistryKeys.STRUCTURE);
+            var structure = structureRegistry.get(new Identifier(structureId));
 
             BlockPos structurePos = null;
 
@@ -153,7 +153,7 @@ public class TerrainTransformationBuilder {
                 // 通过标签查找结构
                 structurePos = targetDimensionWorld.locateStructure(
                         net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.STRUCTURE,
-                                net.minecraft.util.Identifier.of(structureId)),
+                                new Identifier(structureId)),
                         center, searchRadius, false
                 );
             }

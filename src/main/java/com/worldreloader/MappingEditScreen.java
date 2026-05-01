@@ -70,7 +70,7 @@ public class MappingEditScreen<T> extends Screen {
         private final MappingEditScreen<T> screen;
 
         public MappingList(MappingEditScreen<T> screen) {
-            super(screen.client, screen.width, screen.height - 70, 40, 25);
+            super(screen.client, screen.width, screen.height, 40, screen.height - 40, 25);
             this.screen = screen;
             for (T item : screen.list) {
                 this.addEntry(new MappingEntry<>(screen, item));
@@ -91,7 +91,7 @@ public class MappingEditScreen<T> extends Screen {
         }
 
         @Override
-        protected int getScrollbarX() {
+        protected int getScrollbarPositionX() {
             return this.width / 2 + 155;
         }
 
@@ -143,10 +143,7 @@ public class MappingEditScreen<T> extends Screen {
         }
 
         @Override
-        public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float deltaTicks) {
-            int x = this.getX();
-            int y = this.getY();
-
+        public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float deltaTicks) {
             keyField.setX(x);
             keyField.setY(y);
             keyField.render(context, mouseX, mouseY, deltaTicks);

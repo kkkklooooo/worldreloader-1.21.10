@@ -200,4 +200,12 @@ public class ModConfig {
             WorldReloader.LOGGER.error("Failed to save config", e);
         }
     }
+
+    public String toJson() {
+        return GSON.toJson(this);
+    }
+
+    public static ModConfig fromJson(String json) {
+        return GSON.fromJson(json, ModConfig.class);
+    }
 }

@@ -51,6 +51,7 @@ public class ConfigScreen extends Screen {
         // --- 3. Bottom: Footer ---
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), button -> {
             config.save();
+            WorldReloaderClient.syncConfigToServer();
             this.client.setScreen(this.parent);
         }).dimensions(centerX - 155, this.height - 28, 150, 20).build());
 
@@ -138,6 +139,7 @@ public class ConfigScreen extends Screen {
             if (advancedExpanded) {
                 addInt("Boundary Padding", config.paddingCount, val -> config.paddingCount = val);
                 addInt("Minimum Y Level", config.yMin, val -> config.yMin = val);
+                addInt("Max Y Above Surface", config.yMaxThanSurface, val -> config.yMaxThanSurface = val);
                 addMapping("Edit Biome Mappings", "biomeMappings");
                 addMapping("Edit Structure Mappings", "structureMappings");
             }

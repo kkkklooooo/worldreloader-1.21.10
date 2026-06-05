@@ -10,6 +10,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
 import net.minecraft.item.Item;
 import net.minecraft.registry.*;
@@ -56,13 +57,36 @@ public class WorldReloader implements ModInitializer {
 		LOGGER.info("World Reloader Initialized!");
 		config = ModConfig.load();
 
+		// 注册配置同步接收器
+		ServerPlayNetworking.registerGlobalReceiver(ConfigSyncPayload.getChannel(), (server, player, handler, buf, sender) -> {
+			ConfigSyncPayload payload = new ConfigSyncPayload(buf);
+			server.execute(() -> {
+				if (!CheckPermission(player)) {
+					LOGGER.warn("玩家 {} 尝试同步 World Reloader 配置但权限不足", player.getName().getString());
+					return;
+				}
+
+				try {
+					config = ModConfig.fromJson(payload.getJson());
+					updateFromConfig();
+					LOGGER.info("已从玩家 {} 同步本次改造配置，maxRadius={}, posMode={}, randomRadius={}",
+							player.getName().getString(), config.maxRadius, config.posMode, config.randomRadius);
+				} catch (Exception e) {
+					LOGGER.error("同步 World Reloader 配置失败", e);
+					player.sendMessage(Text.literal("§cWorld Reloader 配置同步失败，请查看服务器日志"), false);
+				}
+			});
+		});
+
 		// 注册指令
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 			// 设置权限指令
 			dispatcher.register(literal("worldreloader")
 					.then(literal("refresh")
 							.executes(context -> {
+								config = ModConfig.load();
 								updateFromConfig();
+								context.getSource().sendMessage(Text.literal("§aWorld Reloader 配置已重新加载"));
 								return 1;
 							})
 					)
@@ -357,7 +381,7 @@ public class WorldReloader implements ModInitializer {
 	 * 在指定坐标执行地形改造指令
 	 */
 	private int transformAtCommand(ServerCommandSource source, int x, int y, int z, String mode, String target) {
-		ServerWorld world = source.getWorld();
+		ServerWorld world=source.getWorld();
 
 		BlockPos pos = new BlockPos(x, y, z);
 		source.sendMessage(Text.literal("§6开始在地点 " + x + ", " + y + ", " + z + " 执行地形改造..."));
@@ -368,28 +392,6 @@ public class WorldReloader implements ModInitializer {
 
 		return 1;
 	}
-
-	/**
-	 * 在玩家位置执行地形改造指令
-	 */
-	private int transformPlayerPositionCommand(ServerCommandSource source, String mode, String target) {
-		if (source.getPlayer() == null) {
-			source.sendError(Text.literal("§c只有玩家可以执行此命令"));
-			return 0;
-		}
-
-		BlockPos pos = source.getPlayer().getBlockPos();
-		source.sendMessage(Text.literal("§6开始在玩家位置执行地形改造..."));
-
-		ServerWorld world = source.getWorld();
-
-		world.getServer().execute(() -> {
-			startTerrainTransformationAt(world, pos, source.getPlayer(), mode, target);
-		});
-
-		return 1;
-	}
-
 
 
 	/**
@@ -516,7 +518,14 @@ public class WorldReloader implements ModInitializer {
 					.setYMax(config.yMaxThanSurface);
 		}
 
-        if (config.posMode == ModConfig.PositionMode.FIXED) {
+		Predicate<RegistryEntry<Biome>> mappedBiome = detectTargetBiome(world, beaconPos, player);
+		String mappedStructure = mappedBiome == null ? detectTargetStructure(world, beaconPos, player) : null;
+
+        if (mappedBiome != null) {
+			builder.setBiomePos(beaconPos, mappedBiome, config.searchRadius);
+        } else if (mappedStructure != null) {
+			builder.setStructurePos(beaconPos, mappedStructure, config.searchRadius);
+        } else if (config.posMode == ModConfig.PositionMode.FIXED) {
 			BlockPos specificPos = new BlockPos(config.Posx, config.Posy, config.Posz);
 			builder.setTargetPos(specificPos);
 			if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6使用特定位置: " + specificPos), false);
@@ -528,18 +537,10 @@ public class WorldReloader implements ModInitializer {
         } else if (config.posMode == ModConfig.PositionMode.RANDOM) {
             builder.setRandomPos(beaconPos, config.randomRadius);
             if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6使用随机位置 (半径: " + config.randomRadius + ")"), false);
-        } else {
-            // Fallback to detection logic if needed, or just default to random
-            Predicate<RegistryEntry<Biome>> targetBiome = detectTargetBiome(world, beaconPos, player);
-            String targetStructure = detectTargetStructure(world, beaconPos, player);
-
-            if (targetBiome != null) {
-				builder.setBiomePos(beaconPos, targetBiome, 6400);
-            } else if (targetStructure != null) {
-				builder.setStructurePos(beaconPos, targetStructure, 6400);
-            } else {
-				builder.setRandomPos(beaconPos,6400);
-			}
+		} else {
+			builder.setRandomPos(beaconPos, config.randomRadius);
+			WorldReloader.LOGGER.info("东侧方块未命中任何映射，使用随机位置，信标位置: {}", beaconPos);
+			if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6东侧方块未命中映射，使用随机位置"), false);
 		}
 
 			if (config.mode == ModConfig.OperationMode.SURFACE) {
@@ -580,6 +581,7 @@ public class WorldReloader implements ModInitializer {
 
 		for (var i:config.biomeMappings) {
 			if (Registries.BLOCK.get(new Identifier(i.itemId)) == sideBlock&&i.enabled) {
+                WorldReloader.LOGGER.info("检测到东侧方块: {}，将寻找 {} 生物群系", sideBlock.getName().getString(), i.BiomeId);
 				if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.BiomeId + "生物群系"), false);
 				Predicate<RegistryEntry<Biome>> p;
 
@@ -610,6 +612,7 @@ public class WorldReloader implements ModInitializer {
 
 		for (var i : config.structureMappings) {
 			if (Registries.BLOCK.get(new Identifier(i.itemId)) == sideBlock&&i.enabled) {
+                WorldReloader.LOGGER.info("检测到东侧方块: {}，将寻找 {} 结构", sideBlock.getName().getString(), i.structureId);
 				if(WorldReloader.config.Debug)player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.structureId + "结构"), false);
 				return i.structureId;
 			}

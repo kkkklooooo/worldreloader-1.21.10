@@ -35,6 +35,12 @@ public class ModConfig implements ConfigData {
     @ConfigEntry.Category("Main")
     public boolean preserveBeacon = true;
     @ConfigEntry.Category("Main")
+    @ConfigEntry.Gui.Tooltip(count = 1)
+    public int maxUndoHistory = 5;
+    @ConfigEntry.Category("Main")
+    @ConfigEntry.Gui.Tooltip(count = 1)
+    public boolean netherAtmosphere = true;
+    @ConfigEntry.Category("Main")
     public List<ItemRequirement> targetBlockDict = List.of(
             new ItemRequirement("nether_star", 1)
     );

@@ -286,13 +286,26 @@ public class TerrainTransformationBuilder {
         }
 
         try {
-            int surfaceY = world.getTopY(Heightmap.Type.MOTION_BLOCKING, pos.getX(), pos.getZ());
-            surfaceY = validateAndAdjustSurfaceHeight(pos.getX(), pos.getZ(), surfaceY);
+            int surfaceY;
+            int minValidY;
+            if (world.getDimension().hasCeiling()) {
+                int logicalTop = world.getBottomY() + world.getDimension().logicalHeight();
+                surfaceY = BaseTransformationTask.findSurfaceBelowCeiling(
+                        world, pos.getX(), pos.getZ(), logicalTop - 6, world.getBottomY() + 10);
+                if (surfaceY < 0) {
+                    return null;
+                }
+                minValidY = world.getBottomY() + 31;
+            } else {
+                surfaceY = world.getTopY(Heightmap.Type.MOTION_BLOCKING, pos.getX(), pos.getZ());
+                surfaceY = validateAndAdjustSurfaceHeight(pos.getX(), pos.getZ(), surfaceY, world);
+                minValidY = 64;
+            }
 
             BlockPos surfacePos = new BlockPos(pos.getX(), surfaceY, pos.getZ());
             BlockState surfaceBlock = world.getBlockState(surfacePos);
 
-            if (isSolidBlock(world, surfaceBlock) && surfacePos.getY() >= 64) {
+            if (isSolidBlock(world, surfaceBlock) && surfacePos.getY() >= minValidY) {
                 return surfacePos;
             }
 
@@ -326,12 +339,13 @@ public class TerrainTransformationBuilder {
     }
     private BlockPos findAlternativeBiomePosition(BlockPos center,
                                                   Predicate<RegistryEntry<Biome>> targetBiome) {
+        ServerWorld searchWorld = targetDimensionWorld != null ? targetDimensionWorld : world;
         for (int i = 0; i < 10; i++) {
-            int offsetX = world.random.nextInt(400) - 200;
-            int offsetZ = world.random.nextInt(400) - 200;
+            int offsetX = searchWorld.random.nextInt(400) - 200;
+            int offsetZ = searchWorld.random.nextInt(400) - 200;
             BlockPos testPos = center.add(offsetX, 0, offsetZ);
 
-            if (targetBiome.test(world.getBiome(testPos))) {
+            if (targetBiome.test(searchWorld.getBiome(testPos))) {
                 BlockPos surfacePos = getValidSurfacePosition(testPos);
                 if (surfacePos != null) return surfacePos;
             }

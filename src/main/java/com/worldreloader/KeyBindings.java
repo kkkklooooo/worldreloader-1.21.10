@@ -7,6 +7,7 @@ import org.lwjgl.glfw.GLFW;
 
 public class KeyBindings {
     public static KeyBinding openConfigKey;
+    public static KeyBinding undoKey;
 
     public static void register() {
         openConfigKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
@@ -15,6 +16,12 @@ public class KeyBindings {
                 GLFW.GLFW_KEY_Y,
                 KeyBinding.GAMEPLAY_CATEGORY
 
+        ));
+        undoKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.worldreloader.undo",
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_Z,
+                KeyBinding.GAMEPLAY_CATEGORY
         ));
     }
 }

@@ -37,14 +37,13 @@ public class LineTransformationTask extends BaseTransformationTask {
     private final  int yMax;
     @Override
     protected boolean processCurrentStepPositions() {
-        // 使用目标维度的生物群系
-        RegistryEntry<Biome> bb = getBiomeAtChunkCenter(targetDimensionWorld,
-                new ChunkPos(referenceCenter.getX()>>4, referenceCenter.getZ()>>4));
-
         for (BlockPos pos : currentRadiusPositions) {
-            world.setChunkForced(pos.getX() >> 4, pos.getZ() >> 4, true);
+            ChunkPos cp = new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4);
+            if (forcedChunks.add(cp)) {
+                world.setChunkForced(cp.x, cp.z, true);
+            }
             if (isChangeBiome) {
-                setBiome(pos, bb, world);
+                copyBiomesFromReferenceChunk(cp);
             }
             processPosition(pos);
         }
@@ -241,8 +240,9 @@ public class LineTransformationTask extends BaseTransformationTask {
         int referenceX = referenceCenter.getX() + offsetX;
         int referenceZ = referenceCenter.getZ() + offsetZ;
 
-        if (!world.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
-            return;
+        if (!targetDimensionWorld.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
+            targetDimensionWorld.setChunkForced(referenceX >> 4, referenceZ >> 4, true);
+            forcedReferenceChunks.add(new ChunkPos(referenceX >> 4, referenceZ >> 4));
         }
 
         int originalSurfaceY = world.getChunk(targetX >> 4, targetZ >> 4)
@@ -263,15 +263,15 @@ public class LineTransformationTask extends BaseTransformationTask {
         }
 
         // 使用目标维度世界获取表面高度
-        int referenceSurfaceY = targetDimensionWorld.getChunk(referenceX >> 4, referenceZ >> 4)
-                .getHeightmap(Heightmap.Type.MOTION_BLOCKING)
-                .get(referenceX & 15, referenceZ & 15);
+        int referenceSurfaceY = resolveReferenceSurfaceY(referenceX, referenceZ, yMin - 1, referenceCenter.getY() + yMax);
 
         if (referenceSurfaceY < yMin - 1) {
             return null;
         }
 
-        referenceSurfaceY = validateAndAdjustReferenceHeight(referenceX, referenceZ, referenceSurfaceY);
+        if (!targetDimensionWorld.getDimension().hasCeiling()) {
+            referenceSurfaceY = validateAndAdjustReferenceHeight(referenceX, referenceZ, referenceSurfaceY);
+        }
         return analyzeReferenceTerrain(referenceX, referenceZ, referenceSurfaceY);
     }
 
@@ -307,7 +307,7 @@ public class LineTransformationTask extends BaseTransformationTask {
             }
             BlockState currentState = world.getBlockState(targetPos);
             if (!currentState.isAir()) {
-                world.setBlockState(targetPos, Blocks.AIR.getDefaultState(), 3);
+                setBlockWithRecord(targetPos, Blocks.AIR.getDefaultState(), 3);
             }
         }
     }
@@ -386,7 +386,7 @@ public class LineTransformationTask extends BaseTransformationTask {
             if (!referenceState.isAir()) {
                 BlockState currentState = world.getBlockState(targetPos);
                 if (!currentState.equals(referenceState)) {
-                    world.setBlockState(targetPos, referenceState, 3);
+                    setBlockWithRecord(targetPos, referenceState, 3);
                 }
             }
         }
@@ -404,7 +404,7 @@ public class LineTransformationTask extends BaseTransformationTask {
             if (!referenceState.isAir()) {
                 BlockState currentState = world.getBlockState(targetPos);
                 if (!currentState.equals(referenceState)) {
-                    world.setBlockState(targetPos, referenceState, 3);
+                    setBlockWithRecord(targetPos, referenceState, 3);
                 }
             }
         }
@@ -429,13 +429,13 @@ public class LineTransformationTask extends BaseTransformationTask {
                 if (!referenceState.isAir()) {
                     BlockState currentState = world.getBlockState(targetPos);
                     if (!currentState.equals(referenceState)) {
-                        world.setBlockState(targetPos, referenceState, 3);
+                        setBlockWithRecord(targetPos, referenceState, 3);
                     }
                 }
             }
             else if(reference.blocks[i].getFluidState().isStill())
             {
-                world.setBlockState(new BlockPos(targetX, targetY, targetZ),reference.blocks[i],3);
+                setBlockWithRecord(new BlockPos(targetX, targetY, targetZ),reference.blocks[i],3);
             }
         }
         cleanFloatingBlocks(targetX, targetZ, transitionSurfaceY);
@@ -465,7 +465,7 @@ public class LineTransformationTask extends BaseTransformationTask {
                     }
                 }
                 if (!hasSupport) {
-                    world.setBlockState(pos, Blocks.AIR.getDefaultState(), 3);
+                    setBlockWithRecord(pos, Blocks.AIR.getDefaultState(), 3);
                 }
             }
         }

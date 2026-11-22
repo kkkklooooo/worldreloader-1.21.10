@@ -40,7 +40,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
         int referenceX = referenceCenter.getX() + offsetX;
         int referenceZ = referenceCenter.getZ() + offsetZ;
 
-        if (!world.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
+        if (!targetDimensionWorld.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
             return;
         }
 
@@ -59,19 +59,20 @@ public class TerrainTransformationTask extends BaseTransformationTask {
     protected ReferenceTerrainInfo getReferenceTerrainInfo(int referenceX, int referenceZ) {
         if (!targetDimensionWorld.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
             targetDimensionWorld.setChunkForced(referenceX >> 4, referenceZ >> 4, true);
+            forcedReferenceChunks.add(new net.minecraft.util.math.ChunkPos(referenceX >> 4, referenceZ >> 4));
             return null;
         }
 
         // 使用目标维度世界获取表面高度
-        int referenceSurfaceY = targetDimensionWorld.getChunk(referenceX >> 4, referenceZ >> 4)
-                .getHeightmap(Heightmap.Type.MOTION_BLOCKING)
-                .get(referenceX & 15, referenceZ & 15);
+        int referenceSurfaceY = resolveReferenceSurfaceY(referenceX, referenceZ, yMin - 1, referenceCenter.getY() + yMax);
 
         if (referenceSurfaceY < yMin - 1) {
             return null;
         }
 
-        referenceSurfaceY = validateAndAdjustReferenceHeight(referenceX, referenceZ, referenceSurfaceY);
+        if (!targetDimensionWorld.getDimension().hasCeiling()) {
+            referenceSurfaceY = validateAndAdjustReferenceHeight(referenceX, referenceZ, referenceSurfaceY);
+        }
         return analyzeReferenceTerrain(referenceX, referenceZ, referenceSurfaceY);
     }
 
@@ -108,7 +109,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             }
             BlockState currentState = world.getBlockState(targetPos);
             if (!currentState.isAir()) {
-                world.setBlockState(targetPos, Blocks.AIR.getDefaultState(), 3);
+                setBlockWithRecord(targetPos, Blocks.AIR.getDefaultState(), 3);
             }
         }
     }
@@ -186,7 +187,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             if (!referenceState.isAir()) {
                 BlockState currentState = world.getBlockState(targetPos);
                 if (!currentState.equals(referenceState)) {
-                    world.setBlockState(targetPos, referenceState, 3);
+                    setBlockWithRecord(targetPos, referenceState, 3);
                 }
             }
         }
@@ -204,7 +205,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
             if (!referenceState.isAir()) {
                 BlockState currentState = world.getBlockState(targetPos);
                 if (!currentState.equals(referenceState)) {
-                    world.setBlockState(targetPos, referenceState, 3);
+                    setBlockWithRecord(targetPos, referenceState, 3);
                 }
             }
         }
@@ -228,13 +229,13 @@ public class TerrainTransformationTask extends BaseTransformationTask {
                 if (!referenceState.isAir()) {
                     BlockState currentState = world.getBlockState(targetPos);
                     if (!currentState.equals(referenceState)) {
-                        world.setBlockState(targetPos, referenceState, 3);
+                        setBlockWithRecord(targetPos, referenceState, 3);
                     }
                 }
             }
             else if(reference.blocks[i].getFluidState().isStill())
             {
-                world.setBlockState(new BlockPos(targetX, targetY, targetZ),reference.blocks[i],3);
+                setBlockWithRecord(new BlockPos(targetX, targetY, targetZ),reference.blocks[i],3);
             }
         }
         cleanFloatingBlocks(targetX, targetZ, transitionSurfaceY);
@@ -264,7 +265,7 @@ public class TerrainTransformationTask extends BaseTransformationTask {
                     }
                 }
                 if (!hasSupport) {
-                    world.setBlockState(pos, Blocks.AIR.getDefaultState(), 3);
+                    setBlockWithRecord(pos, Blocks.AIR.getDefaultState(), 3);
                 }
             }
         }

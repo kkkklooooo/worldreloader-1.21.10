@@ -1,6 +1,7 @@
 {
   "mod.worldreloader": "World Reloader",
   "key.worldloader.open_config": "Open World Reloader Menu",
+  "key.worldreloader.undo": "Undo Last Terrain Transformation",
 
   "text.autoconfig.worldreloader.title": "Configuration",
 
@@ -23,6 +24,10 @@
   "text.autoconfig.worldreloader.option.dimension": "Target Terrain Dimension",
   "text.autoconfig.worldreloader.option.Debug.@Tooltip": "Enable Debug Mode",
   "text.autoconfig.worldreloader.option.preserveBeacon": "Preserve Beacon Area",
+  "text.autoconfig.worldreloader.option.maxUndoHistory": "Max Undo History",
+  "text.autoconfig.worldreloader.option.maxUndoHistory.@Tooltip": "Maximum number of terrain transformations kept for undo (0 to disable)",
+  "text.autoconfig.worldreloader.option.netherAtmosphere": "Nether Biome Fog & Particles",
+  "text.autoconfig.worldreloader.option.netherAtmosphere.@Tooltip": "Render thick Nether fog and floating particles when inside Nether biomes in non-Nether dimensions",
 
   "text.autoconfig.worldreloader.category.Line": "Line Module Settings",
   "text.autoconfig.worldreloader.option.UseLine": "Use Line Module",

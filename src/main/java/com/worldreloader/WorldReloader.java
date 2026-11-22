@@ -2,19 +2,24 @@ package com.worldreloader;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.worldreloader.client.NetherAtmosphereHelper;
 import com.worldreloader.transformationtasks.LineTransformationTask;
 import com.worldreloader.transformationtasks.SurfaceTransformationTask;
 import com.worldreloader.transformationtasks.TerrainTransformationBuilder;
 import com.worldreloader.transformationtasks.TerrainTransformationTask;
+import com.worldreloader.undo.UndoManager;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.gui.registry.GuiRegistry;
 import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
 import net.minecraft.item.Item;
 import net.minecraft.registry.*;
@@ -47,6 +52,7 @@ import static net.minecraft.server.command.CommandManager.literal;
 
 public class WorldReloader implements ModInitializer {
 	public static final String MOD_ID = "worldreloader";
+	public static final Identifier UNDO_PACKET_ID = Identifier.of(MOD_ID, "undo");
 
 	public static ModConfig config;
 	public static ConfigHolder<ModConfig> ch = AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
@@ -60,6 +66,17 @@ public class WorldReloader implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		LOGGER.info("World Reloader Initialized!");
+		UndoManager.init();
+		ServerPlayNetworking.registerGlobalReceiver(UNDO_PACKET_ID, (server, player, handler, buf, responseSender) -> {
+			server.execute(() -> {
+				if (!CheckPermission(player)) {
+					player.sendMessage(Text.literal("§c你没有权限撤回地形改造！"), false);
+					return;
+				}
+				UndoManager.undoLast(server, player);
+			});
+		});
+
 		// 注册指令
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 			// 设置权限指令
@@ -69,6 +86,9 @@ public class WorldReloader implements ModInitializer {
 								updateFromConfig();
 								return 1;
 							})
+					)
+					.then(literal("undo")
+							.executes(context -> undoCommand(context.getSource()))
 					)
 					.then(literal("setPermission")
 							.requires(source -> source.hasPermissionLevel(3)) // 需要管理员权限
@@ -237,12 +257,30 @@ public class WorldReloader implements ModInitializer {
 
 		config = AutoConfig.getConfigHolder(ModConfig.class).getConfig();
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			NetherAtmosphereHelper.update(client);
 			while (KeyBindings.openConfigKey.wasPressed()) {
 				if (client.player != null) {
 					client.setScreen(AutoConfig.getConfigScreen(ModConfig.class, client.currentScreen).get());
 				}
 			}
+			while (KeyBindings.undoKey.wasPressed()) {
+				if (client.player != null && client.getNetworkHandler() != null) {
+					if (ClientPlayNetworking.canSend(UNDO_PACKET_ID)) {
+						ClientPlayNetworking.send(UNDO_PACKET_ID, PacketByteBufs.empty());
+					} else {
+						client.player.sendMessage(Text.literal("§c当前服务器未启用 WorldReloader 撤回功能"), false);
+					}
+				}
+			}
 		});
+	}
+
+	private int undoCommand(ServerCommandSource source) {
+		if (source.getPlayer() != null && !CheckPermission(source.getPlayer())) {
+			source.sendError(Text.literal("§c你没有权限撤回地形改造！"));
+			return 0;
+		}
+		return UndoManager.undoLast(source.getServer(), source.getPlayer(), source) ? 1 : 0;
 	}
 	/**
 	 * 从配置更新物品需求和目标方块
@@ -448,7 +486,7 @@ public class WorldReloader implements ModInitializer {
 
 
 		LOGGER.info("指令启动地形改造 - 位置: {}, 模式: {}, 目标: {}", centerPos, mode, target);
-		RegistryKey<World> worldRegistryKey=RegistryKey.of(RegistryKeys.WORLD,Identifier.of("minecraft",config.dimension));
+		RegistryKey<World> worldRegistryKey = RegistryKey.of(RegistryKeys.WORLD, parseDimensionId(config.dimension));
 		MinecraftServer server=world.getServer();
 		ServerWorld targetWorld=server.getWorld(worldRegistryKey);
 		TerrainTransformationBuilder builder = new TerrainTransformationBuilder(world, player)
@@ -532,7 +570,7 @@ public class WorldReloader implements ModInitializer {
 			return;
 		}
 
-		RegistryKey<World> worldRegistryKey=RegistryKey.of(RegistryKeys.WORLD,Identifier.of("minecraft",config.dimension));
+		RegistryKey<World> worldRegistryKey = RegistryKey.of(RegistryKeys.WORLD, parseDimensionId(config.dimension));
 		MinecraftServer server=world.getServer();
 		ServerWorld targetWorld=server.getWorld(worldRegistryKey);
 
@@ -647,5 +685,18 @@ public class WorldReloader implements ModInitializer {
 			}
 		}
 		return null;
+	}
+
+	private static Identifier parseDimensionId(String dimension) {
+		if (dimension == null || dimension.isBlank()) {
+			return Identifier.of("minecraft", "overworld");
+		}
+		if (dimension.contains(":")) {
+			Identifier parsed = Identifier.tryParse(dimension);
+			if (parsed != null) {
+				return parsed;
+			}
+		}
+		return Identifier.of("minecraft", dimension);
 	}
 }

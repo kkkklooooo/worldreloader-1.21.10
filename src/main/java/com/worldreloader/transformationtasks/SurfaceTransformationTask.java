@@ -36,7 +36,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         int referenceX = referenceCenter.getX() + offsetX;
         int referenceZ = referenceCenter.getZ() + offsetZ;
 
-        if (!world.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
+        if (!targetDimensionWorld.isChunkLoaded(referenceX >> 4, referenceZ >> 4)) {
             return;
         }
 
@@ -72,15 +72,15 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         }
 
         // 使用目标维度世界获取表面高度
-        int referenceSurfaceY = targetDimensionWorld.getChunk(referenceX >> 4, referenceZ >> 4)
-                .getHeightmap(Heightmap.Type.MOTION_BLOCKING)
-                .get(referenceX & 15, referenceZ & 15);
+        int referenceSurfaceY = resolveReferenceSurfaceY(referenceX, referenceZ, 19, referenceCenter.getY() + HEIGHT + 20);
 
         if (referenceSurfaceY < 19) {
             return null;
         }
 
-        referenceSurfaceY = validateAndAdjustHeight(targetDimensionWorld, referenceX, referenceZ, referenceSurfaceY, minY);
+        if (!targetDimensionWorld.getDimension().hasCeiling()) {
+            referenceSurfaceY = validateAndAdjustHeight(targetDimensionWorld, referenceX, referenceZ, referenceSurfaceY, minY);
+        }
         return analyzeTerrain(targetDimensionWorld, referenceX, referenceZ, referenceSurfaceY, minY, DEPTH, HEIGHT);
     }
 
@@ -109,7 +109,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
             }
             BlockState currentState = world.getBlockState(targetPos);
             if (!currentState.isAir()) {
-                world.setBlockState(targetPos, Blocks.AIR.getDefaultState(), 3);
+                setBlockWithRecord(targetPos, Blocks.AIR.getDefaultState(), 3);
             }
         }
     }
@@ -128,7 +128,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
             BlockPos targetPos = new BlockPos(targetX, y, targetZ);
             BlockState currentState = world.getBlockState(targetPos);
             if (!currentState.isAir()) {
-                world.setBlockState(targetPos, Blocks.AIR.getDefaultState(), 3);
+                setBlockWithRecord(targetPos, Blocks.AIR.getDefaultState(), 3);
             }
         }
     }
@@ -146,7 +146,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
 
                 BlockState currentState = world.getBlockState(targetPos);
                 if (currentState.isAir() || currentState.isReplaceable()) {
-                    world.setBlockState(targetPos, referenceState, 3);
+                    setBlockWithRecord(targetPos, referenceState, 3);
                 }
             }
         }
@@ -164,7 +164,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
                 if (!referenceState.isAir()) {
                     BlockState currentState = world.getBlockState(targetPos);
                     if (!currentState.equals(referenceState)) {
-                        world.setBlockState(targetPos, referenceState, 3);
+                        setBlockWithRecord(targetPos, referenceState, 3);
                     }
                 }
             }
@@ -180,7 +180,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
 
                 BlockState currentState = world.getBlockState(targetPos);
                 if (currentState.isAir() || currentState.isReplaceable()) {
-                    world.setBlockState(targetPos, referenceState, 3);
+                    setBlockWithRecord(targetPos, referenceState, 3);
                 }
             }
         }
@@ -195,7 +195,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
                 if (!referenceState.isAir()) {
                     BlockState currentState = world.getBlockState(targetPos);
                     if (!currentState.equals(referenceState)) {
-                        world.setBlockState(targetPos, referenceState, 3);
+                        setBlockWithRecord(targetPos, referenceState, 3);
                     }
                 }
             }

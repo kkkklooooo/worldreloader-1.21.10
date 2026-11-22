@@ -3,6 +3,8 @@ package com.worldreloader.transformationtasks;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Either;
 import com.worldreloader.WorldReloader;
+import com.worldreloader.undo.TransformationRecord;
+import com.worldreloader.undo.UndoManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -16,6 +18,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
@@ -38,6 +41,8 @@ public abstract class BaseTransformationTask {
     protected final BlockPos referenceCenter;
     protected final net.minecraft.entity.player.PlayerEntity player;
     protected Set<ChunkPos> forcedChunks = new HashSet<>();
+    protected final Set<ChunkPos> forcedReferenceChunks = new HashSet<>();
+    protected final Set<Long> recordedBiomeChunks = new HashSet<>();
     protected final ServerWorld targetDimensionWorld;
 
     protected int currentRadius = 0;
@@ -55,6 +60,8 @@ public abstract class BaseTransformationTask {
     protected boolean preserveBeacon=true;
 
     protected List<BlockPos> currentRadiusPositions = new ArrayList<>();
+    protected TransformationRecord.Recorder undoRecorder;
+    private boolean undoCommitted = false;
 
     protected BaseTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter,
                                      net.minecraft.entity.player.PlayerEntity player, ServerWorld targetDimensionWorld,
@@ -68,6 +75,8 @@ public abstract class BaseTransformationTask {
         this.maxRadius = maxRadius;
         this.totalSteps = totalSteps;
         this.itemCleanupInterval = itemCleanupInterval;
+        int maxUndo = WorldReloader.config != null ? WorldReloader.config.maxUndoHistory : 5;
+        this.undoRecorder = maxUndo > 0 ? new TransformationRecord.Recorder(world.getRegistryKey()) : null;
         registerToTick();
         this.isChangeBiome=isChangeBiome;
         this.preserveBeacon=preserveBeacon;
@@ -75,17 +84,68 @@ public abstract class BaseTransformationTask {
 
     // 公共方法
     public void start() {
-
         this.isActive = true;
+        UndoManager.registerActiveTask(this);
+    }
+
+    public boolean isActive() {
+        return this.isActive;
     }
 
     public void stop() {
         //cleanupItemEntities();
-        if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§a最终物品清理完成！"), false);
+        if(WorldReloader.config.Debug && player != null) player.sendMessage(net.minecraft.text.Text.literal("§a最终物品清理完成！"), false);
         this.isActive = false;
         currentRadiusPositions.clear();
         currentStep = 0;
         lastCleanupRadius = -1;
+        commitUndoRecord();
+    }
+
+    /**
+     * Interrupts this forward task and commits any partial steps recorded so far for immediate undo.
+     */
+    public void cancelAndCommitForUndo() {
+        this.isActive = false;
+        currentRadiusPositions.clear();
+        currentStep = 0;
+        lastCleanupRadius = -1;
+        commitUndoRecord();
+        if (isinit) {
+            cleanupChunkForcing();
+        }
+    }
+
+    private void commitUndoRecord() {
+        if (undoCommitted) {
+            return;
+        }
+        undoCommitted = true;
+        TransformationRecord record = null;
+        if (undoRecorder != null) {
+            undoRecorder.finishStep();
+            record = undoRecorder.build();
+            undoRecorder = null;
+        }
+        UndoManager.onTaskFinished(this, record);
+    }
+
+    protected void setBlockWithRecord(BlockPos pos, BlockState newState, int flags) {
+        BlockState currentState = world.getBlockState(pos);
+        if (currentState.equals(newState)) {
+            return;
+        }
+        if (undoRecorder != null) {
+            undoRecorder.recordBlockChange(world, pos);
+        }
+        world.setBlockState(pos, newState, flags);
+    }
+
+    protected void setBiomeWithRecord(BlockPos pos, RegistryEntry<Biome> biome, ServerWorld serverWorld) {
+        if (undoRecorder != null && serverWorld == this.world) {
+            undoRecorder.recordBiomeChange(serverWorld, new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4));
+        }
+        setBiome(pos, biome, serverWorld);
     }
 
     protected abstract void processPosition(BlockPos circlePos);
@@ -97,8 +157,14 @@ public abstract class BaseTransformationTask {
     protected void registerToTick() {
         ServerTickEvents.END_SERVER_TICK.register((MinecraftServer server) -> {
             if (this.isActive) {
-                processNextStep();
+                if (undoRecorder != null) {
+                    undoRecorder.beginStep();
+                }
                 handleChunkForcing();
+                processNextStep();
+                if (undoRecorder != null) {
+                    undoRecorder.finishStep();
+                }
             } else if (isinit) {
                 cleanupChunkForcing();
             }
@@ -108,19 +174,22 @@ public abstract class BaseTransformationTask {
     protected void handleChunkForcing() {
         if (!isinit) {
             int chunkRadius = (maxRadius + 15) >> 4;
+            for (int x = -chunkRadius - 1; x <= chunkRadius + 1; x++) {
+                for (int z = -chunkRadius - 1; z <= chunkRadius + 1; z++) {
+                    ChunkPos refChunkPos = new ChunkPos((referenceCenter.getX() >> 4) + x, (referenceCenter.getZ() >> 4) + z);
+                    if (targetDimensionWorld != null && forcedReferenceChunks.add(refChunkPos)) {
+                        targetDimensionWorld.setChunkForced(refChunkPos.x, refChunkPos.z, true);
+                    }
+                }
+            }
             for (int x = -chunkRadius; x <= chunkRadius; x++) {
                 for (int z = -chunkRadius; z <= chunkRadius; z++) {
-                    ChunkPos chunkPos = new ChunkPos((referenceCenter.getX() >> 4) + x, (referenceCenter.getZ() >> 4) + z);
-                    if(targetDimensionWorld!=null&&!forcedChunks.contains(chunkPos)){
-                        targetDimensionWorld.setChunkForced(chunkPos.x, chunkPos.z, true);
-                    }
-                    if (!forcedChunks.contains(chunkPos)) {
-                        world.setChunkForced(chunkPos.x, chunkPos.z, true);
-                        if(isChangeBiome) {
-                            RegistryEntry<Biome> bb = getBiomeAtChunkCenter(world, chunkPos);
-                            setBiome(center.add(16*x, 0, 16*z), bb, world);
+                    ChunkPos targetChunkPos = new ChunkPos((center.getX() >> 4) + x, (center.getZ() >> 4) + z);
+                    if (forcedChunks.add(targetChunkPos)) {
+                        world.setChunkForced(targetChunkPos.x, targetChunkPos.z, true);
+                        if (isChangeBiome) {
+                            copyBiomesFromReferenceChunk(targetChunkPos);
                         }
-                        forcedChunks.add(chunkPos);
                     }
                 }
             }
@@ -128,17 +197,95 @@ public abstract class BaseTransformationTask {
         }
     }
 
+    protected void copyBiomesFromReferenceChunk(ChunkPos targetChunkPos) {
+        if (!recordedBiomeChunks.add(targetChunkPos.toLong())) {
+            return;
+        }
+        if (undoRecorder != null) {
+            undoRecorder.recordBiomeChange(world, targetChunkPos);
+        }
+
+        ServerWorld sourceWorld = targetDimensionWorld != null ? targetDimensionWorld : world;
+        Chunk targetChunk = world.getChunk(targetChunkPos.x, targetChunkPos.z);
+        int targetStartBiomeX = BiomeCoords.fromChunk(targetChunkPos.x);
+        int targetStartBiomeZ = BiomeCoords.fromChunk(targetChunkPos.z);
+
+        int sourceMinY = sourceWorld.getBottomY();
+        int sourceLogicalMaxY = sourceMinY + Math.max(1, sourceWorld.getDimension().logicalHeight()) - 1;
+        int sourceMaxY = Math.min(sourceWorld.getTopY() - 1, sourceLogicalMaxY);
+
+        int offsetX = referenceCenter.getX() - center.getX();
+        int offsetY = referenceCenter.getY() - center.getY();
+        int offsetZ = referenceCenter.getZ() - center.getZ();
+
+        BiomeSupplier supplier = (bx, by, bz, noise) -> {
+            int localBx = bx - targetStartBiomeX;
+            int localBz = bz - targetStartBiomeZ;
+            if (localBx >= 0 && localBx < 4 && localBz >= 0 && localBz < 4) {
+                int targetBlockX = BiomeCoords.toBlock(bx) + 2;
+                int targetBlockY = BiomeCoords.toBlock(by) + 2;
+                int targetBlockZ = BiomeCoords.toBlock(bz) + 2;
+
+                int refBlockX = targetBlockX + offsetX;
+                int refBlockZ = targetBlockZ + offsetZ;
+                int refBlockY = MathHelper.clamp(targetBlockY + offsetY, sourceMinY, sourceMaxY);
+
+                Chunk refChunk = sourceWorld.getChunk(refBlockX >> 4, refBlockZ >> 4);
+                return refChunk.getBiomeForNoiseGen(
+                        BiomeCoords.fromBlock(refBlockX),
+                        BiomeCoords.fromBlock(refBlockY),
+                        BiomeCoords.fromBlock(refBlockZ)
+                );
+            }
+            return targetChunk.getBiomeForNoiseGen(bx, by, bz);
+        };
+
+        targetChunk.populateBiomes(supplier, world.getChunkManager().getNoiseConfig().getMultiNoiseSampler());
+        targetChunk.setNeedsSaving(true);
+        world.getChunkManager().threadedAnvilChunkStorage.sendChunkBiomePackets(List.of(targetChunk));
+    }
+
     protected void cleanupChunkForcing() {
-        if(targetDimensionWorld!=null){
-            for (ChunkPos chunkPos : forcedChunks) {
+        if (targetDimensionWorld != null) {
+            for (ChunkPos chunkPos : forcedReferenceChunks) {
                 targetDimensionWorld.setChunkForced(chunkPos.x, chunkPos.z, false);
             }
+            forcedReferenceChunks.clear();
         }
         for (ChunkPos chunkPos : forcedChunks) {
             world.setChunkForced(chunkPos.x, chunkPos.z, false);
         }
         forcedChunks.clear();
         isinit = false;
+    }
+
+    public static int findSurfaceBelowCeiling(World world, int x, int z, int maxScanY, int minScanY) {
+        int y = maxScanY;
+        boolean sawAir = false;
+        while (y > minScanY) {
+            BlockPos pos = new BlockPos(x, y, z);
+            BlockState state = world.getBlockState(pos);
+            if (state.isAir()) {
+                sawAir = true;
+            } else if (sawAir && isSolidBlock(world, state)) {
+                return y;
+            }
+            y--;
+        }
+        return -1;
+    }
+
+    protected int resolveReferenceSurfaceY(int referenceX, int referenceZ, int minValidY, int maxCeilingScanY) {
+        if (targetDimensionWorld.getDimension().hasCeiling()) {
+            int logicalTop = targetDimensionWorld.getBottomY() + targetDimensionWorld.getDimension().logicalHeight();
+            int scanStart = Math.min(logicalTop - 6, maxCeilingScanY);
+            int minScan = Math.max(targetDimensionWorld.getBottomY() + 1, minValidY);
+            int found = findSurfaceBelowCeiling(targetDimensionWorld, referenceX, referenceZ, scanStart, minScan);
+            return found >= 0 ? found : Math.min(scanStart, referenceCenter.getY());
+        }
+        return targetDimensionWorld.getChunk(referenceX >> 4, referenceZ >> 4)
+                .getHeightmap(Heightmap.Type.MOTION_BLOCKING)
+                .get(referenceX & 15, referenceZ & 15);
     }
 
     public static RegistryEntry<Biome> getBiomeAtChunkCenter(World world, ChunkPos chunkPos) {

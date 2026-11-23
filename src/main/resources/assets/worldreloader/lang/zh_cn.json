@@ -28,6 +28,8 @@
   "text.autoconfig.worldreloader.option.maxUndoHistory.@Tooltip": "最多保留可按Z撤回的地形变更次数（0表示关闭撤回记录）",
   "text.autoconfig.worldreloader.option.netherAtmosphere": "下界群系雾气与孢子效果",
   "text.autoconfig.worldreloader.option.netherAtmosphere.@Tooltip": "在主世界等维度进入下界群系区域时显示下界浓雾与飘浮粒子效果",
+  "text.autoconfig.worldreloader.option.netherAmbientLight": "下界群系环境亮度",
+  "text.autoconfig.worldreloader.option.netherAmbientLight.@Tooltip": "进入下界群系区域时应用的环境基础亮度（原版下界为0.1，推荐0.15，设为0关闭提亮）",
 
   "text.autoconfig.worldreloader.category.Line": "线生成模式设置",
   "text.autoconfig.worldreloader.option.UseLine": "使用线生成模式",

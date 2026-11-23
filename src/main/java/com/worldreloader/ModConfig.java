@@ -41,6 +41,9 @@ public class ModConfig implements ConfigData {
     @ConfigEntry.Gui.Tooltip(count = 1)
     public boolean netherAtmosphere = true;
     @ConfigEntry.Category("Main")
+    @ConfigEntry.Gui.Tooltip(count = 1)
+    public float netherAmbientLight = 0.15f;
+    @ConfigEntry.Category("Main")
     public List<ItemRequirement> targetBlockDict = List.of(
             new ItemRequirement("nether_star", 1)
     );

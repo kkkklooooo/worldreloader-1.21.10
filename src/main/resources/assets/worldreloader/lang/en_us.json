@@ -28,6 +28,8 @@
   "text.autoconfig.worldreloader.option.maxUndoHistory.@Tooltip": "Maximum number of terrain transformations kept for undo (0 to disable)",
   "text.autoconfig.worldreloader.option.netherAtmosphere": "Nether Biome Fog & Particles",
   "text.autoconfig.worldreloader.option.netherAtmosphere.@Tooltip": "Render thick Nether fog and floating particles when inside Nether biomes in non-Nether dimensions",
+  "text.autoconfig.worldreloader.option.netherAmbientLight": "Nether Biome Ambient Brightness",
+  "text.autoconfig.worldreloader.option.netherAmbientLight.@Tooltip": "Ambient light applied inside Nether biomes (vanilla Nether is 0.1; 0.15 recommended)",
 
   "text.autoconfig.worldreloader.category.Line": "Line Module Settings",
   "text.autoconfig.worldreloader.option.UseLine": "Use Line Module",

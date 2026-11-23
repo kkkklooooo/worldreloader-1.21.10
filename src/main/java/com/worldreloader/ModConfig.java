@@ -21,11 +21,11 @@ public class ModConfig implements ConfigData {
     @ConfigEntry.Category("Main")
     public boolean UseSpecificPos = false;
     @ConfigEntry.Category("Main")
-    public int Posx;
+    public int Posx=77;
     @ConfigEntry.Category("Main")
-    public int Posy;
+    public int Posy=60;
     @ConfigEntry.Category("Main")
-    public int Posz;
+    public int Posz=-199;
     @ConfigEntry.Category("Main")
     public int maxRadius = 76;
     @ConfigEntry.Category("Main")

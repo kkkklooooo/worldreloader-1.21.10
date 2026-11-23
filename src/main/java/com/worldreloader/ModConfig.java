@@ -74,25 +74,25 @@ public class ModConfig implements ConfigData {
 
     @ConfigEntry.Category("Whitelist")
     @ConfigEntry.Gui.Tooltip(count = 1)
-    public boolean UseWhitelist = false;
+    public boolean UseWhitelist = true;
     @ConfigEntry.Category("Whitelist")
     @ConfigEntry.Gui.Tooltip(count = 1)
-    public boolean whitelistMapBlocks = false;
+    public boolean whitelistMapBlocks = true;
     @ConfigEntry.Category("Whitelist")
-    public int whitelistMinX = 0;
+    public int whitelistMinX = 1389;
     @ConfigEntry.Category("Whitelist")
-    public int whitelistMinY = 60;
+    public int whitelistMinY = 78;
     @ConfigEntry.Category("Whitelist")
-    public int whitelistMinZ = 0;
+    public int whitelistMinZ = 1733;
     @ConfigEntry.Category("Whitelist")
     @ConfigEntry.Gui.Tooltip(count = 1)
     public transient boolean captureWhitelistMin = false;
     @ConfigEntry.Category("Whitelist")
-    public int whitelistMaxX = 16;
+    public int whitelistMaxX = 1503;
     @ConfigEntry.Category("Whitelist")
-    public int whitelistMaxY = 90;
+    public int whitelistMaxY = 95;
     @ConfigEntry.Category("Whitelist")
-    public int whitelistMaxZ = 16;
+    public int whitelistMaxZ = 1638;
     @ConfigEntry.Category("Whitelist")
     @ConfigEntry.Gui.Tooltip(count = 1)
     public transient boolean captureWhitelistMax = false;

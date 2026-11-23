@@ -12,6 +12,7 @@ import net.minecraft.block.Blocks;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.FillBiomeCommand;
 import net.minecraft.server.world.ServerWorld;
@@ -28,7 +29,9 @@ import net.minecraft.world.biome.source.BiomeSupplier;
 import net.minecraft.world.chunk.Chunk;
 import org.apache.commons.lang3.mutable.MutableInt;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -245,12 +248,69 @@ public abstract class BaseTransformationTask {
                 BlockPos pos = new BlockPos(targetX, y, targetZ);
                 BlockState oldState = world.getBlockState(pos);
                 if (!oldState.isAir()) {
+                    if (oldState.getFluidState().isIn(FluidTags.WATER)) {
+                        convertConnectedWhitelistWaterToLava(pos, targetBiome);
+                        continue;
+                    }
                     BlockState mappedState = NetherBlockMapper.mapToNether(pos, oldState, targetBiome);
                     if (mappedState != null && !mappedState.equals(oldState)) {
                         setBlockWithRecord(pos, mappedState, Block.NOTIFY_LISTENERS | Block.FORCE_STATE);
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Converts a connected water/waterlogged region inside the whitelist box in two passes
+     * (remove water first, then place lava) so adjacent water blocks never turn lava into obsidian.
+     */
+    private void convertConnectedWhitelistWaterToLava(BlockPos startPos, RegistryEntry<Biome> targetBiome) {
+        final int maxCells = 4096;
+        List<BlockPos> waterPositions = new ArrayList<>();
+        List<BlockState> lavaStates = new ArrayList<>();
+        Set<Long> visited = new HashSet<>();
+        Deque<BlockPos> queue = new ArrayDeque<>();
+
+        queue.add(startPos);
+        visited.add(startPos.asLong());
+
+        while (!queue.isEmpty() && visited.size() <= maxCells) {
+            BlockPos current = queue.poll();
+            BlockState currentState = world.getBlockState(current);
+            if (!currentState.getFluidState().isIn(FluidTags.WATER)) {
+                continue;
+            }
+
+            if (NetherBlockMapper.isPureWaterLikeBlock(currentState)) {
+                BlockState lavaState = NetherBlockMapper.mapToNether(current, currentState, targetBiome);
+                waterPositions.add(current);
+                lavaStates.add(lavaState);
+                // Pass 1: replace with air first while recording the original water state for undo.
+                setBlockWithRecord(current, Blocks.AIR.getDefaultState(), Block.NOTIFY_LISTENERS | Block.FORCE_STATE);
+            } else {
+                // Waterlogged solid block (stairs/slab/fence): strip waterlogged and map to Nether equivalent.
+                BlockState mappedState = NetherBlockMapper.mapToNether(current, currentState, targetBiome);
+                if (!mappedState.equals(currentState)) {
+                    setBlockWithRecord(current, mappedState, Block.NOTIFY_LISTENERS | Block.FORCE_STATE);
+                }
+            }
+
+            for (net.minecraft.util.math.Direction dir : net.minecraft.util.math.Direction.values()) {
+                BlockPos neighbor = current.offset(dir);
+                if (!isInsideWhitelistBox(neighbor.getX(), neighbor.getY(), neighbor.getZ())) {
+                    continue;
+                }
+                long key = neighbor.asLong();
+                if (visited.add(key) && world.getBlockState(neighbor).getFluidState().isIn(FluidTags.WATER)) {
+                    queue.add(neighbor);
+                }
+            }
+        }
+
+        // Pass 2: place lava across all cleared water positions now that no adjacent in-box water remains.
+        for (int i = 0; i < waterPositions.size(); i++) {
+            setBlockWithRecord(waterPositions.get(i), lavaStates.get(i), Block.NOTIFY_LISTENERS | Block.FORCE_STATE);
         }
     }
 

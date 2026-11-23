@@ -142,10 +142,32 @@ public final class NetherBlockMapper {
         map.put(Blocks.VINE, warped ? Blocks.TWISTING_VINES_PLANT : Blocks.WEEPING_VINES_PLANT);
     }
 
+    public static boolean isPureWaterLikeBlock(BlockState state) {
+        return state.isOf(Blocks.WATER)
+                || state.isOf(Blocks.BUBBLE_COLUMN)
+                || state.isOf(Blocks.SEAGRASS)
+                || state.isOf(Blocks.TALL_SEAGRASS)
+                || state.isOf(Blocks.KELP)
+                || state.isOf(Blocks.KELP_PLANT);
+    }
+
     public static BlockState mapToNether(BlockPos pos, BlockState oldState, RegistryEntry<Biome> targetBiome) {
         if (oldState.isAir()) {
             return oldState;
         }
+
+        if (isPureWaterLikeBlock(oldState)) {
+            return copyMatchingProperties(oldState, Blocks.LAVA);
+        }
+
+        BlockState mapped = mapToNetherInternal(pos, oldState, targetBiome);
+        if (mapped.contains(Properties.WATERLOGGED) && mapped.get(Properties.WATERLOGGED)) {
+            mapped = mapped.with(Properties.WATERLOGGED, false);
+        }
+        return mapped;
+    }
+
+    private static BlockState mapToNetherInternal(BlockPos pos, BlockState oldState, RegistryEntry<Biome> targetBiome) {
 
         boolean warped = targetBiome != null && targetBiome.matchesKey(BiomeKeys.WARPED_FOREST);
         boolean soulValley = targetBiome != null && targetBiome.matchesKey(BiomeKeys.SOUL_SAND_VALLEY);

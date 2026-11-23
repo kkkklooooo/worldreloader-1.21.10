@@ -15,13 +15,7 @@ import java.util.List;
 
 public class LineTransformationTask extends BaseTransformationTask {
     protected LineTransformationTask(TerrainTransformationBuilder builder) {
-        super(builder.world, builder.changePos, builder.targetPos, builder.player,
-                builder.targetDimensionWorld,
-                builder.radius,
-                builder.steps,
-                builder.itemCleanupInterval,
-                builder.isChangeBiome,
-                builder.preserveBeacon);
+        super(builder);
         this.paddingCount = builder.padding;
         this.yMin = builder.yMin;
         this.yMax = builder.yMax;
@@ -249,6 +243,8 @@ public class LineTransformationTask extends BaseTransformationTask {
                 .getHeightmap(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES)
                 .get(targetX & 15, targetZ & 15);
 
+        handleWhitelistColumn(targetX, targetZ);
+
         destroyAtPosition(targetX, targetZ);
         ReferenceTerrainInfo referenceInfo = getReferenceTerrainInfo(referenceX, referenceZ);
         if (referenceInfo != null) {
@@ -307,7 +303,7 @@ public class LineTransformationTask extends BaseTransformationTask {
             }
             BlockState currentState = world.getBlockState(targetPos);
             if (!currentState.isAir()) {
-                setBlockWithRecord(targetPos, Blocks.AIR.getDefaultState(), 3);
+                setTerrainBlockWithRecord(targetPos, Blocks.AIR.getDefaultState(), 3);
             }
         }
     }
@@ -386,7 +382,7 @@ public class LineTransformationTask extends BaseTransformationTask {
             if (!referenceState.isAir()) {
                 BlockState currentState = world.getBlockState(targetPos);
                 if (!currentState.equals(referenceState)) {
-                    setBlockWithRecord(targetPos, referenceState, 3);
+                    setTerrainBlockWithRecord(targetPos, referenceState, 3);
                 }
             }
         }
@@ -404,7 +400,7 @@ public class LineTransformationTask extends BaseTransformationTask {
             if (!referenceState.isAir()) {
                 BlockState currentState = world.getBlockState(targetPos);
                 if (!currentState.equals(referenceState)) {
-                    setBlockWithRecord(targetPos, referenceState, 3);
+                    setTerrainBlockWithRecord(targetPos, referenceState, 3);
                 }
             }
         }
@@ -429,13 +425,13 @@ public class LineTransformationTask extends BaseTransformationTask {
                 if (!referenceState.isAir()) {
                     BlockState currentState = world.getBlockState(targetPos);
                     if (!currentState.equals(referenceState)) {
-                        setBlockWithRecord(targetPos, referenceState, 3);
+                        setTerrainBlockWithRecord(targetPos, referenceState, 3);
                     }
                 }
             }
             else if(reference.blocks[i].getFluidState().isStill())
             {
-                setBlockWithRecord(new BlockPos(targetX, targetY, targetZ),reference.blocks[i],3);
+                setTerrainBlockWithRecord(new BlockPos(targetX, targetY, targetZ),reference.blocks[i],3);
             }
         }
         cleanFloatingBlocks(targetX, targetZ, transitionSurfaceY);
@@ -465,7 +461,7 @@ public class LineTransformationTask extends BaseTransformationTask {
                     }
                 }
                 if (!hasSupport) {
-                    setBlockWithRecord(pos, Blocks.AIR.getDefaultState(), 3);
+                    setTerrainBlockWithRecord(pos, Blocks.AIR.getDefaultState(), 3);
                 }
             }
         }

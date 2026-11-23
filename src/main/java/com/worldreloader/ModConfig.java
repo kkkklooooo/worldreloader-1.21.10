@@ -19,17 +19,17 @@ public class ModConfig implements ConfigData {
 
 
     @ConfigEntry.Category("Main")
-    boolean UseSpecificPos = false;
+    public boolean UseSpecificPos = false;
     @ConfigEntry.Category("Main")
-    int Posx;
+    public int Posx;
     @ConfigEntry.Category("Main")
-    int Posy;
+    public int Posy;
     @ConfigEntry.Category("Main")
-    int Posz;
+    public int Posz;
     @ConfigEntry.Category("Main")
-    int maxRadius = 76;
+    public int maxRadius = 76;
     @ConfigEntry.Category("Main")
-    int itemCleanupInterval = 20;
+    public int itemCleanupInterval = 20;
     @ConfigEntry.Category("Main")
     public boolean Debug = false;
     @ConfigEntry.Category("Main")
@@ -46,28 +46,53 @@ public class ModConfig implements ConfigData {
     );
 
     @ConfigEntry.Category("Main")
-    String targetBlock = "beacon";
+    public String targetBlock = "beacon";
     @ConfigEntry.Category("Main")
-    String dimension = "overworld";
+    public String dimension = "overworld";
 
     @ConfigEntry.Category("Non-surface")
-    int paddingCount = 12;
+    public int paddingCount = 12;
     @ConfigEntry.Category("Non-surface")
-    int totalSteps2 = 3;
+    public int totalSteps2 = 3;
     @ConfigEntry.Category("Non-surface")
-    int yMin = 40;
+    public int yMin = 40;
     @ConfigEntry.Category("Non-surface")
-    int yMaxThanSurface = 30;
+    public int yMaxThanSurface = 30;
 
     @ConfigEntry.Category("surface")
-    boolean UseSurface = false;
+    public boolean UseSurface = false;
     @ConfigEntry.Category("surface")
     @ConfigEntry.Gui.Tooltip(count = 1)
-    int totalSteps = 10;
+    public int totalSteps = 10;
     @ConfigEntry.Category("surface")
-    int HEIGHT = 15;
+    public int HEIGHT = 15;
     @ConfigEntry.Category("surface")
-    int DEPTH = 15;
+    public int DEPTH = 15;
+
+    @ConfigEntry.Category("Whitelist")
+    @ConfigEntry.Gui.Tooltip(count = 1)
+    public boolean UseWhitelist = false;
+    @ConfigEntry.Category("Whitelist")
+    @ConfigEntry.Gui.Tooltip(count = 1)
+    public boolean whitelistMapBlocks = false;
+    @ConfigEntry.Category("Whitelist")
+    public int whitelistMinX = 0;
+    @ConfigEntry.Category("Whitelist")
+    public int whitelistMinY = 60;
+    @ConfigEntry.Category("Whitelist")
+    public int whitelistMinZ = 0;
+    @ConfigEntry.Category("Whitelist")
+    @ConfigEntry.Gui.Tooltip(count = 1)
+    public transient boolean captureWhitelistMin = false;
+    @ConfigEntry.Category("Whitelist")
+    public int whitelistMaxX = 16;
+    @ConfigEntry.Category("Whitelist")
+    public int whitelistMaxY = 90;
+    @ConfigEntry.Category("Whitelist")
+    public int whitelistMaxZ = 16;
+    @ConfigEntry.Category("Whitelist")
+    @ConfigEntry.Gui.Tooltip(count = 1)
+    public transient boolean captureWhitelistMax = false;
 
 
 

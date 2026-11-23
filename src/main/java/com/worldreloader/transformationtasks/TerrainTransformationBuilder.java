@@ -1,6 +1,7 @@
 package com.worldreloader.transformationtasks;
 
 import com.mojang.datafixers.util.Pair;
+import com.worldreloader.ModConfig;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.RegistryKeys;
@@ -34,6 +35,14 @@ public class TerrainTransformationBuilder {
     int steps=3;
     int itemCleanupInterval=20;
     boolean preserveBeacon=true;
+    boolean whitelistEnabled=false;
+    int whitelistMinX=0;
+    int whitelistMinY=60;
+    int whitelistMinZ=0;
+    int whitelistMaxX=16;
+    int whitelistMaxY=90;
+    int whitelistMaxZ=16;
+    boolean whitelistMapBlocks=false;
     PlayerEntity player;
     ServerWorld targetDimensionWorld;
     public TerrainTransformationBuilder(ServerWorld world,PlayerEntity player)
@@ -45,6 +54,20 @@ public class TerrainTransformationBuilder {
     public TerrainTransformationBuilder preserveBeacon(boolean b)
     {
         preserveBeacon=b;
+        return this;
+    }
+    public TerrainTransformationBuilder setWhitelistFromConfig(ModConfig config)
+    {
+        if (config != null && config.UseWhitelist) {
+            this.whitelistEnabled = true;
+            this.whitelistMinX = Math.min(config.whitelistMinX, config.whitelistMaxX);
+            this.whitelistMinY = Math.min(config.whitelistMinY, config.whitelistMaxY);
+            this.whitelistMinZ = Math.min(config.whitelistMinZ, config.whitelistMaxZ);
+            this.whitelistMaxX = Math.max(config.whitelistMinX, config.whitelistMaxX);
+            this.whitelistMaxY = Math.max(config.whitelistMinY, config.whitelistMaxY);
+            this.whitelistMaxZ = Math.max(config.whitelistMinZ, config.whitelistMaxZ);
+            this.whitelistMapBlocks = config.whitelistMapBlocks;
+        }
         return this;
     }
     public TerrainTransformationBuilder setTargetDimension(ServerWorld targetDimensionWorld) {

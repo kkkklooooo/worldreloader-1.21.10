@@ -11,13 +11,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
 
     public SurfaceTransformationTask(TerrainTransformationBuilder builder) {
         //建议使用builder.buildSurface()方法，带有异常检测
-        super(builder.world, builder.changePos, builder.targetPos, builder.player,
-                builder.targetDimensionWorld,
-                builder.radius,
-                builder.steps,
-                builder.itemCleanupInterval,
-                builder.isChangeBiome,
-                builder.preserveBeacon);
+        super(builder);
         this.DEPTH = builder.yMin;
         this.HEIGHT = builder.yMax;
     }
@@ -43,6 +37,8 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
         int originalSurfaceY = world.getChunk(targetX >> 4, targetZ >> 4)
                 .getHeightmap(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES)
                 .get(targetX & 15, targetZ & 15);
+
+        handleWhitelistColumn(targetX, targetZ);
 
         ReferenceTerrainInfo referenceInfo = getReferenceTerrainInfo(referenceX, referenceZ);
         if (referenceInfo == null) {
@@ -109,7 +105,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
             }
             BlockState currentState = world.getBlockState(targetPos);
             if (!currentState.isAir()) {
-                setBlockWithRecord(targetPos, Blocks.AIR.getDefaultState(), 3);
+                setTerrainBlockWithRecord(targetPos, Blocks.AIR.getDefaultState(), 3);
             }
         }
     }
@@ -128,7 +124,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
             BlockPos targetPos = new BlockPos(targetX, y, targetZ);
             BlockState currentState = world.getBlockState(targetPos);
             if (!currentState.isAir()) {
-                setBlockWithRecord(targetPos, Blocks.AIR.getDefaultState(), 3);
+                setTerrainBlockWithRecord(targetPos, Blocks.AIR.getDefaultState(), 3);
             }
         }
     }
@@ -146,7 +142,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
 
                 BlockState currentState = world.getBlockState(targetPos);
                 if (currentState.isAir() || currentState.isReplaceable()) {
-                    setBlockWithRecord(targetPos, referenceState, 3);
+                    setTerrainBlockWithRecord(targetPos, referenceState, 3);
                 }
             }
         }
@@ -164,7 +160,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
                 if (!referenceState.isAir()) {
                     BlockState currentState = world.getBlockState(targetPos);
                     if (!currentState.equals(referenceState)) {
-                        setBlockWithRecord(targetPos, referenceState, 3);
+                        setTerrainBlockWithRecord(targetPos, referenceState, 3);
                     }
                 }
             }
@@ -180,7 +176,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
 
                 BlockState currentState = world.getBlockState(targetPos);
                 if (currentState.isAir() || currentState.isReplaceable()) {
-                    setBlockWithRecord(targetPos, referenceState, 3);
+                    setTerrainBlockWithRecord(targetPos, referenceState, 3);
                 }
             }
         }
@@ -195,7 +191,7 @@ public class SurfaceTransformationTask extends BaseTransformationTask {
                 if (!referenceState.isAir()) {
                     BlockState currentState = world.getBlockState(targetPos);
                     if (!currentState.equals(referenceState)) {
-                        setBlockWithRecord(targetPos, referenceState, 3);
+                        setTerrainBlockWithRecord(targetPos, referenceState, 3);
                     }
                 }
             }

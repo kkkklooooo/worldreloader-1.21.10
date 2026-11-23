@@ -3,6 +3,8 @@ package com.worldreloader;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.worldreloader.client.NetherAtmosphereHelper;
+import com.worldreloader.client.WhitelistConfigGui;
+import com.worldreloader.client.WhitelistDebugRenderer;
 import com.worldreloader.transformationtasks.LineTransformationTask;
 import com.worldreloader.transformationtasks.SurfaceTransformationTask;
 import com.worldreloader.transformationtasks.TerrainTransformationBuilder;
@@ -139,6 +141,13 @@ public class WorldReloader implements ModInitializer {
 																return transformAtCommand(context.getSource(), x, y, z, "random", null);
 															})
 													)
+													.then(literal("spec")
+															.executes(context->{
+																int x = IntegerArgumentType.getInteger(context, "x");
+																int y = IntegerArgumentType.getInteger(context, "y");
+																int z = IntegerArgumentType.getInteger(context, "z");
+																return transformAtCommand(context.getSource(),x,y,z,"spec",null);
+															}))
 											)
 									)
 							)
@@ -253,6 +262,8 @@ public class WorldReloader implements ModInitializer {
 
 			return ActionResult.PASS;
 		});
+		WhitelistConfigGui.register();
+		WhitelistDebugRenderer.register();
 		KeyBindings.register();
 
 		config = AutoConfig.getConfigHolder(ModConfig.class).getConfig();
@@ -497,7 +508,8 @@ public class WorldReloader implements ModInitializer {
 				.setItemCleanupInterval(config.itemCleanupInterval)
 				.changeBiome(true)
 				.preserveBeacon(config.preserveBeacon)
-				.setTargetDimension(targetWorld);
+				.setTargetDimension(targetWorld)
+				.setWhitelistFromConfig(config);
 
 		// 设置高度参数
 		if (config.UseSurface) {
@@ -535,7 +547,14 @@ public class WorldReloader implements ModInitializer {
 				player.sendMessage(Text.literal("§6随机模式"), false);
 				builder.setRandomPos(centerPos, 6400);
 				break;
+			case "spec":
+				if (config.UseSpecificPos) {
+					BlockPos specificPos = new BlockPos(config.Posx, config.Posy, config.Posz);
+					builder.setTargetPos(specificPos);
+				}
 		}
+
+			notifyWhitelistStatus(player, targetWorld);
 
 			if (config.UseSurface) {
 				builder.setSteps(config.totalSteps);
@@ -583,7 +602,9 @@ public class WorldReloader implements ModInitializer {
 				.setSteps(config.totalSteps2)
 				.setItemCleanupInterval(config.itemCleanupInterval)
 				.changeBiome(true)
-				.setTargetDimension(targetWorld);
+				.preserveBeacon(config.preserveBeacon)
+				.setTargetDimension(targetWorld)
+				.setWhitelistFromConfig(config);
 
 		// 设置高度参数
 		if (config.UseSurface) {
@@ -612,7 +633,10 @@ public class WorldReloader implements ModInitializer {
 			}
 		}
 
+			notifyWhitelistStatus(player, targetWorld);
+
 			if (config.UseSurface) {
+				builder.setSteps(config.totalSteps);
 				SurfaceTransformationTask task = builder.buildSurface();
 				if (task != null) {
 					task.start();
@@ -621,7 +645,7 @@ public class WorldReloader implements ModInitializer {
 				} else {
 					player.sendMessage(Text.literal("§c无法启动地表地形改造任务！"), false);
 				}
-			}else if(config.UseLine){
+			}else if(!config.UseWhitelist && config.UseLine){
 				LineTransformationTask task = builder.buildLine();
 				if (task != null) {
 					task.start();
@@ -685,6 +709,28 @@ public class WorldReloader implements ModInitializer {
 			}
 		}
 		return null;
+	}
+
+	private void notifyWhitelistStatus(net.minecraft.entity.player.PlayerEntity player, ServerWorld targetWorld) {
+		if (player == null || !config.UseWhitelist) {
+			return;
+		}
+		int minX = Math.min(config.whitelistMinX, config.whitelistMaxX);
+		int minY = Math.min(config.whitelistMinY, config.whitelistMaxY);
+		int minZ = Math.min(config.whitelistMinZ, config.whitelistMaxZ);
+		int maxX = Math.max(config.whitelistMinX, config.whitelistMaxX);
+		int maxY = Math.max(config.whitelistMinY, config.whitelistMaxY);
+		int maxZ = Math.max(config.whitelistMinZ, config.whitelistMaxZ);
+		player.sendMessage(Text.literal(String.format(
+				"§b白名单模式已启用，保护区域: (%d, %d, %d) ~ (%d, %d, %d)",
+				minX, minY, minZ, maxX, maxY, maxZ)), false);
+		if (config.whitelistMapBlocks) {
+			if (targetWorld != null && targetWorld.getRegistryKey() == World.NETHER) {
+				player.sendMessage(Text.literal("§6框选区域方块将映射为下界风格（保留原有结构）"), false);
+			} else if (config.Debug) {
+				player.sendMessage(Text.literal("§e提示: 当前目标维度不是下界，框选区域保持原样不进行方块映射"), false);
+			}
+		}
 	}
 
 	private static Identifier parseDimensionId(String dimension) {

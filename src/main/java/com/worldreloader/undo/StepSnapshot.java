@@ -37,7 +37,7 @@ public final class StepSnapshot {
             NbtCompound nbt = blockEntityNbts != null ? blockEntityNbts.get(posLong) : null;
 
             if (!world.getBlockState(pos).equals(prevState) || nbt != null) {
-                world.setBlockState(pos, prevState, Block.NOTIFY_ALL);
+                world.setBlockState(pos, prevState, Block.NOTIFY_LISTENERS | Block.FORCE_STATE);
                 if (nbt != null) {
                     BlockEntity be = world.getBlockEntity(pos);
                     if (be != null) {

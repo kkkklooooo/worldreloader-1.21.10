@@ -63,9 +63,46 @@ public abstract class BaseTransformationTask {
     protected TransformationRecord.Recorder undoRecorder;
     private boolean undoCommitted = false;
 
+    protected final boolean whitelistEnabled;
+    protected final int wMinX;
+    protected final int wMinY;
+    protected final int wMinZ;
+    protected final int wMaxX;
+    protected final int wMaxY;
+    protected final int wMaxZ;
+    protected final boolean whitelistMapBlocks;
+
+    protected BaseTransformationTask(TerrainTransformationBuilder builder) {
+        this(builder.world, builder.changePos, builder.targetPos, builder.player,
+                builder.targetDimensionWorld,
+                builder.radius,
+                builder.steps,
+                builder.itemCleanupInterval,
+                builder.isChangeBiome,
+                builder.preserveBeacon,
+                builder.whitelistEnabled,
+                builder.whitelistMinX,
+                builder.whitelistMinY,
+                builder.whitelistMinZ,
+                builder.whitelistMaxX,
+                builder.whitelistMaxY,
+                builder.whitelistMaxZ,
+                builder.whitelistMapBlocks);
+    }
+
     protected BaseTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter,
                                      net.minecraft.entity.player.PlayerEntity player, ServerWorld targetDimensionWorld,
                                      int maxRadius, int totalSteps, int itemCleanupInterval, boolean isChangeBiome, boolean preserveBeacon) {
+        this(world, center, referenceCenter, player, targetDimensionWorld,
+                maxRadius, totalSteps, itemCleanupInterval, isChangeBiome, preserveBeacon,
+                false, 0, 0, 0, 0, 0, 0, false);
+    }
+
+    private BaseTransformationTask(ServerWorld world, BlockPos center, BlockPos referenceCenter,
+                                   net.minecraft.entity.player.PlayerEntity player, ServerWorld targetDimensionWorld,
+                                   int maxRadius, int totalSteps, int itemCleanupInterval, boolean isChangeBiome, boolean preserveBeacon,
+                                   boolean whitelistEnabled, int wMinX, int wMinY, int wMinZ,
+                                   int wMaxX, int wMaxY, int wMaxZ, boolean whitelistMapBlocks) {
         this.world = world;
         this.center = center;
         this.referenceCenter = referenceCenter;
@@ -77,9 +114,17 @@ public abstract class BaseTransformationTask {
         this.itemCleanupInterval = itemCleanupInterval;
         int maxUndo = WorldReloader.config != null ? WorldReloader.config.maxUndoHistory : 5;
         this.undoRecorder = maxUndo > 0 ? new TransformationRecord.Recorder(world.getRegistryKey()) : null;
+        this.isChangeBiome = isChangeBiome;
+        this.preserveBeacon = preserveBeacon;
+        this.whitelistEnabled = whitelistEnabled;
+        this.wMinX = Math.min(wMinX, wMaxX);
+        this.wMinY = Math.min(wMinY, wMaxY);
+        this.wMinZ = Math.min(wMinZ, wMaxZ);
+        this.wMaxX = Math.max(wMinX, wMaxX);
+        this.wMaxY = Math.max(wMinY, wMaxY);
+        this.wMaxZ = Math.max(wMinZ, wMaxZ);
+        this.whitelistMapBlocks = whitelistMapBlocks;
         registerToTick();
-        this.isChangeBiome=isChangeBiome;
-        this.preserveBeacon=preserveBeacon;
     }
 
     // 公共方法
@@ -130,6 +175,13 @@ public abstract class BaseTransformationTask {
         UndoManager.onTaskFinished(this, record);
     }
 
+    protected void setTerrainBlockWithRecord(BlockPos pos, BlockState newState, int flags) {
+        if (!canModifyBlock(pos)) {
+            return;
+        }
+        setBlockWithRecord(pos, newState, flags);
+    }
+
     protected void setBlockWithRecord(BlockPos pos, BlockState newState, int flags) {
         BlockState currentState = world.getBlockState(pos);
         if (currentState.equals(newState)) {
@@ -146,6 +198,60 @@ public abstract class BaseTransformationTask {
             undoRecorder.recordBiomeChange(serverWorld, new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4));
         }
         setBiome(pos, biome, serverWorld);
+    }
+
+    protected boolean shouldMapWhitelistToNether() {
+        return whitelistEnabled
+                && whitelistMapBlocks
+                && targetDimensionWorld != null
+                && targetDimensionWorld.getRegistryKey() == World.NETHER;
+    }
+
+    protected boolean isInsideWhitelistBox(int x, int y, int z) {
+        return whitelistEnabled
+                && x >= wMinX && x <= wMaxX
+                && y >= wMinY && y <= wMaxY
+                && z >= wMinZ && z <= wMaxZ;
+    }
+
+    protected boolean canModifyBlock(BlockPos pos) {
+        return !isInsideWhitelistBox(pos.getX(), pos.getY(), pos.getZ());
+    }
+
+    /**
+     * Maps blocks strictly inside [wMinY, wMaxY] for columns overlapping the whitelist box.
+     * Blocks below wMinY and above wMaxY remain eligible for normal terrain transformation.
+     */
+    protected void handleWhitelistColumn(int targetX, int targetZ) {
+        if (!whitelistEnabled) {
+            return;
+        }
+        if (targetX < wMinX || targetX > wMaxX || targetZ < wMinZ || targetZ > wMaxZ) {
+            return;
+        }
+
+        if (shouldMapWhitelistToNether()) {
+            int referenceX = referenceCenter.getX() + (targetX - center.getX());
+            int referenceZ = referenceCenter.getZ() + (targetZ - center.getZ());
+            int sourceMinY = targetDimensionWorld.getBottomY();
+            int sourceMaxY = Math.min(targetDimensionWorld.getTopY() - 1,
+                    sourceMinY + Math.max(1, targetDimensionWorld.getDimension().logicalHeight()) - 1);
+            int refY = MathHelper.clamp(referenceCenter.getY(), sourceMinY, sourceMaxY);
+            RegistryEntry<Biome> targetBiome = targetDimensionWorld.getBiome(new BlockPos(referenceX, refY, referenceZ));
+
+            int yStart = Math.min(world.getTopY() - 1, wMaxY);
+            int yEnd = Math.max(world.getBottomY(), wMinY);
+            for (int y = yStart; y >= yEnd; y--) {
+                BlockPos pos = new BlockPos(targetX, y, targetZ);
+                BlockState oldState = world.getBlockState(pos);
+                if (!oldState.isAir()) {
+                    BlockState mappedState = NetherBlockMapper.mapToNether(pos, oldState, targetBiome);
+                    if (mappedState != null && !mappedState.equals(oldState)) {
+                        setBlockWithRecord(pos, mappedState, Block.NOTIFY_LISTENERS | Block.FORCE_STATE);
+                    }
+                }
+            }
+        }
     }
 
     protected abstract void processPosition(BlockPos circlePos);
@@ -225,6 +331,13 @@ public abstract class BaseTransformationTask {
                 int targetBlockX = BiomeCoords.toBlock(bx) + 2;
                 int targetBlockY = BiomeCoords.toBlock(by) + 2;
                 int targetBlockZ = BiomeCoords.toBlock(bz) + 2;
+
+                if (whitelistEnabled && !shouldMapWhitelistToNether()
+                        && targetBlockX >= wMinX && targetBlockX <= wMaxX
+                        && targetBlockY >= wMinY && targetBlockY <= wMaxY
+                        && targetBlockZ >= wMinZ && targetBlockZ <= wMaxZ) {
+                    return targetChunk.getBiomeForNoiseGen(bx, by, bz);
+                }
 
                 int refBlockX = targetBlockX + offsetX;
                 int refBlockZ = targetBlockZ + offsetZ;

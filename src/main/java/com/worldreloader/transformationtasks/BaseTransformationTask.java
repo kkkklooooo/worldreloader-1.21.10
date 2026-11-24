@@ -142,7 +142,7 @@ public abstract class BaseTransformationTask {
 
     public void stop() {
         //cleanupItemEntities();
-        if(WorldReloader.config.Debug && player != null) player.sendMessage(net.minecraft.text.Text.literal("§a最终物品清理完成！"), false);
+        if(WorldReloader.config.Debug && player != null) WorldReloader.logChat("§a最终物品清理完成！");
         this.isActive = false;
         currentRadiusPositions.clear();
         currentStep = 0;
@@ -471,14 +471,14 @@ public abstract class BaseTransformationTask {
 
     protected void processNextStep() {
         if (currentRadius > maxRadius) {
-            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§6地形改造完成！"), false);
+            if(WorldReloader.config.Debug) WorldReloader.logChat("§6地形改造完成！");
             stop();
             return;
         }
 
         if (currentStep == 0) {
             currentRadiusPositions = generateCirclePositions(currentRadius);
-            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§7开始改造半径: " + currentRadius + "格 (共 " + currentRadiusPositions.size() + " 个位置)"), false);
+            if(WorldReloader.config.Debug) WorldReloader.logChat("§7开始改造半径: " + currentRadius + "格 (共 " + currentRadiusPositions.size() + " 个位置)");
         }
 
         if (shouldCleanupItems()) {
@@ -490,13 +490,13 @@ public abstract class BaseTransformationTask {
             return;
         }
 
-        if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§e完成步骤: 半径 " + currentRadius + "格 (" + (currentStep + 1) + "/" + totalSteps + ")"), false);
+        if(WorldReloader.config.Debug) WorldReloader.logChat("§e完成步骤: 半径 " + currentRadius + "格 (" + (currentStep + 1) + "/" + totalSteps + ")");
         currentStep++;
 
         if (currentStep >= totalSteps) {
             currentRadius++;
             currentStep = 0;
-            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§a完成半径: " + (currentRadius - 1) + "格"), false);
+            if(WorldReloader.config.Debug) WorldReloader.logChat("§a完成半径: " + (currentRadius - 1) + "格");
         }
     }
 
@@ -513,7 +513,7 @@ public abstract class BaseTransformationTask {
         if (startIndex >= totalPositions) {
             currentRadius++;
             currentStep = 0;
-            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§a完成半径: " + (currentRadius - 1) + "格"), false);
+            if(WorldReloader.config.Debug) WorldReloader.logChat("§a完成半径: " + (currentRadius - 1) + "格");
             return false;
         }
 
@@ -561,7 +561,7 @@ public abstract class BaseTransformationTask {
         }
 
         if (itemsCleared > 0 && WorldReloader.config.Debug) {
-            player.sendMessage(net.minecraft.text.Text.literal("§b清理了 " + itemsCleared + " 个掉落物（半径 " + currentRadius + "）"), false);
+            WorldReloader.logChat("§b清理了 " + itemsCleared + " 个掉落物（半径 " + currentRadius + "）");
         }
     }
 

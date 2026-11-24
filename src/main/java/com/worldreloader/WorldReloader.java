@@ -4,7 +4,6 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.worldreloader.client.NetherAtmosphereHelper;
 import com.worldreloader.client.WhitelistConfigGui;
-import com.worldreloader.client.WhitelistDebugRenderer;
 import com.worldreloader.transformationtasks.LineTransformationTask;
 import com.worldreloader.transformationtasks.SurfaceTransformationTask;
 import com.worldreloader.transformationtasks.TerrainTransformationBuilder;
@@ -60,6 +59,28 @@ public class WorldReloader implements ModInitializer {
 	public static ConfigHolder<ModConfig> ch = AutoConfig.register(ModConfig.class, GsonConfigSerializer::new);
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public String minPermission="op";
+
+	/**
+	 * 把原本显示在玩家聊天栏的提示改写进日志。
+	 * 本模组面向录制/展示场景：聊天栏不再输出任何内容，所有提示只记录到日志里，
+	 * 避免录屏画面被聊天信息干扰。传入的 §颜色代码会被自动去掉。
+	 */
+	public static void logChat(String message) {
+		if (message == null || message.isEmpty()) {
+			return;
+		}
+		LOGGER.info("{}", message.replaceAll("§[0-9a-fk-orx]", ""));
+	}
+
+	/**
+	 * {@link #logChat(String)} 的 Text 重载，方便保留原有 Text 写法。
+	 */
+	public static void logChat(Text text) {
+		if (text == null) {
+			return;
+		}
+		logChat(text.getString());
+	}
 	// 改为 Map 存储，方便查找
 	private final Map<Item, Integer> itemRequirements = new HashMap<>();
 	private Block targetBlock;
@@ -72,7 +93,7 @@ public class WorldReloader implements ModInitializer {
 		ServerPlayNetworking.registerGlobalReceiver(UNDO_PACKET_ID, (server, player, handler, buf, responseSender) -> {
 			server.execute(() -> {
 				if (!CheckPermission(player)) {
-					player.sendMessage(Text.literal("§c你没有权限撤回地形改造！"), false);
+					WorldReloader.logChat("§c你没有权限撤回地形改造！");
 					return;
 				}
 				UndoManager.undoLast(server, player);
@@ -189,7 +210,7 @@ public class WorldReloader implements ModInitializer {
 			}
 
 			if (itemRequirements.isEmpty()) {
-				player.sendMessage(Text.literal("§c未配置有效的物品需求！请检查配置。"), false);
+				WorldReloader.logChat("§c未配置有效的物品需求！请检查配置。");
 				return ActionResult.FAIL;
 			}
 
@@ -214,7 +235,7 @@ public class WorldReloader implements ModInitializer {
 
 			// 权限检查
 			if (!CheckPermission(player)) {
-				player.sendMessage(Text.literal("§c你没有权限使用地形改造功能！"), false);
+				WorldReloader.logChat("§c你没有权限使用地形改造功能！");
 				return ActionResult.FAIL;
 			}
 
@@ -263,7 +284,6 @@ public class WorldReloader implements ModInitializer {
 			return ActionResult.PASS;
 		});
 		WhitelistConfigGui.register();
-		WhitelistDebugRenderer.register();
 		KeyBindings.register();
 
 		config = AutoConfig.getConfigHolder(ModConfig.class).getConfig();
@@ -279,7 +299,7 @@ public class WorldReloader implements ModInitializer {
 					if (ClientPlayNetworking.canSend(UNDO_PACKET_ID)) {
 						ClientPlayNetworking.send(UNDO_PACKET_ID, PacketByteBufs.empty());
 					} else {
-						client.player.sendMessage(Text.literal("§c当前服务器未启用 WorldReloader 撤回功能"), false);
+						WorldReloader.logChat("§c当前服务器未启用 WorldReloader 撤回功能");
 					}
 				}
 			}
@@ -288,7 +308,7 @@ public class WorldReloader implements ModInitializer {
 
 	private int undoCommand(ServerCommandSource source) {
 		if (source.getPlayer() != null && !CheckPermission(source.getPlayer())) {
-			source.sendError(Text.literal("§c你没有权限撤回地形改造！"));
+			WorldReloader.logChat("§c你没有权限撤回地形改造！");
 			return 0;
 		}
 		return UndoManager.undoLast(source.getServer(), source.getPlayer(), source) ? 1 : 0;
@@ -344,7 +364,7 @@ public class WorldReloader implements ModInitializer {
 
 		// 检查是否已存在相同坐标
 		if (config.savedPositions.contains(newPos)) {
-			player.sendMessage(Text.literal("§7该坐标已存在: " + newPos), false);
+			WorldReloader.logChat("§7该坐标已存在: " + newPos);
 			return;
 		}
 
@@ -353,11 +373,11 @@ public class WorldReloader implements ModInitializer {
 		// 保存配置
 		AutoConfig.getConfigHolder(ModConfig.class).save();
 
-		player.sendMessage(Text.literal("§a已添加坐标: " + newPos), false);
+		WorldReloader.logChat("§a已添加坐标: " + newPos);
 		LOGGER.info("添加坐标: {}", newPos);
 
 		// 显示当前坐标总数
-		player.sendMessage(Text.literal("§7当前保存的坐标数: " + config.savedPositions.size()), false);
+		WorldReloader.logChat("§7当前保存的坐标数: " + config.savedPositions.size());
 	}
 
 	/**
@@ -369,11 +389,11 @@ public class WorldReloader implements ModInitializer {
 
 		if (removed) {
 			AutoConfig.getConfigHolder(ModConfig.class).save();
-			player.sendMessage(Text.literal("§c已移除坐标: " + targetPos), false);
+			WorldReloader.logChat("§c已移除坐标: " + targetPos);
 			LOGGER.info("移除坐标: {}", targetPos);
-			player.sendMessage(Text.literal("§7剩余坐标数: " + config.savedPositions.size()), false);
+			WorldReloader.logChat("§7剩余坐标数: " + config.savedPositions.size());
 		} else {
-			player.sendMessage(Text.literal("§7未找到该位置的坐标"), false);
+			WorldReloader.logChat("§7未找到该位置的坐标");
 		}
 	}
 
@@ -391,7 +411,7 @@ public class WorldReloader implements ModInitializer {
 		int count = config.savedPositions.size();
 		config.savedPositions.clear();
 		AutoConfig.getConfigHolder(ModConfig.class).save();
-		player.sendMessage(Text.literal("§c已清空所有保存的坐标 (" + count + " 个)"), false);
+		WorldReloader.logChat("§c已清空所有保存的坐标 (" + count + " 个)");
 	}
 
 	/**
@@ -400,12 +420,12 @@ public class WorldReloader implements ModInitializer {
 	public static void listSavedPositions(net.minecraft.entity.player.PlayerEntity player) {
 		List<ModConfig.SavedPosition> positions = getSavedPositions();
 		if (positions.isEmpty()) {
-			player.sendMessage(Text.literal("§7没有保存的坐标"), false);
+			WorldReloader.logChat("§7没有保存的坐标");
 		} else {
-			player.sendMessage(Text.literal("§6保存的坐标列表 (" + positions.size() + " 个):"), false);
+			WorldReloader.logChat("§6保存的坐标列表 (" + positions.size() + " 个):");
 			for (int i = 0; i < positions.size(); i++) {
 				ModConfig.SavedPosition pos = positions.get(i);
-				player.sendMessage(Text.literal("§a" + (i + 1) + ". §f" + pos), false);
+				WorldReloader.logChat("§a" + (i + 1) + ". §f" + pos);
 			}
 		}
 	}
@@ -430,14 +450,14 @@ public class WorldReloader implements ModInitializer {
 	 */
 	private int setPermissionCommand(ServerCommandSource source, String permission) {
 		if (!permission.equals("player") && !permission.equals("op") && !permission.equals("disabled")) {
-			source.sendError(Text.literal("§c无效的权限等级！可用选项: player, op, disabled"));
+			WorldReloader.logChat("§c无效的权限等级！可用选项: player, op, disabled");
 			return 0;
 		}
 
 		minPermission = permission;
 		ch.save();
 
-		source.sendMessage(Text.literal("§a地形改造权限已设置为: " + permission));
+		WorldReloader.logChat("§a地形改造权限已设置为: " + permission);
 		LOGGER.info("地形改造权限已设置为: {}", permission);
 		return 1;
 	}
@@ -447,12 +467,12 @@ public class WorldReloader implements ModInitializer {
 	 */
 	private int transformAtCommand(ServerCommandSource source, int x, int y, int z, String mode, String target) {
 		if (!(source.getWorld() instanceof ServerWorld world)) {
-			source.sendError(Text.literal("§c只能在服务器世界中执行此命令"));
+			WorldReloader.logChat("§c只能在服务器世界中执行此命令");
 			return 0;
 		}
 
 		BlockPos pos = new BlockPos(x, y, z);
-		source.sendMessage(Text.literal("§6开始在地点 " + x + ", " + y + ", " + z + " 执行地形改造..."));
+		WorldReloader.logChat("§6开始在地点 " + x + ", " + y + ", " + z + " 执行地形改造...");
 
 		world.getServer().execute(() -> {
 			startTerrainTransformationAt(world, pos, source.getPlayer(), mode, target);
@@ -466,15 +486,15 @@ public class WorldReloader implements ModInitializer {
 	 */
 	private int transformPlayerPositionCommand(ServerCommandSource source, String mode, String target) {
 		if (source.getPlayer() == null) {
-			source.sendError(Text.literal("§c只有玩家可以执行此命令"));
+			WorldReloader.logChat("§c只有玩家可以执行此命令");
 			return 0;
 		}
 
 		BlockPos pos = source.getPlayer().getBlockPos();
-		source.sendMessage(Text.literal("§6开始在玩家位置执行地形改造..."));
+		WorldReloader.logChat("§6开始在玩家位置执行地形改造...");
 
 		if (!(source.getWorld() instanceof ServerWorld world)) {
-			source.sendError(Text.literal("§c只能在服务器世界中执行此命令"));
+			WorldReloader.logChat("§c只能在服务器世界中执行此命令");
 			return 0;
 		}
 
@@ -533,18 +553,18 @@ public class WorldReloader implements ModInitializer {
 						RegistryKey<Biome> k = RegistryKey.of(RegistryKeys.BIOME, Identifier.of("minecraft",target));
 						targetBiome = (entry) -> entry.matchesKey(k);
 					}
-					player.sendMessage(Text.literal("§6目标生物群系: " + target), false);
+					WorldReloader.logChat("§6目标生物群系: " + target);
 					builder.setBiomePos(centerPos, targetBiome, 6400);
 				}
 				break;
 			case "structure":
 				if (target != null) {
-					player.sendMessage(Text.literal("§6目标结构: " + target), false);
+					WorldReloader.logChat("§6目标结构: " + target);
 					builder.setStructurePos(centerPos, target, 6400);
 				}
 				break;
 			case "random":
-				player.sendMessage(Text.literal("§6随机模式"), false);
+				WorldReloader.logChat("§6随机模式");
 				builder.setRandomPos(centerPos, 6400);
 				break;
 			case "spec":
@@ -561,19 +581,19 @@ public class WorldReloader implements ModInitializer {
 				SurfaceTransformationTask task = builder.buildSurface();
 				if (task != null) {
 					task.start();
-					player.sendMessage(Text.literal("§a地表地形改造已启动！"), false);
+					WorldReloader.logChat("§a地表地形改造已启动！");
 					LOGGER.info("地表地形改造任务已启动 - 中心位置: {}", centerPos);
 				} else {
-					player.sendMessage(Text.literal("§c无法启动地表地形改造任务！"), false);
+					WorldReloader.logChat("§c无法启动地表地形改造任务！");
 				}
 			} else {
 				TerrainTransformationTask task = builder.buildStandard();
 				if (task != null) {
 					task.start();
-					player.sendMessage(Text.literal("§a完整地形改造已启动！"), false);
+					WorldReloader.logChat("§a完整地形改造已启动！");
 					LOGGER.info("完整地形改造任务已启动 - 中心位置: {}", centerPos);
 				} else {
-					player.sendMessage(Text.literal("§c无法启动完整地形改造任务！"), false);
+					WorldReloader.logChat("§c无法启动完整地形改造任务！");
 				}
 			}
 
@@ -585,7 +605,7 @@ public class WorldReloader implements ModInitializer {
 	private void startTerrainTransformation(ServerWorld world, BlockPos beaconPos, net.minecraft.entity.player.PlayerEntity player) {
 		// 权限检查
 		if (!CheckPermission(player)) {
-			player.sendMessage(Text.literal("§c你没有权限使用地形改造功能！"), false);
+			WorldReloader.logChat("§c你没有权限使用地形改造功能！");
 			return;
 		}
 
@@ -618,7 +638,7 @@ public class WorldReloader implements ModInitializer {
         if (config.UseSpecificPos) {
 			BlockPos specificPos = new BlockPos(config.Posx, config.Posy, config.Posz);
 			builder.setTargetPos(specificPos);
-            player.sendMessage(Text.literal("§6使用特定位置: " + specificPos), false);
+            WorldReloader.logChat("§6使用特定位置: " + specificPos);
 		} else {
 			Predicate<RegistryEntry<Biome>> targetBiome = detectTargetBiome(world, beaconPos, player);
 			String targetStructure = detectTargetStructure(world, beaconPos, player);
@@ -629,7 +649,7 @@ public class WorldReloader implements ModInitializer {
 				builder.setStructurePos(beaconPos, targetStructure, 6400);
             } else {
 				builder.setRandomPos(beaconPos,6400);
-                player.sendMessage(Text.literal("§6使用随机位置"), false);
+                WorldReloader.logChat("§6使用随机位置");
 			}
 		}
 
@@ -640,29 +660,29 @@ public class WorldReloader implements ModInitializer {
 				SurfaceTransformationTask task = builder.buildSurface();
 				if (task != null) {
 					task.start();
-					player.sendMessage(Text.literal("§a地表地形改造已启动！"), false);
+					WorldReloader.logChat("§a地表地形改造已启动！");
 					LOGGER.info("地表地形改造任务已启动 - 信标位置: {}", beaconPos);
 				} else {
-					player.sendMessage(Text.literal("§c无法启动地表地形改造任务！"), false);
+					WorldReloader.logChat("§c无法启动地表地形改造任务！");
 				}
 			}else if(!config.UseWhitelist && config.UseLine){
 				LineTransformationTask task = builder.buildLine();
 				if (task != null) {
 					task.start();
-					player.sendMessage(Text.literal("§a完整地形改造已启动！"), false);
+					WorldReloader.logChat("§a完整地形改造已启动！");
 					LOGGER.info("完整地形改造任务已启动 - 信标位置: {}", beaconPos);
 				} else {
-					player.sendMessage(Text.literal("§c无法启动完整地形改造任务！"), false);
+					WorldReloader.logChat("§c无法启动完整地形改造任务！");
 				}
 			}
 			else {
 				TerrainTransformationTask task = builder.buildStandard();
 				if (task != null) {
 					task.start();
-					player.sendMessage(Text.literal("§a完整地形改造已启动！"), false);
+					WorldReloader.logChat("§a完整地形改造已启动！");
 					LOGGER.info("完整地形改造任务已启动 - 信标位置: {}", beaconPos);
 				} else {
-					player.sendMessage(Text.literal("§c无法启动完整地形改造任务！"), false);
+					WorldReloader.logChat("§c无法启动完整地形改造任务！");
 				}
 			}
 	}
@@ -674,7 +694,7 @@ public class WorldReloader implements ModInitializer {
 
 		for (var i:config.biomeMappings) {
 			if (Registries.BLOCK.get(Identifier.of("minecraft",i.itemId)) == sideBlock&&i.enabled) {
-				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.BiomeId + "生物群系"), false);
+				WorldReloader.logChat("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.BiomeId + "生物群系");
 				Predicate<RegistryEntry<Biome>> p;
 
 				if (i.BiomeId.startsWith("#")) {
@@ -704,7 +724,7 @@ public class WorldReloader implements ModInitializer {
 
 		for (var i : config.structureMappings) {
 			if (Registries.BLOCK.get(Identifier.of("minecraft",i.itemId)) == sideBlock&&i.enabled) {
-				player.sendMessage(Text.literal("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.structureId + "结构"), false);
+				WorldReloader.logChat("§6检测到东侧方块: " + sideBlock.getName().getString() + "，将寻找" + i.structureId + "结构");
 				return i.structureId;
 			}
 		}
@@ -721,14 +741,14 @@ public class WorldReloader implements ModInitializer {
 		int maxX = Math.max(config.whitelistMinX, config.whitelistMaxX);
 		int maxY = Math.max(config.whitelistMinY, config.whitelistMaxY);
 		int maxZ = Math.max(config.whitelistMinZ, config.whitelistMaxZ);
-		player.sendMessage(Text.literal(String.format(
+		WorldReloader.logChat(String.format(
 				"§b白名单模式已启用，保护区域: (%d, %d, %d) ~ (%d, %d, %d)",
-				minX, minY, minZ, maxX, maxY, maxZ)), false);
+				minX, minY, minZ, maxX, maxY, maxZ));
 		if (config.whitelistMapBlocks) {
 			if (targetWorld != null && targetWorld.getRegistryKey() == World.NETHER) {
-				player.sendMessage(Text.literal("§6框选区域方块将映射为下界风格（保留原有结构）"), false);
+				WorldReloader.logChat("§6框选区域方块将映射为下界风格（保留原有结构）");
 			} else if (config.Debug) {
-				player.sendMessage(Text.literal("§e提示: 当前目标维度不是下界，框选区域保持原样不进行方块映射"), false);
+				WorldReloader.logChat("§e提示: 当前目标维度不是下界，框选区域保持原样不进行方块映射");
 			}
 		}
 	}

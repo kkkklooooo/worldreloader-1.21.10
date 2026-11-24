@@ -60,7 +60,7 @@ public final class UndoTransformationTask {
             cleanupChunks(world);
             active = false;
             if (initiator != null) {
-                initiator.sendMessage(Text.literal("§a地形变更撤回完成！"), false);
+                WorldReloader.logChat("§a地形变更撤回完成！");
             }
             return;
         }
@@ -69,7 +69,7 @@ public final class UndoTransformationTask {
         step.restore(world);
         if (WorldReloader.config != null && WorldReloader.config.Debug && initiator != null) {
             int done = record.getStepCount() - nextStepIndex;
-            initiator.sendMessage(Text.literal("§e撤回进度: " + done + "/" + record.getStepCount()), false);
+            WorldReloader.logChat("§e撤回进度: " + done + "/" + record.getStepCount());
         }
         nextStepIndex--;
     }

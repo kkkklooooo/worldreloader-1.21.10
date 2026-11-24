@@ -7,7 +7,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -68,7 +67,7 @@ public final class UndoManager {
 
     public static boolean undoLast(MinecraftServer server, PlayerEntity player, ServerCommandSource source) {
         if (activeUndoTask != null && activeUndoTask.isActive()) {
-            sendFeedback(player, source, "§e正在撤回上一次地形变更，请等待完成...");
+            sendFeedback("§e正在撤回上一次地形变更，请等待完成...");
             return false;
         }
 
@@ -86,15 +85,15 @@ public final class UndoManager {
 
         TransformationRecord record = HISTORY.pollFirst();
         if (record == null || record.isEmpty()) {
-            sendFeedback(player, source, "§7没有可撤回的地形变更记录");
+            sendFeedback("§7没有可撤回的地形变更记录");
             return false;
         }
 
         activeUndoTask = new UndoTransformationTask(server, record, player);
         if (interruptedActive) {
-            sendFeedback(player, source, "§6已中断当前地形改造，开始反向撤回（共 " + record.getStepCount() + " 步）...");
+            sendFeedback("§6已中断当前地形改造，开始反向撤回（共 " + record.getStepCount() + " 步）...");
         } else {
-            sendFeedback(player, source, "§a开始撤回上一次地形变更（共 " + record.getStepCount() + " 步）...");
+            sendFeedback("§a开始撤回上一次地形变更（共 " + record.getStepCount() + " 步）...");
         }
         return true;
     }
@@ -105,12 +104,8 @@ public final class UndoManager {
         activeUndoTask = null;
     }
 
-    private static void sendFeedback(PlayerEntity player, ServerCommandSource source, String message) {
-        Text text = Text.literal(message);
-        if (source != null) {
-            source.sendFeedback(() -> text, false);
-        } else if (player != null) {
-            player.sendMessage(text, false);
-        }
+    private static void sendFeedback(String message) {
+        // 聊天栏输出已关闭：所有提示改为写入日志，避免干扰录屏画面。
+        WorldReloader.logChat(message);
     }
 }

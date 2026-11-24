@@ -129,7 +129,7 @@ public class LineTransformationTask extends BaseTransformationTask {
             }
 
             if(WorldReloader.config.Debug) {
-                player.sendMessage(net.minecraft.text.Text.literal("§b检测到主延伸方向: " + (isXAxisDominant ? "X轴" : "Z轴")), false);
+                WorldReloader.logChat("§b检测到主延伸方向: " + (isXAxisDominant ? "X轴" : "Z轴"));
             }
 
             return positions;
@@ -185,7 +185,7 @@ public class LineTransformationTask extends BaseTransformationTask {
     protected void processNextStep() {
         // 检查是否完成所有宽度
         if (currentWidth > width+1) {
-            if(WorldReloader.config.Debug) player.sendMessage(net.minecraft.text.Text.literal("§6地形改造完成！"), false);
+            if(WorldReloader.config.Debug) WorldReloader.logChat("§6地形改造完成！");
             stop();
             return;
         }
@@ -199,8 +199,8 @@ public class LineTransformationTask extends BaseTransformationTask {
         }
 
         if(WorldReloader.config.Debug && currentStep == 0) {
-            player.sendMessage(net.minecraft.text.Text.literal("§7开始改造宽度: " + currentWidth +
-                    " (共 " + currentRadiusPositions.size() + " 个位置)"), false);
+            WorldReloader.logChat("§7开始改造宽度: " + currentWidth +
+                    " (共 " + currentRadiusPositions.size() + " 个位置)");
         }
 
         // 处理物品清理
@@ -213,7 +213,7 @@ public class LineTransformationTask extends BaseTransformationTask {
         processCurrentStepPositions();
 
         if(WorldReloader.config.Debug) {
-            player.sendMessage(net.minecraft.text.Text.literal("§e完成宽度: " + currentWidth), false);
+            WorldReloader.logChat("§e完成宽度: " + currentWidth);
         }
 
         // 直接移动到下一个宽度
